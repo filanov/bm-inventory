@@ -404,8 +404,10 @@ definitions:
             properties:
               mac:
                 type: string
-              ip-address:
-                type: string
+              ip-addresses:
+                type: array
+                items:
+                  type: string
 
   node-list:
     type: array

@@ -499,8 +499,11 @@ func init() {
             "items": {
               "type": "object",
               "properties": {
-                "ip-address": {
-                  "type": "string"
+                "ip-addresses": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
                 "mac": {
                   "type": "string"
@@ -1093,8 +1096,11 @@ func init() {
     "ConnectivityCheckParamsItems0NicsItems0": {
       "type": "object",
       "properties": {
-        "ip-address": {
-          "type": "string"
+        "ip-addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "mac": {
           "type": "string"

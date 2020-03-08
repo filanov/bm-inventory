@@ -115,8 +115,8 @@ func (m *ConnectivityCheckParamsItems0) UnmarshalBinary(b []byte) error {
 // swagger:model ConnectivityCheckParamsItems0NicsItems0
 type ConnectivityCheckParamsItems0NicsItems0 struct {
 
-	// ip address
-	IPAddress string `json:"ip-address,omitempty"`
+	// ip addresses
+	IPAddresses []string `json:"ip-addresses"`
 
 	// mac
 	Mac string `json:"mac,omitempty"`
