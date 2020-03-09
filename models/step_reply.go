@@ -15,14 +15,17 @@ import (
 // swagger:model step-reply
 type StepReply struct {
 
-	// data
-	Data string `json:"data,omitempty"`
+	// error
+	Error string `json:"error,omitempty"`
 
-	// return code
-	ReturnCode int64 `json:"return-code,omitempty"`
+	// output
+	Output string `json:"output,omitempty"`
 
 	// step type
 	StepType StepType `json:"step-type,omitempty"`
+
+	// succcessful completion
+	SucccessfulCompletion bool `json:"succcessful-completion,omitempty"`
 }
 
 // Validate validates this step reply

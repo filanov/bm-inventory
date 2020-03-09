@@ -340,6 +340,7 @@ func init() {
         "parameters": [
           {
             "type": "string",
+            "format": "uuid",
             "description": "ID of node",
             "name": "node_id",
             "in": "path",
@@ -365,22 +366,27 @@ func init() {
           "inventory"
         ],
         "summary": "Post the result of the required operations from the server",
-        "operationId": "PostNextStepsReply",
+        "operationId": "PostStepReply",
         "parameters": [
           {
             "type": "string",
+            "format": "uuid",
             "description": "ID of node",
             "name": "node_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "reply",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/step-reply"
+            }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Steps reply",
-            "schema": {
-              "$ref": "#/definitions/steps-reply"
-            }
+          "201": {
+            "description": "Reply accepted"
           },
           "404": {
             "description": "Node not found"
@@ -489,32 +495,42 @@ func init() {
         "$ref": "#/definitions/cluster"
       }
     },
+    "connectivity-check-nic": {
+      "type": "object",
+      "properties": {
+        "ip-addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mac": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "connectivity-check-node": {
+      "type": "object",
+      "properties": {
+        "nics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/connectivity-check-nic"
+          }
+        },
+        "node-id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
     "connectivity-check-params": {
       "type": "array",
       "items": {
-        "type": "object",
-        "properties": {
-          "nics": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "ip-addresses": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "mac": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "node-id": {
-            "type": "string"
-          }
-        }
+        "$ref": "#/definitions/connectivity-check-node"
       }
     },
     "image": {
@@ -652,14 +668,17 @@ func init() {
     "step-reply": {
       "type": "object",
       "properties": {
-        "data": {
+        "error": {
           "type": "string"
         },
-        "return-code": {
-          "type": "integer"
+        "output": {
+          "type": "string"
         },
         "step-type": {
           "$ref": "#/definitions/step-type"
+        },
+        "succcessful-completion": {
+          "type": "boolean"
         }
       }
     },
@@ -1013,6 +1032,7 @@ func init() {
         "parameters": [
           {
             "type": "string",
+            "format": "uuid",
             "description": "ID of node",
             "name": "node_id",
             "in": "path",
@@ -1038,22 +1058,27 @@ func init() {
           "inventory"
         ],
         "summary": "Post the result of the required operations from the server",
-        "operationId": "PostNextStepsReply",
+        "operationId": "PostStepReply",
         "parameters": [
           {
             "type": "string",
+            "format": "uuid",
             "description": "ID of node",
             "name": "node_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "reply",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/step-reply"
+            }
           }
         ],
         "responses": {
-          "200": {
-            "description": "Steps reply",
-            "schema": {
-              "$ref": "#/definitions/steps-reply"
-            }
+          "201": {
+            "description": "Reply accepted"
           },
           "404": {
             "description": "Node not found"
@@ -1076,34 +1101,6 @@ func init() {
             "master",
             "worker"
           ]
-        }
-      }
-    },
-    "ConnectivityCheckParamsItems0": {
-      "type": "object",
-      "properties": {
-        "nics": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ConnectivityCheckParamsItems0NicsItems0"
-          }
-        },
-        "node-id": {
-          "type": "string"
-        }
-      }
-    },
-    "ConnectivityCheckParamsItems0NicsItems0": {
-      "type": "object",
-      "properties": {
-        "ip-addresses": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "mac": {
-          "type": "string"
         }
       }
     },
@@ -1193,10 +1190,42 @@ func init() {
         "$ref": "#/definitions/cluster"
       }
     },
+    "connectivity-check-nic": {
+      "type": "object",
+      "properties": {
+        "ip-addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mac": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "connectivity-check-node": {
+      "type": "object",
+      "properties": {
+        "nics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/connectivity-check-nic"
+          }
+        },
+        "node-id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
     "connectivity-check-params": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/ConnectivityCheckParamsItems0"
+        "$ref": "#/definitions/connectivity-check-node"
       }
     },
     "image": {
@@ -1335,14 +1364,17 @@ func init() {
     "step-reply": {
       "type": "object",
       "properties": {
-        "data": {
+        "error": {
           "type": "string"
         },
-        "return-code": {
-          "type": "integer"
+        "output": {
+          "type": "string"
         },
         "step-type": {
           "$ref": "#/definitions/step-type"
+        },
+        "succcessful-completion": {
+          "type": "boolean"
         }
       }
     },
