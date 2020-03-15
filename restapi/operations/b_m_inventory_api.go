@@ -38,8 +38,11 @@ func NewBMInventoryAPI(spec *loads.Document) *BMInventoryAPI {
 		BasicAuthenticator:  security.BasicAuth,
 		APIKeyAuthenticator: security.APIKeyAuth,
 		BearerAuthenticator: security.BearerAuth,
-		JSONConsumer:        runtime.JSONConsumer(),
-		JSONProducer:        runtime.JSONProducer(),
+
+		JSONConsumer: runtime.JSONConsumer(),
+
+		JSONProducer: runtime.JSONProducer(),
+
 		InventoryCreateImageHandler: inventory.CreateImageHandlerFunc(func(params inventory.CreateImageParams) middleware.Responder {
 			return middleware.NotImplemented("operation inventory.CreateImage has not yet been implemented")
 		}),
@@ -103,9 +106,11 @@ type BMInventoryAPI struct {
 	// BearerAuthenticator generates a runtime.Authenticator from the supplied bearer token auth function.
 	// It has a default implementation in the security package, however you can replace it for your particular usage.
 	BearerAuthenticator func(string, security.ScopedTokenAuthentication) runtime.Authenticator
+
 	// JSONConsumer registers a consumer for the following mime types:
 	//   - application/json
 	JSONConsumer runtime.Consumer
+
 	// JSONProducer registers a producer for the following mime types:
 	//   - application/json
 	JSONProducer runtime.Producer
@@ -203,55 +208,43 @@ func (o *BMInventoryAPI) Validate() error {
 	}
 
 	if o.InventoryCreateImageHandler == nil {
-		unregistered = append(unregistered, "Inventory.CreateImageHandler")
+		unregistered = append(unregistered, "inventory.CreateImageHandler")
 	}
-
 	if o.InventoryDeregisterClusterHandler == nil {
-		unregistered = append(unregistered, "Inventory.DeregisterClusterHandler")
+		unregistered = append(unregistered, "inventory.DeregisterClusterHandler")
 	}
-
 	if o.InventoryDeregisterNodeHandler == nil {
-		unregistered = append(unregistered, "Inventory.DeregisterNodeHandler")
+		unregistered = append(unregistered, "inventory.DeregisterNodeHandler")
 	}
-
 	if o.InventoryGetClusterHandler == nil {
-		unregistered = append(unregistered, "Inventory.GetClusterHandler")
+		unregistered = append(unregistered, "inventory.GetClusterHandler")
 	}
-
 	if o.InventoryGetImageHandler == nil {
-		unregistered = append(unregistered, "Inventory.GetImageHandler")
+		unregistered = append(unregistered, "inventory.GetImageHandler")
 	}
-
 	if o.InventoryGetNextStepsHandler == nil {
-		unregistered = append(unregistered, "Inventory.GetNextStepsHandler")
+		unregistered = append(unregistered, "inventory.GetNextStepsHandler")
 	}
-
 	if o.InventoryGetNodeHandler == nil {
-		unregistered = append(unregistered, "Inventory.GetNodeHandler")
+		unregistered = append(unregistered, "inventory.GetNodeHandler")
 	}
-
 	if o.InventoryListClustersHandler == nil {
-		unregistered = append(unregistered, "Inventory.ListClustersHandler")
+		unregistered = append(unregistered, "inventory.ListClustersHandler")
 	}
-
 	if o.InventoryListImagesHandler == nil {
-		unregistered = append(unregistered, "Inventory.ListImagesHandler")
+		unregistered = append(unregistered, "inventory.ListImagesHandler")
 	}
-
 	if o.InventoryListNodesHandler == nil {
-		unregistered = append(unregistered, "Inventory.ListNodesHandler")
+		unregistered = append(unregistered, "inventory.ListNodesHandler")
 	}
-
 	if o.InventoryPostStepReplyHandler == nil {
-		unregistered = append(unregistered, "Inventory.PostStepReplyHandler")
+		unregistered = append(unregistered, "inventory.PostStepReplyHandler")
 	}
-
 	if o.InventoryRegisterClusterHandler == nil {
-		unregistered = append(unregistered, "Inventory.RegisterClusterHandler")
+		unregistered = append(unregistered, "inventory.RegisterClusterHandler")
 	}
-
 	if o.InventoryRegisterNodeHandler == nil {
-		unregistered = append(unregistered, "Inventory.RegisterNodeHandler")
+		unregistered = append(unregistered, "inventory.RegisterNodeHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -268,16 +261,12 @@ func (o *BMInventoryAPI) ServeErrorFor(operationID string) func(http.ResponseWri
 
 // AuthenticatorsFor gets the authenticators for the specified security schemes
 func (o *BMInventoryAPI) AuthenticatorsFor(schemes map[string]spec.SecurityScheme) map[string]runtime.Authenticator {
-
 	return nil
-
 }
 
 // Authorizer returns the registered authorizer
 func (o *BMInventoryAPI) Authorizer() runtime.Authorizer {
-
 	return nil
-
 }
 
 // ConsumersFor gets the consumers for the specified media types.
@@ -341,7 +330,6 @@ func (o *BMInventoryAPI) Context() *middleware.Context {
 
 func (o *BMInventoryAPI) initHandlerCache() {
 	o.Context() // don't care about the result, just that the initialization happened
-
 	if o.handlers == nil {
 		o.handlers = make(map[string]map[string]http.Handler)
 	}
@@ -350,67 +338,54 @@ func (o *BMInventoryAPI) initHandlerCache() {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/images"] = inventory.NewCreateImage(o.context, o.InventoryCreateImageHandler)
-
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
 	o.handlers["DELETE"]["/clusters/{cluster_id}"] = inventory.NewDeregisterCluster(o.context, o.InventoryDeregisterClusterHandler)
-
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
 	o.handlers["DELETE"]["/nodes/{node_id}"] = inventory.NewDeregisterNode(o.context, o.InventoryDeregisterNodeHandler)
-
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/clusters/{cluster_id}"] = inventory.NewGetCluster(o.context, o.InventoryGetClusterHandler)
-
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/images/{image_id}"] = inventory.NewGetImage(o.context, o.InventoryGetImageHandler)
-
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/nodes/{node_id}/next-steps"] = inventory.NewGetNextSteps(o.context, o.InventoryGetNextStepsHandler)
-
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/nodes/{node_id}"] = inventory.NewGetNode(o.context, o.InventoryGetNodeHandler)
-
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/clusters"] = inventory.NewListClusters(o.context, o.InventoryListClustersHandler)
-
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/images"] = inventory.NewListImages(o.context, o.InventoryListImagesHandler)
-
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/nodes"] = inventory.NewListNodes(o.context, o.InventoryListNodesHandler)
-
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/nodes/{node_id}/next-steps/reply"] = inventory.NewPostStepReply(o.context, o.InventoryPostStepReplyHandler)
-
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/clusters"] = inventory.NewRegisterCluster(o.context, o.InventoryRegisterClusterHandler)
-
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/nodes"] = inventory.NewRegisterNode(o.context, o.InventoryRegisterNodeHandler)
-
 }
 
 // Serve creates a http handler to serve the API over HTTP
@@ -439,4 +414,16 @@ func (o *BMInventoryAPI) RegisterConsumer(mediaType string, consumer runtime.Con
 // RegisterProducer allows you to add (or override) a producer for a media type.
 func (o *BMInventoryAPI) RegisterProducer(mediaType string, producer runtime.Producer) {
 	o.customProducers[mediaType] = producer
+}
+
+// AddMiddlewareFor adds a http middleware to existing handler
+func (o *BMInventoryAPI) AddMiddlewareFor(method, path string, builder middleware.Builder) {
+	um := strings.ToUpper(method)
+	if path == "/" {
+		path = ""
+	}
+	o.Init()
+	if h, ok := o.handlers[um][path]; ok {
+		o.handlers[method][path] = builder(h)
+	}
 }

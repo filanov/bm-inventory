@@ -9,11 +9,12 @@ import (
 	"strconv"
 
 	"github.com/go-openapi/errors"
-	strfmt "github.com/go-openapi/strfmt"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
 // ConnectivityCheckParams connectivity check params
+//
 // swagger:model connectivity-check-params
 type ConnectivityCheckParams []*ConnectivityCheckNode
 
