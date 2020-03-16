@@ -6,3 +6,5 @@ containers:
     bm-inventory: Dockerfile.bm-inventory
 volumes:
     - $HOME/.cache/go-build:/go/pkg/mod
+    - $HOME/.kube/:$HOME/.kube
+    - $HOME/.minikube/:$HOME/.minikube
