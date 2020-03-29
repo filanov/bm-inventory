@@ -410,6 +410,10 @@ func (b *bareMetalInventory) ListHosts(ctx context.Context, params inventory.Lis
 	return inventory.NewListHostsOK().WithPayload(hosts)
 }
 
+func createStepID(stepType models.StepType) string {
+	return fmt.Sprintf("%s-%s",stepType,uuid.New().String()[:8])
+}
+
 func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.GetNextStepsParams) middleware.Responder {
 	steps := models.Steps{}
 	var host models.Host
@@ -427,8 +431,10 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 	b.debugCmdMux.Lock()
 	if cmd, ok := b.debugCmdMap[params.HostID]; ok {
 		step := &models.Step{}
-		step.StepType = models.StepTypeDebug
-		step.Data = cmd
+		step.StepType = models.StepTypeExecute
+		step.StepID = createStepID(step.StepType)
+		step.Command = "bash"
+		step.Args = []string{"-c", cmd}
 		steps = append(steps, step)
 		delete(b.debugCmdMap, params.HostID)
 	}
@@ -436,6 +442,7 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 
 	steps = append(steps, &models.Step{
 		StepType: models.StepTypeHardawareInfo,
+		StepID: createStepID(models.StepTypeHardawareInfo),
 	})
 
 	return inventory.NewGetNextStepsOK().WithPayload(steps)
