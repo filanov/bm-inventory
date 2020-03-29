@@ -1114,9 +1114,17 @@ func init() {
     "step": {
       "type": "object",
       "properties": {
-        "data": {
-          "type": "string",
-          "format": "json"
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "command": {
+          "type": "string"
+        },
+        "step-id": {
+          "type": "string"
         },
         "step-type": {
           "$ref": "#/definitions/step-type"
@@ -1135,8 +1143,8 @@ func init() {
         "output": {
           "type": "string"
         },
-        "step-type": {
-          "$ref": "#/definitions/step-type"
+        "step-id": {
+          "type": "string"
         }
       }
     },
@@ -1145,7 +1153,7 @@ func init() {
       "enum": [
         "hardaware-info",
         "connectivity-check",
-        "debug"
+        "execute"
       ]
     },
     "steps": {
@@ -2269,9 +2277,17 @@ func init() {
     "step": {
       "type": "object",
       "properties": {
-        "data": {
-          "type": "string",
-          "format": "json"
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "command": {
+          "type": "string"
+        },
+        "step-id": {
+          "type": "string"
         },
         "step-type": {
           "$ref": "#/definitions/step-type"
@@ -2290,8 +2306,8 @@ func init() {
         "output": {
           "type": "string"
         },
-        "step-type": {
-          "$ref": "#/definitions/step-type"
+        "step-id": {
+          "type": "string"
         }
       }
     },
@@ -2300,7 +2316,7 @@ func init() {
       "enum": [
         "hardaware-info",
         "connectivity-check",
-        "debug"
+        "execute"
       ]
     },
     "steps": {
