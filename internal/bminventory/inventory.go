@@ -427,8 +427,9 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 	b.debugCmdMux.Lock()
 	if cmd, ok := b.debugCmdMap[params.HostID]; ok {
 		step := &models.Step{}
-		step.StepType = models.StepTypeDebug
-		step.Data = cmd
+		step.StepType = models.StepTypeExecute
+		step.Command = "bash"
+		step.Args = []string{"-c", cmd}
 		steps = append(steps, step)
 		delete(b.debugCmdMap, params.HostID)
 	}
