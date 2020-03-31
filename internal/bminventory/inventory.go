@@ -31,10 +31,13 @@ const (
 )
 
 const (
-	HostStatusDisabled    = "disabled"
-	HostStatusInstalling  = "installing"
-	HostStatusInstalled   = "installed"
-	HostStatusDiscovering = "discovering"
+	HostStatusDisabled     = "disabled"
+	HostStatusInstalling   = "installing"
+	HostStatusInstalled    = "installed"
+	HostStatusDiscovering  = "discovering"
+	HostStatusKnown		   = "known"
+	HostStatusInsufficient = "insufficient"
+	HostStatusDisconnected =  "disconnected"
 )
 
 const (
@@ -521,6 +524,12 @@ func createStepID(stepType models.StepType) string {
 	return fmt.Sprintf("%s-%s", stepType, uuid.New().String()[:8])
 }
 
+func printSteps(steps models.Steps)  {
+	for i := 0; i < len(steps); i++ {
+		logrus.Infof("step <%d> is <%s>,", i, steps[i].StepType)
+	}
+}
+
 func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.GetNextStepsParams) middleware.Responder {
 	steps := models.Steps{}
 	var host models.Host
@@ -531,8 +540,25 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 		return inventory.NewGetNextStepsNotFound()
 	}
 
-	if swag.StringValue(host.Status) == HostStatusDisabled {
-		return inventory.NewGetNextStepsOK().WithPayload(steps)
+	logrus.Infof("GetNextSteps host: <%s>, host status: <%s>", params.HostID, swag.StringValue(host.Status))
+
+	switch swag.StringValue(host.Status) {
+	case HostStatusKnown, HostStatusInsufficient, HostStatusDisconnected:
+		step := &models.Step{}
+		step.StepType = models.StepTypeConnectivityCheck
+		step.StepID = createStepID(step.StepType)
+		steps = append(steps, step)
+	case HostStatusDiscovering:
+		stepHw := &models.Step{}
+		stepHw.StepType = models.StepTypeHardawareInfo
+		stepHw.StepID = createStepID(stepHw.StepType)
+		steps = append(steps, stepHw)
+		stepLink := &models.Step{}
+		stepLink.StepType = models.StepTypeConnectivityCheck
+		stepLink.StepID = createStepID(stepLink.StepType)
+		steps = append(steps, stepLink)
+	case HostStatusInstalling, HostStatusDisabled:
+
 	}
 
 	b.debugCmdMux.Lock()
@@ -547,14 +573,8 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 	}
 	b.debugCmdMux.Unlock()
 
-	steps = append(steps, &models.Step{
-		StepType: models.StepTypeHardawareInfo,
-		StepID:   createStepID(models.StepTypeHardawareInfo),
-	})
-	for _, step := range steps {
-		logrus.Infof("Submitting step <%s> to cluster <%s> host <%s> Command: <%s> Arguments: <%+v>", step.StepID, params.ClusterID, params.HostID,
-			step.Command, step.Args)
-	}
+	logrus.Infof("GetNextSteps host: <%s> returns <%d> steps:", params.HostID, len(steps))
+	printSteps(steps)
 	return inventory.NewGetNextStepsOK().WithPayload(steps)
 }
 

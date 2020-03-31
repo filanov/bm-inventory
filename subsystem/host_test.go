@@ -2,6 +2,7 @@ package subsystem
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -66,6 +67,28 @@ var _ = Describe("Host tests", func() {
 		steps := getNextSteps(clusterID, *host.ID)
 		_, ok := getStepInList(steps, models.StepTypeHardawareInfo)
 		Expect(ok).Should(Equal(true))
+		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		Expect(ok).Should(Equal(true))
+		host = getHost(clusterID, *host.ID)
+		Expect(db.Model(host).Update("status", "known").Error).NotTo(HaveOccurred())
+		steps = getNextSteps(clusterID, *host.ID)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		Expect(ok).Should(Equal(true))
+		Expect(db.Model(host).Update("status", "disabled").Error).NotTo(HaveOccurred())
+		steps = getNextSteps(clusterID, *host.ID)
+		Expect(len(steps)).Should(Equal(0))
+		Expect(db.Model(host).Update("status", "insufficient").Error).NotTo(HaveOccurred())
+		steps = getNextSteps(clusterID, *host.ID)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		Expect(ok).Should(Equal(true))
+		Expect(db.Model(host).Update("status", "installing").Error).NotTo(HaveOccurred())
+		steps = getNextSteps(clusterID, *host.ID)
+		Expect(len(steps)).Should(Equal(0))
+		Expect(db.Model(host).Update("status", "disconnected").Error).NotTo(HaveOccurred())
+		steps = getNextSteps(clusterID, *host.ID)
+		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
+		Expect(ok).Should(Equal(true))
+
 	})
 
 	It("disable enable", func() {
@@ -198,3 +221,9 @@ func getNextSteps(clusterID, hostID strfmt.UUID) models.Steps {
 	Expect(err).NotTo(HaveOccurred())
 	return steps.GetPayload()
 }
+
+//func printSteps(steps models.Steps) () {
+//	for _, step := range steps {
+//		fmt.Println(step.StepType)
+//		}
+//}
