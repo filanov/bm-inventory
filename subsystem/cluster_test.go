@@ -2,6 +2,9 @@ package subsystem
 
 import (
 	"context"
+	"io/ioutil"
+	"log"
+	"os"
 
 	"github.com/filanov/bm-inventory/client/inventory"
 	"github.com/filanov/bm-inventory/models"
@@ -90,7 +93,7 @@ var _ = Describe("Cluster tests", func() {
 	})
 })
 
-var _ = Describe("system-test cluster install", func() {
+	var _ = Describe("system-test cluster install", func() {
 	ctx := context.Background()
 	AfterEach(func() {
 		clearDB()
@@ -139,5 +142,18 @@ var _ = Describe("system-test cluster install", func() {
 		for _, host := range c.GetPayload().Hosts {
 			Expect(swag.StringValue(host.Status)).Should(Equal("installing"))
 		}
+
+		file, err := ioutil.TempFile("", "tmp")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer os.Remove(file.Name())
+
+		_, err = bmclient.Inventory.DownloadClusterKubeconfig(ctx, &inventory.DownloadClusterKubeconfigParams{ClusterID: clusterID}, file)
+
+		Expect(err).NotTo(HaveOccurred())
+		s, err := file.Stat()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(s.Size()).ShouldNot(Equal(0))
 	})
 })
