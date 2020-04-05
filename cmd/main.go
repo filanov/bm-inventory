@@ -64,7 +64,10 @@ func main() {
 		logrus.Fatal("failed to auto migrate, ", err)
 	}
 
-	bm := bminventory.NewBareMetalInventory(db, kclient, Options.BMConfig)
+	bm, err := bminventory.NewBareMetalInventory(db, kclient, Options.BMConfig)
+	if err != nil {
+		logrus.Fatalf("Error creating baremetal inventory: %s", err.Error())
+	}
 	h, err := restapi.Handler(restapi.Config{
 		InventoryAPI: bm,
 		Logger:       logrus.Printf,

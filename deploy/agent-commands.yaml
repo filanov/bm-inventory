@@ -1,0 +1,9 @@
+commands:
+  - name: hardware-info
+    command: podman
+    arguments: [run,--rm,--privileged,--quiet,--net=host,-v,/var/log:/var/log,quay.io/oamizur/hardware_info,/usr/bin/hardware_info]
+    expected-argument-num: 0
+  - name: connectivity-check
+    command: podman
+    arguments: [run,--rm,--privileged,--quiet,--net=host,-v,/var/log:/var/log,quay.io/oamizur/connectivity_check,/usr/bin/connectivity_check]
+    expected-argument-num: 1

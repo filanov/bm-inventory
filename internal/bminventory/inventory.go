@@ -3,9 +3,12 @@ package bminventory
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/filanov/bm-inventory/internal/installcfg"
 	"github.com/filanov/bm-inventory/models"
@@ -42,10 +45,17 @@ const (
 	ResourceKindCluster = "cluster"
 )
 
+const AgentsCommandsFile = "/etc/ocp-metal/agent-commands.yaml"
+
+const (
+	HardwareInfo      = "hardware-info"
+	ConnectivityCheck = "connectivity-check"
+)
+
 type Config struct {
 	ImageBuilder    string `envconfig:"IMAGE_BUILDER" default:"quay.io/oscohen/installer-image-build"`
 	ImageBuilderCmd string `envconfig:"IMAGE_BUILDER_CMD" default:"echo hello"`
-	AgentDockerImg  string `envconfig:"AGENT_DOCKER_IMAGE" default:"quay.io/oamizur/introspector:latest"`
+	AgentDockerImg  string `envconfig:"AGENT_DOCKER_IMAGE" default:"quay.io/oamizur/agent:latest"`
 	InventoryURL    string `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
 	InventoryPort   string `envconfig:"INVENTORY_PORT" default:"30485"`
 	S3EndpointURL   string `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
@@ -69,9 +79,9 @@ const ignitionConfigFormat = `{
   },
 "systemd": {
 "units": [{
-"name": "introspector.service",
+"name": "agent.service",
 "enabled": true,
-"contents": "[Service]\nType=simple\nExecStartPre=docker run --privileged --rm -v /usr/local/bin:/hostbin %s cp /usr/bin/introspector /usr/sbin/dmidecode /hostbin\nExecStart=/usr/local/bin/introspector --host %s --port %s --cluster-id %s\n\n[Install]\nWantedBy=multi-user.target"
+"contents": "[Service]\nType=simple\nExecStartPre=docker run --privileged --rm -v /usr/local/bin:/hostbin %s cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host %s --port %s --cluster-id %s\n\n[Install]\nWantedBy=multi-user.target"
 }]
 }
 }`
@@ -81,6 +91,17 @@ type debugCmd struct {
 	stepID string
 }
 
+type Command struct {
+	Name                string
+	Command             string
+	Arguments           []string
+	ExpectedArgumentNum int
+}
+
+type AgentCommands struct {
+	Commands []Command
+}
+
 type bareMetalInventory struct {
 	Config
 	imageBuildCmd []string
@@ -88,14 +109,66 @@ type bareMetalInventory struct {
 	kube          client.Client
 	debugCmdMap   map[strfmt.UUID]debugCmd
 	debugCmdMux   sync.Mutex
+	agentCommands map[string]*Command
 }
 
-func NewBareMetalInventory(db *gorm.DB, kclient client.Client, cfg Config) *bareMetalInventory {
+func (b *bareMetalInventory) readAgentCommands() error {
+	contents, err := ioutil.ReadFile(AgentsCommandsFile)
+	if err != nil {
+		logrus.WithError(err).Errorf("Could not read file %s", AgentsCommandsFile)
+		return err
+	}
+	var agentCommands AgentCommands
+	err = yaml.Unmarshal(contents, &agentCommands)
+	if err != nil {
+		logrus.WithError(err).Errorf("Error unmarshaling %s", contents)
+		return err
+	}
+	b.agentCommands = make(map[string]*Command)
+	for _, cmd := range agentCommands.Commands {
+		b.agentCommands[cmd.Name] = &cmd
+	}
+	return nil
+}
+
+func (b *bareMetalInventory) getCommandByName(name string) *Command {
+	cmd, ok := b.agentCommands[name]
+	if !ok {
+		logrus.Errorf("Command %s was not found", name)
+		return nil
+	}
+	return cmd
+}
+
+func (b *bareMetalInventory) createAgentExecuteStep(cmdName string, args ...string) *models.Step {
+	cmd := b.getCommandByName(cmdName)
+	if cmd == nil {
+		return nil
+	}
+	if len(args) != cmd.ExpectedArgumentNum {
+		logrus.Errorf("Argument number mismatch: expected %d received %d", cmd.ExpectedArgumentNum, len(args))
+		return nil
+	}
+	ret := models.Step{
+		Args:     append(cmd.Arguments, args...),
+		Command:  cmd.Command,
+		StepID:   createStepID(cmdName),
+		StepType: models.StepTypeExecute,
+	}
+	return &ret
+}
+
+func NewBareMetalInventory(db *gorm.DB, kclient client.Client, cfg Config) (*bareMetalInventory, error) {
 	b := &bareMetalInventory{db: db, kube: kclient, Config: cfg, debugCmdMap: make(map[strfmt.UUID]debugCmd)}
 	if cfg.ImageBuilderCmd != "" {
 		b.imageBuildCmd = strings.Split(cfg.ImageBuilderCmd, " ")
 	}
-	return b
+
+	err := b.readAgentCommands()
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 func strToURI(str string) *strfmt.URI {
@@ -523,8 +596,8 @@ func (b *bareMetalInventory) ListHosts(ctx context.Context, params inventory.Lis
 	return inventory.NewListHostsOK().WithPayload(hosts)
 }
 
-func createStepID(stepType models.StepType) string {
-	return fmt.Sprintf("%s-%s", stepType, uuid.New().String()[:8])
+func createStepID(prefix string) string {
+	return fmt.Sprintf("%s-%s", prefix, uuid.New().String()[:8])
 }
 
 func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.GetNextStepsParams) middleware.Responder {
@@ -553,10 +626,10 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 	}
 	b.debugCmdMux.Unlock()
 
-	steps = append(steps, &models.Step{
-		StepType: models.StepTypeHardawareInfo,
-		StepID:   createStepID(models.StepTypeHardawareInfo),
-	})
+	hardwareInfoStep := b.createAgentExecuteStep(HardwareInfo)
+	if hardwareInfoStep != nil {
+		steps = append(steps, hardwareInfoStep)
+	}
 	for _, step := range steps {
 		logrus.Infof("Submitting step <%s> to cluster <%s> host <%s> Command: <%s> Arguments: <%+v>", step.StepID, params.ClusterID, params.HostID,
 			step.Command, step.Args)
@@ -571,7 +644,7 @@ func (b *bareMetalInventory) PostStepReply(ctx context.Context, params inventory
 }
 
 func (b *bareMetalInventory) SetDebugStep(ctx context.Context, params inventory.SetDebugStepParams) middleware.Responder {
-	stepID := createStepID(models.StepTypeExecute)
+	stepID := createStepID(string(models.StepTypeExecute))
 	b.debugCmdMux.Lock()
 	b.debugCmdMap[params.HostID] = debugCmd{
 		cmd:    swag.StringValue(params.Step.Command),

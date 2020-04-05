@@ -2,6 +2,9 @@ package subsystem
 
 import (
 	"context"
+	"strings"
+
+	"github.com/filanov/bm-inventory/internal/bminventory"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -64,7 +67,7 @@ var _ = Describe("Host tests", func() {
 	It("next step", func() {
 		host := registerHost(clusterID)
 		steps := getNextSteps(clusterID, *host.ID)
-		_, ok := getStepInList(steps, models.StepTypeHardawareInfo)
+		_, ok := getStepByIdPrefix(steps, bminventory.HardwareInfo)
 		Expect(ok).Should(Equal(true))
 	})
 
@@ -103,16 +106,16 @@ var _ = Describe("Host tests", func() {
 		var step *models.Step
 		var ok bool
 		// debug should be only for host1
-		_, ok = getStepInList(getNextSteps(clusterID, *host2.ID), models.StepTypeExecute)
+		_, ok = getStepByIdPrefix(getNextSteps(clusterID, *host2.ID), string(models.StepTypeExecute))
 		Expect(ok).Should(Equal(false))
 
-		step, ok = getStepInList(getNextSteps(clusterID, *host1.ID), models.StepTypeExecute)
+		step, ok = getStepByIdPrefix(getNextSteps(clusterID, *host1.ID), string(models.StepTypeExecute))
 		Expect(ok).Should(Equal(true))
 		Expect(step.Command).Should(Equal("bash"))
 		Expect(step.Args).Should(Equal([]string{"-c", "echo hello"}))
 
 		// debug executed only once
-		_, ok = getStepInList(getNextSteps(clusterID, *host1.ID), models.StepTypeExecute)
+		_, ok = getStepByIdPrefix(getNextSteps(clusterID, *host1.ID), string(models.StepTypeExecute))
 		Expect(ok).Should(Equal(false))
 
 		_, err = bmclient.Inventory.PostStepReply(ctx, &inventory.PostStepReplyParams{
@@ -181,9 +184,9 @@ var _ = Describe("Host tests", func() {
 	})
 })
 
-func getStepInList(steps models.Steps, sType models.StepType) (*models.Step, bool) {
+func getStepByIdPrefix(steps models.Steps, idPrefix string) (*models.Step, bool) {
 	for _, step := range steps {
-		if step.StepType == sType {
+		if strings.HasPrefix(step.StepID, idPrefix) {
 			return step, true
 		}
 	}
