@@ -2,7 +2,6 @@ package subsystem
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -221,9 +220,3 @@ func getNextSteps(clusterID, hostID strfmt.UUID) models.Steps {
 	Expect(err).NotTo(HaveOccurred())
 	return steps.GetPayload()
 }
-
-//func printSteps(steps models.Steps) () {
-//	for _, step := range steps {
-//		fmt.Println(step.StepType)
-//		}
-//}

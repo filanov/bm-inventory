@@ -35,9 +35,9 @@ const (
 	HostStatusInstalling   = "installing"
 	HostStatusInstalled    = "installed"
 	HostStatusDiscovering  = "discovering"
-	HostStatusKnown		   = "known"
+	HostStatusKnown        = "known"
 	HostStatusInsufficient = "insufficient"
-	HostStatusDisconnected =  "disconnected"
+	HostStatusDisconnected = "disconnected"
 )
 
 const (
@@ -524,10 +524,24 @@ func createStepID(stepType models.StepType) string {
 	return fmt.Sprintf("%s-%s", stepType, uuid.New().String()[:8])
 }
 
-func printSteps(steps models.Steps)  {
-	for i := 0; i < len(steps); i++ {
-		logrus.Infof("step <%d> is <%s>,", i, steps[i].StepType)
+func logSteps(steps models.Steps, clusterId strfmt.UUID, hostId strfmt.UUID) {
+	if len(steps) == 0 {
+		logrus.Infof("No steps required for cluster <%s> host <%s>", clusterId, hostId)
 	}
+	for i := 0; i < len(steps); i++ {
+		logrus.Infof("Submitting step <%s> id <%s> to cluster <%s> host <%s> Command: <%s> Arguments: <%+v>", steps[i].StepType, steps[i].StepID, clusterId, hostId,
+			steps[i].Command, steps[i].Args)
+	}
+}
+
+func addStep(steps models.Steps, stepType models.StepType, stepCmd string, stepArg []string) models.Steps {
+	step := &models.Step{}
+	step.StepType = stepType
+	step.StepID = createStepID(step.StepType)
+	step.Command = stepCmd
+	step.Args = stepArg
+	steps = append(steps, step)
+	return steps
 }
 
 func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.GetNextStepsParams) middleware.Responder {
@@ -544,37 +558,22 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 
 	switch swag.StringValue(host.Status) {
 	case HostStatusKnown, HostStatusInsufficient, HostStatusDisconnected:
-		step := &models.Step{}
-		step.StepType = models.StepTypeConnectivityCheck
-		step.StepID = createStepID(step.StepType)
-		steps = append(steps, step)
+		steps = addStep(steps, models.StepTypeConnectivityCheck, "", []string{})
 	case HostStatusDiscovering:
-		stepHw := &models.Step{}
-		stepHw.StepType = models.StepTypeHardawareInfo
-		stepHw.StepID = createStepID(stepHw.StepType)
-		steps = append(steps, stepHw)
-		stepLink := &models.Step{}
-		stepLink.StepType = models.StepTypeConnectivityCheck
-		stepLink.StepID = createStepID(stepLink.StepType)
-		steps = append(steps, stepLink)
+		steps = addStep(steps, models.StepTypeHardawareInfo, "", []string{})
+		steps = addStep(steps, models.StepTypeConnectivityCheck, "", []string{})
 	case HostStatusInstalling, HostStatusDisabled:
 
 	}
 
 	b.debugCmdMux.Lock()
 	if cmd, ok := b.debugCmdMap[params.HostID]; ok {
-		step := &models.Step{}
-		step.StepType = models.StepTypeExecute
-		step.StepID = createStepID(step.StepType)
-		step.Command = "bash"
-		step.Args = []string{"-c", cmd}
-		steps = append(steps, step)
+		steps = addStep(steps, models.StepTypeExecute, "bash", []string{"-c", cmd})
 		delete(b.debugCmdMap, params.HostID)
 	}
 	b.debugCmdMux.Unlock()
 
-	logrus.Infof("GetNextSteps host: <%s> returns <%d> steps:", params.HostID, len(steps))
-	printSteps(steps)
+	logSteps(steps, params.ClusterID, params.HostID)
 	return inventory.NewGetNextStepsOK().WithPayload(steps)
 }
 
