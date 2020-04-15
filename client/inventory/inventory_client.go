@@ -31,7 +31,7 @@ type API interface {
 	   DownloadClusterISO downloads open shift per cluster discovery i s o*/
 	DownloadClusterISO(ctx context.Context, params *DownloadClusterISOParams, writer io.Writer) (*DownloadClusterISOOK, error)
 	/*
-	   DownloadClusterKubeconfig downloads the kubeconfig file for the specified cluster*/
+	   DownloadClusterKubeconfig downloads the kubeconfig files for the specified cluster*/
 	DownloadClusterKubeconfig(ctx context.Context, params *DownloadClusterKubeconfigParams, writer io.Writer) (*DownloadClusterKubeconfigOK, error)
 	/*
 	   EnableHost enables a host for use*/
@@ -186,14 +186,14 @@ func (a *Client) DownloadClusterISO(ctx context.Context, params *DownloadCluster
 }
 
 /*
-DownloadClusterKubeconfig downloads the kubeconfig file for the specified cluster
+DownloadClusterKubeconfig downloads the kubeconfig files for the specified cluster
 */
 func (a *Client) DownloadClusterKubeconfig(ctx context.Context, params *DownloadClusterKubeconfigParams, writer io.Writer) (*DownloadClusterKubeconfigOK, error) {
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "DownloadClusterKubeconfig",
 		Method:             "GET",
-		PathPattern:        "/clusters/{clusterId}/downloads/kubeconfig",
+		PathPattern:        "/clusters/{clusterId}/{fileName}/downloads/kubeconfig",
 		ProducesMediaTypes: []string{"application/octet-stream"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},

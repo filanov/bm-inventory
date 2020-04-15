@@ -65,6 +65,11 @@ type DownloadClusterKubeconfigParams struct {
 
 	*/
 	ClusterID strfmt.UUID
+	/*FileName
+	  The kubeconfig file name
+
+	*/
+	FileName string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -115,6 +120,17 @@ func (o *DownloadClusterKubeconfigParams) SetClusterID(clusterID strfmt.UUID) {
 	o.ClusterID = clusterID
 }
 
+// WithFileName adds the fileName to the download cluster kubeconfig params
+func (o *DownloadClusterKubeconfigParams) WithFileName(fileName string) *DownloadClusterKubeconfigParams {
+	o.SetFileName(fileName)
+	return o
+}
+
+// SetFileName adds the fileName to the download cluster kubeconfig params
+func (o *DownloadClusterKubeconfigParams) SetFileName(fileName string) {
+	o.FileName = fileName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *DownloadClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -125,6 +141,11 @@ func (o *DownloadClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest
 
 	// path param clusterId
 	if err := r.SetPathParam("clusterId", o.ClusterID.String()); err != nil {
+		return err
+	}
+
+	// path param fileName
+	if err := r.SetPathParam("fileName", o.FileName); err != nil {
 		return err
 	}
 

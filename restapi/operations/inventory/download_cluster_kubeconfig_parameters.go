@@ -35,6 +35,11 @@ type DownloadClusterKubeconfigParams struct {
 	  In: path
 	*/
 	ClusterID strfmt.UUID
+	/*The kubeconfig file name
+	  Required: true
+	  In: path
+	*/
+	FileName string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -48,6 +53,11 @@ func (o *DownloadClusterKubeconfigParams) BindRequest(r *http.Request, route *mi
 
 	rClusterID, rhkClusterID, _ := route.Params.GetOK("clusterId")
 	if err := o.bindClusterID(rClusterID, rhkClusterID, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
+	rFileName, rhkFileName, _ := route.Params.GetOK("fileName")
+	if err := o.bindFileName(rFileName, rhkFileName, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -87,5 +97,34 @@ func (o *DownloadClusterKubeconfigParams) validateClusterID(formats strfmt.Regis
 	if err := validate.FormatOf("clusterId", "path", "uuid", o.ClusterID.String(), formats); err != nil {
 		return err
 	}
+	return nil
+}
+
+// bindFileName binds and validates parameter FileName from path.
+func (o *DownloadClusterKubeconfigParams) bindFileName(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	// Required: true
+	// Parameter is provided by construction from the route
+
+	o.FileName = raw
+
+	if err := o.validateFileName(formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateFileName carries on validations for parameter FileName
+func (o *DownloadClusterKubeconfigParams) validateFileName(formats strfmt.Registry) error {
+
+	if err := validate.Enum("fileName", "path", o.FileName, []interface{}{"bootstrap.ign", "master.ign", "metadata.json", "worker.ign", "kubeadmin-password", "kubeconfig"}); err != nil {
+		return err
+	}
+
 	return nil
 }

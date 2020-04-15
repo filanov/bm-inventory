@@ -17,6 +17,7 @@ import (
 // DownloadClusterKubeconfigURL generates an URL for the download cluster kubeconfig operation
 type DownloadClusterKubeconfigURL struct {
 	ClusterID strfmt.UUID
+	FileName  string
 
 	_basePath string
 	// avoid unkeyed usage
@@ -42,13 +43,20 @@ func (o *DownloadClusterKubeconfigURL) SetBasePath(bp string) {
 func (o *DownloadClusterKubeconfigURL) Build() (*url.URL, error) {
 	var _result url.URL
 
-	var _path = "/clusters/{clusterId}/downloads/kubeconfig"
+	var _path = "/clusters/{clusterId}/{fileName}/downloads/kubeconfig"
 
 	clusterID := o.ClusterID.String()
 	if clusterID != "" {
 		_path = strings.Replace(_path, "{clusterId}", clusterID, -1)
 	} else {
 		return nil, errors.New("clusterId is required on DownloadClusterKubeconfigURL")
+	}
+
+	fileName := o.FileName
+	if fileName != "" {
+		_path = strings.Replace(_path, "{fileName}", fileName, -1)
+	} else {
+		return nil, errors.New("fileName is required on DownloadClusterKubeconfigURL")
 	}
 
 	_basePath := o._basePath

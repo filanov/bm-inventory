@@ -29,9 +29,9 @@ func NewDownloadClusterKubeconfig(ctx *middleware.Context, handler DownloadClust
 	return &DownloadClusterKubeconfig{Context: ctx, Handler: handler}
 }
 
-/*DownloadClusterKubeconfig swagger:route GET /clusters/{clusterId}/downloads/kubeconfig inventory downloadClusterKubeconfig
+/*DownloadClusterKubeconfig swagger:route GET /clusters/{clusterId}/{fileName}/downloads/kubeconfig inventory downloadClusterKubeconfig
 
-Download the kubeconfig file for the specified cluster
+Download the kubeconfig files for the specified cluster
 
 */
 type DownloadClusterKubeconfig struct {
