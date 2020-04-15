@@ -342,6 +342,12 @@ func getImageName(clusterID strfmt.UUID) string {
 func (b *bareMetalInventory) InstallCluster(ctx context.Context, params inventory.InstallClusterParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	var cluster models.Cluster
+
+	responder, done := generateClusterKubeconfig(b, cluster, params, log, ctx)
+	if done {
+		return responder
+	}
+
 	tx := b.db.Begin()
 	if tx.Error != nil {
 		log.WithError(tx.Error).Errorf("failed to start db transaction")
@@ -395,6 +401,24 @@ func (b *bareMetalInventory) InstallCluster(ctx context.Context, params inventor
 	}
 
 	return inventory.NewInstallClusterOK().WithPayload(&cluster)
+}
+
+func generateClusterKubeconfig(b *bareMetalInventory, cluster models.Cluster, params inventory.InstallClusterParams, log logrus.FieldLogger, ctx context.Context) (middleware.Responder, bool) {
+	if err := b.db.Preload("Hosts").First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
+		log.WithError(err).Errorf("failed to get cluster %s", params.ClusterID)
+		return inventory.NewInstallClusterNotFound(), true
+	}
+
+	if err := b.createKubeconfigJob(ctx, &cluster); err != nil {
+		log.WithError(err).Error("Failed to create kubeconfig generation job")
+		return inventory.NewInstallClusterInternalServerError(), true
+	}
+
+	if err := b.monitorJob(ctx, fmt.Sprintf("%s-%s", kubeconfigPrefix, params.ClusterID)); err != nil {
+		log.WithError(err).Error("Generating kubeconfig files failed")
+		return inventory.NewInstallClusterInternalServerError(), true
+	}
+	return nil, false
 }
 
 func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params inventory.UpdateClusterParams) middleware.Responder {
@@ -769,31 +793,13 @@ func (b *bareMetalInventory) createKubeconfigJob(ctx context.Context, cluster *m
 
 func (b *bareMetalInventory) DownloadClusterKubeconfig(ctx context.Context, params inventory.DownloadClusterKubeconfigParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
-	var cluster models.Cluster
-
-	log.Infof("Prepare and download kubeConfig from cluster %s", params.ClusterID)
-
-	if err := b.db.Preload("Hosts").First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
-		log.WithError(err).Errorf("failed to get cluster %s", params.ClusterID)
-		return inventory.NewDownloadClusterKubeconfigNotFound()
-	}
-
-	if err := b.createKubeconfigJob(ctx, &cluster); err != nil {
-		log.WithError(err).Error("Failed to create kubeconfig generation job")
-		return inventory.NewDownloadClusterKubeconfigInternalServerError()
-	}
-
-	if err := b.monitorJob(ctx, fmt.Sprintf("%s-%s", kubeconfigPrefix, params.ClusterID)); err != nil {
-		log.WithError(err).Error("Generating kubeconfig files failed")
-		return inventory.NewDownloadClusterKubeconfigInternalServerError()
-	}
 
 	filesUrl := fmt.Sprintf("%s/%s/%s", b.S3EndpointURL, b.S3Bucket,
-		fmt.Sprintf("%s/kubeconfig", params.ClusterID))
+		fmt.Sprintf("%s/%s", params.ClusterID, params.FileName))
 	log.Info("File URL: ", filesUrl)
 	resp, err := http.Get(filesUrl)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to get clusters %s kubeKonfig", params.ClusterID)
+		log.WithError(err).Errorf("Failed to get clusters %s %s file", params.ClusterID, params.FileName)
 		return inventory.NewDownloadClusterKubeconfigInternalServerError()
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -801,7 +807,7 @@ func (b *bareMetalInventory) DownloadClusterKubeconfig(ctx context.Context, para
 		b, _ := ioutil.ReadAll(resp.Body)
 		log.WithError(fmt.Errorf("%s", string(b))).
 			Errorf("Failed to get clusters %s kubeKonfig", params.ClusterID)
-		return inventory.NewDownloadClusterISOInternalServerError()
+		return inventory.NewDownloadClusterKubeconfigInternalServerError()
 	}
 	return filemiddleware.NewResponder(inventory.NewDownloadClusterKubeconfigOK().WithPayload(resp.Body), "kubeconfig")
 }

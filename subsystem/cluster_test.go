@@ -149,10 +149,10 @@ var _ = Describe("system-test cluster install", func() {
 		defer os.Remove(file.Name())
 
 		missingClusterId := strfmt.UUID(uuid.New().String())
-		_, err = bmclient.Inventory.DownloadClusterKubeconfig(ctx, &inventory.DownloadClusterKubeconfigParams{ClusterID: missingClusterId}, file)
-		Expect(err).Should(MatchError(inventory.NewDownloadClusterKubeconfigNotFound()))
+		_, err = bmclient.Inventory.DownloadClusterKubeconfig(ctx, &inventory.DownloadClusterKubeconfigParams{ClusterID: missingClusterId, FileName: "bootstrap.ign"}, file)
+		Expect(err).Should(MatchError(inventory.NewDownloadClusterKubeconfigInternalServerError()))
 
-		_, err = bmclient.Inventory.DownloadClusterKubeconfig(ctx, &inventory.DownloadClusterKubeconfigParams{ClusterID: clusterID}, file)
+		_, err = bmclient.Inventory.DownloadClusterKubeconfig(ctx, &inventory.DownloadClusterKubeconfigParams{ClusterID: clusterID, FileName: "bootstrap.ign"}, file)
 		Expect(err).NotTo(HaveOccurred())
 		s, err := file.Stat()
 		Expect(err).NotTo(HaveOccurred())
