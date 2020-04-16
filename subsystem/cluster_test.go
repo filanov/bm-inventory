@@ -150,7 +150,7 @@ var _ = Describe("system-test cluster install", func() {
 
 		missingClusterId := strfmt.UUID(uuid.New().String())
 		_, err = bmclient.Inventory.DownloadClusterKubeconfig(ctx, &inventory.DownloadClusterKubeconfigParams{ClusterID: missingClusterId, FileName: "bootstrap.ign"}, file)
-		Expect(err).Should(MatchError(inventory.NewDownloadClusterKubeconfigInternalServerError()))
+		Expect(err).Should(MatchError(inventory.NewDownloadClusterKubeconfigConflict()))
 
 		_, err = bmclient.Inventory.DownloadClusterKubeconfig(ctx, &inventory.DownloadClusterKubeconfigParams{ClusterID: clusterID, FileName: "bootstrap.ign"}, file)
 		Expect(err).NotTo(HaveOccurred())

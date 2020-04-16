@@ -404,12 +404,13 @@ func (b *bareMetalInventory) InstallCluster(ctx context.Context, params inventor
 
 func generateClusterInstallConfig(b *bareMetalInventory, cluster models.Cluster, params inventory.InstallClusterParams, log logrus.FieldLogger, ctx context.Context, cfg []byte) (middleware.Responder, bool) {
 
-	if err := b.createKubeconfigJob(ctx, &cluster, cfg); err != nil {
+	jobNmae, err := b.createKubeconfigJob(ctx, &cluster, cfg)
+	if err != nil {
 		log.WithError(err).Errorf("Failed to create kubeconfig generation job for cluster %s", cluster.ID)
 		return inventory.NewInstallClusterInternalServerError(), true
 	}
 
-	if err := b.monitorJob(ctx, fmt.Sprintf("%s-%s", kubeconfigPrefix, params.ClusterID)); err != nil {
+	if err := b.monitorJob(ctx, jobNmae); err != nil {
 		log.WithError(err).Errorf("Generating kubeconfig files failed for cluster %s", cluster.ID)
 		return inventory.NewInstallClusterInternalServerError(), true
 	}
@@ -720,8 +721,9 @@ func (b *bareMetalInventory) EnableHost(ctx context.Context, params inventory.En
 	return inventory.NewEnableHostNoContent()
 }
 
-func (b *bareMetalInventory) createKubeconfigJob(ctx context.Context, cluster *models.Cluster, cfg []byte) error {
+func (b *bareMetalInventory) createKubeconfigJob(ctx context.Context, cluster *models.Cluster, cfg []byte) (string, error) {
 	id := cluster.ID
+	jobName := fmt.Sprintf("%s-%s", kubeconfigPrefix, id)
 
 	if err := b.kube.Create(ctx, &batch.Job{
 		TypeMeta: meta.TypeMeta{
@@ -729,14 +731,14 @@ func (b *bareMetalInventory) createKubeconfigJob(ctx context.Context, cluster *m
 			APIVersion: "batch/v1",
 		},
 		ObjectMeta: meta.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", kubeconfigPrefix, id),
+			Name:      jobName,
 			Namespace: "default",
 		},
 		Spec: batch.JobSpec{
 			BackoffLimit: swag.Int32(2),
 			Template: core.PodTemplateSpec{
 				ObjectMeta: meta.ObjectMeta{
-					Name:      fmt.Sprintf("%s-%s", kubeconfigPrefix, id),
+					Name:      jobName,
 					Namespace: "default",
 				},
 				Spec: core.PodSpec{
@@ -757,7 +759,7 @@ func (b *bareMetalInventory) createKubeconfigJob(ctx context.Context, cluster *m
 								},
 								{
 									Name:  "IMAGE_NAME",
-									Value: fmt.Sprintf("%s-%s", kubeconfigPrefix, id),
+									Value: jobName,
 								},
 								{
 									Name:  "S3_BUCKET",
@@ -775,9 +777,9 @@ func (b *bareMetalInventory) createKubeconfigJob(ctx context.Context, cluster *m
 			},
 		},
 	}); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return jobName, nil
 }
 
 func (b *bareMetalInventory) DownloadClusterKubeconfig(ctx context.Context, params inventory.DownloadClusterKubeconfigParams) middleware.Responder {
@@ -796,7 +798,7 @@ func (b *bareMetalInventory) DownloadClusterKubeconfig(ctx context.Context, para
 		b, _ := ioutil.ReadAll(resp.Body)
 		log.WithError(fmt.Errorf("%s", string(b))).
 			Errorf("Failed to get clusters %s kubeKonfig", params.ClusterID)
-		return inventory.NewDownloadClusterKubeconfigInternalServerError()
+		return inventory.NewDownloadClusterKubeconfigConflict()
 	}
 	return filemiddleware.NewResponder(inventory.NewDownloadClusterKubeconfigOK().WithPayload(resp.Body), "kubeconfig")
 }
