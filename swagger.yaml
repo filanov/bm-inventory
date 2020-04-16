@@ -175,7 +175,7 @@ paths:
         500:
           description: Internal server error
 
-  /clusters/{clusterId}/{fileName}/downloads/kubeconfig:
+  /clusters/{clusterId}/downloads/kubeconfig:
     get:
       tags:
         - inventory
@@ -190,7 +190,7 @@ paths:
           type: string
           format: uuid
           required: true
-        - in: path
+        - in: query
           name: fileName
           description: The kubeconfig file name
           type: string
