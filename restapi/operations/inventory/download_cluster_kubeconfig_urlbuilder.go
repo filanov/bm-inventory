@@ -17,7 +17,8 @@ import (
 // DownloadClusterKubeconfigURL generates an URL for the download cluster kubeconfig operation
 type DownloadClusterKubeconfigURL struct {
 	ClusterID strfmt.UUID
-	FileName  string
+
+	FileName string
 
 	_basePath string
 	// avoid unkeyed usage
@@ -43,7 +44,7 @@ func (o *DownloadClusterKubeconfigURL) SetBasePath(bp string) {
 func (o *DownloadClusterKubeconfigURL) Build() (*url.URL, error) {
 	var _result url.URL
 
-	var _path = "/clusters/{clusterId}/{fileName}/downloads/kubeconfig"
+	var _path = "/clusters/{clusterId}/downloads/kubeconfig"
 
 	clusterID := o.ClusterID.String()
 	if clusterID != "" {
@@ -52,18 +53,20 @@ func (o *DownloadClusterKubeconfigURL) Build() (*url.URL, error) {
 		return nil, errors.New("clusterId is required on DownloadClusterKubeconfigURL")
 	}
 
-	fileName := o.FileName
-	if fileName != "" {
-		_path = strings.Replace(_path, "{fileName}", fileName, -1)
-	} else {
-		return nil, errors.New("fileName is required on DownloadClusterKubeconfigURL")
-	}
-
 	_basePath := o._basePath
 	if _basePath == "" {
 		_basePath = "/api/bm-inventory/v1"
 	}
 	_result.Path = golangswaggerpaths.Join(_basePath, _path)
+
+	qs := make(url.Values)
+
+	fileNameQ := o.FileName
+	if fileNameQ != "" {
+		qs.Set("fileName", fileNameQ)
+	}
+
+	_result.RawQuery = qs.Encode()
 
 	return &_result, nil
 }

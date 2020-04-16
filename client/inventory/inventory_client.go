@@ -193,7 +193,7 @@ func (a *Client) DownloadClusterKubeconfig(ctx context.Context, params *Download
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "DownloadClusterKubeconfig",
 		Method:             "GET",
-		PathPattern:        "/clusters/{clusterId}/{fileName}/downloads/kubeconfig",
+		PathPattern:        "/clusters/{clusterId}/downloads/kubeconfig",
 		ProducesMediaTypes: []string{"application/octet-stream"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"http"},

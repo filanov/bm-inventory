@@ -62,7 +62,7 @@ type DownloadClusterKubeconfigOK struct {
 }
 
 func (o *DownloadClusterKubeconfigOK) Error() string {
-	return fmt.Sprintf("[GET /clusters/{clusterId}/{fileName}/downloads/kubeconfig][%d] downloadClusterKubeconfigOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /clusters/{clusterId}/downloads/kubeconfig][%d] downloadClusterKubeconfigOK  %+v", 200, o.Payload)
 }
 
 func (o *DownloadClusterKubeconfigOK) GetPayload() io.Writer {
@@ -92,7 +92,7 @@ type DownloadClusterKubeconfigNotFound struct {
 }
 
 func (o *DownloadClusterKubeconfigNotFound) Error() string {
-	return fmt.Sprintf("[GET /clusters/{clusterId}/{fileName}/downloads/kubeconfig][%d] downloadClusterKubeconfigNotFound ", 404)
+	return fmt.Sprintf("[GET /clusters/{clusterId}/downloads/kubeconfig][%d] downloadClusterKubeconfigNotFound ", 404)
 }
 
 func (o *DownloadClusterKubeconfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -113,7 +113,7 @@ type DownloadClusterKubeconfigInternalServerError struct {
 }
 
 func (o *DownloadClusterKubeconfigInternalServerError) Error() string {
-	return fmt.Sprintf("[GET /clusters/{clusterId}/{fileName}/downloads/kubeconfig][%d] downloadClusterKubeconfigInternalServerError ", 500)
+	return fmt.Sprintf("[GET /clusters/{clusterId}/downloads/kubeconfig][%d] downloadClusterKubeconfigInternalServerError ", 500)
 }
 
 func (o *DownloadClusterKubeconfigInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {

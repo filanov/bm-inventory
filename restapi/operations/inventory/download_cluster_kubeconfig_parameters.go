@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/errors"
+	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
@@ -37,7 +38,7 @@ type DownloadClusterKubeconfigParams struct {
 	ClusterID strfmt.UUID
 	/*The kubeconfig file name
 	  Required: true
-	  In: path
+	  In: query
 	*/
 	FileName string
 }
@@ -51,13 +52,15 @@ func (o *DownloadClusterKubeconfigParams) BindRequest(r *http.Request, route *mi
 
 	o.HTTPRequest = r
 
+	qs := runtime.Values(r.URL.Query())
+
 	rClusterID, rhkClusterID, _ := route.Params.GetOK("clusterId")
 	if err := o.bindClusterID(rClusterID, rhkClusterID, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
-	rFileName, rhkFileName, _ := route.Params.GetOK("fileName")
-	if err := o.bindFileName(rFileName, rhkFileName, route.Formats); err != nil {
+	qFileName, qhkFileName, _ := qs.GetOK("fileName")
+	if err := o.bindFileName(qFileName, qhkFileName, route.Formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -100,15 +103,21 @@ func (o *DownloadClusterKubeconfigParams) validateClusterID(formats strfmt.Regis
 	return nil
 }
 
-// bindFileName binds and validates parameter FileName from path.
+// bindFileName binds and validates parameter FileName from query.
 func (o *DownloadClusterKubeconfigParams) bindFileName(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	if !hasKey {
+		return errors.Required("fileName", "query")
+	}
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
 	}
 
 	// Required: true
-	// Parameter is provided by construction from the route
+	// AllowEmptyValue: false
+	if err := validate.RequiredString("fileName", "query", raw); err != nil {
+		return err
+	}
 
 	o.FileName = raw
 
@@ -122,7 +131,7 @@ func (o *DownloadClusterKubeconfigParams) bindFileName(rawData []string, hasKey 
 // validateFileName carries on validations for parameter FileName
 func (o *DownloadClusterKubeconfigParams) validateFileName(formats strfmt.Registry) error {
 
-	if err := validate.Enum("fileName", "path", o.FileName, []interface{}{"bootstrap.ign", "master.ign", "metadata.json", "worker.ign", "kubeadmin-password", "kubeconfig"}); err != nil {
+	if err := validate.Enum("fileName", "query", o.FileName, []interface{}{"bootstrap.ign", "master.ign", "metadata.json", "worker.ign", "kubeadmin-password", "kubeconfig"}); err != nil {
 		return err
 	}
 

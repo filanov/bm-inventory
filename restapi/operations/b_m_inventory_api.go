@@ -394,7 +394,7 @@ func (o *BMInventoryAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
-	o.handlers["GET"]["/clusters/{clusterId}/{fileName}/downloads/kubeconfig"] = inventory.NewDownloadClusterKubeconfig(o.context, o.InventoryDownloadClusterKubeconfigHandler)
+	o.handlers["GET"]["/clusters/{clusterId}/downloads/kubeconfig"] = inventory.NewDownloadClusterKubeconfig(o.context, o.InventoryDownloadClusterKubeconfigHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

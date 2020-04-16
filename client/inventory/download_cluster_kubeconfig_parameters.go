@@ -144,9 +144,13 @@ func (o *DownloadClusterKubeconfigParams) WriteToRequest(r runtime.ClientRequest
 		return err
 	}
 
-	// path param fileName
-	if err := r.SetPathParam("fileName", o.FileName); err != nil {
-		return err
+	// query param fileName
+	qrFileName := o.FileName
+	qFileName := qrFileName
+	if qFileName != "" {
+		if err := r.SetQueryParam("fileName", qFileName); err != nil {
+			return err
+		}
 	}
 
 	if len(res) > 0 {

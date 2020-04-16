@@ -297,6 +297,57 @@ func init() {
         }
       }
     },
+    "/clusters/{clusterId}/downloads/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "inventory"
+        ],
+        "summary": "Download the kubeconfig files for the specified cluster",
+        "operationId": "DownloadClusterKubeconfig",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The ID of the cluster whose kubeconfig to download",
+            "name": "clusterId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "enum": [
+              "bootstrap.ign",
+              "master.ign",
+              "metadata.json",
+              "worker.ign",
+              "kubeadmin-password",
+              "kubeconfig"
+            ],
+            "type": "string",
+            "description": "The kubeconfig file name",
+            "name": "fileName",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The kubeconfig file",
+            "schema": {
+              "type": "file"
+            }
+          },
+          "404": {
+            "description": "Cluster not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/clusters/{clusterId}/hosts": {
       "get": {
         "tags": [
@@ -654,57 +705,6 @@ func init() {
           },
           "404": {
             "description": "Host not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/clusters/{clusterId}/{fileName}/downloads/kubeconfig": {
-      "get": {
-        "produces": [
-          "application/octet-stream"
-        ],
-        "tags": [
-          "inventory"
-        ],
-        "summary": "Download the kubeconfig files for the specified cluster",
-        "operationId": "DownloadClusterKubeconfig",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The ID of the cluster whose kubeconfig to download",
-            "name": "clusterId",
-            "in": "path",
-            "required": true
-          },
-          {
-            "enum": [
-              "bootstrap.ign",
-              "master.ign",
-              "metadata.json",
-              "worker.ign",
-              "kubeadmin-password",
-              "kubeconfig"
-            ],
-            "type": "string",
-            "description": "The kubeconfig file name",
-            "name": "fileName",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The kubeconfig file",
-            "schema": {
-              "type": "file"
-            }
-          },
-          "404": {
-            "description": "Cluster not found"
           },
           "500": {
             "description": "Internal server error"
@@ -1670,6 +1670,57 @@ func init() {
         }
       }
     },
+    "/clusters/{clusterId}/downloads/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "inventory"
+        ],
+        "summary": "Download the kubeconfig files for the specified cluster",
+        "operationId": "DownloadClusterKubeconfig",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "description": "The ID of the cluster whose kubeconfig to download",
+            "name": "clusterId",
+            "in": "path",
+            "required": true
+          },
+          {
+            "enum": [
+              "bootstrap.ign",
+              "master.ign",
+              "metadata.json",
+              "worker.ign",
+              "kubeadmin-password",
+              "kubeconfig"
+            ],
+            "type": "string",
+            "description": "The kubeconfig file name",
+            "name": "fileName",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The kubeconfig file",
+            "schema": {
+              "type": "file"
+            }
+          },
+          "404": {
+            "description": "Cluster not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/clusters/{clusterId}/hosts": {
       "get": {
         "tags": [
@@ -2027,57 +2078,6 @@ func init() {
           },
           "404": {
             "description": "Host not found"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        }
-      }
-    },
-    "/clusters/{clusterId}/{fileName}/downloads/kubeconfig": {
-      "get": {
-        "produces": [
-          "application/octet-stream"
-        ],
-        "tags": [
-          "inventory"
-        ],
-        "summary": "Download the kubeconfig files for the specified cluster",
-        "operationId": "DownloadClusterKubeconfig",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "description": "The ID of the cluster whose kubeconfig to download",
-            "name": "clusterId",
-            "in": "path",
-            "required": true
-          },
-          {
-            "enum": [
-              "bootstrap.ign",
-              "master.ign",
-              "metadata.json",
-              "worker.ign",
-              "kubeadmin-password",
-              "kubeconfig"
-            ],
-            "type": "string",
-            "description": "The kubeconfig file name",
-            "name": "fileName",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The kubeconfig file",
-            "schema": {
-              "type": "file"
-            }
-          },
-          "404": {
-            "description": "Cluster not found"
           },
           "500": {
             "description": "Internal server error"
