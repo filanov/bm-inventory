@@ -368,9 +368,8 @@ func (b *bareMetalInventory) InstallCluster(ctx context.Context, params inventor
 	fmt.Println("Install config: \n", string(cfg))
 
 	// generate ignition files from install-config.yaml
-	responder, done := generateClusterInstallConfig(b, cluster, params, log, ctx, cfg)
-	if done {
-		return responder
+	if err := generateClusterInstallConfig(b, cluster, params, log, ctx, cfg); err != nil {
+		return err
 	}
 
 	// move hosts states to installing
@@ -402,19 +401,19 @@ func (b *bareMetalInventory) InstallCluster(ctx context.Context, params inventor
 	return inventory.NewInstallClusterOK().WithPayload(&cluster)
 }
 
-func generateClusterInstallConfig(b *bareMetalInventory, cluster models.Cluster, params inventory.InstallClusterParams, log logrus.FieldLogger, ctx context.Context, cfg []byte) (middleware.Responder, bool) {
+func generateClusterInstallConfig(b *bareMetalInventory, cluster models.Cluster, params inventory.InstallClusterParams, log logrus.FieldLogger, ctx context.Context, cfg []byte) middleware.Responder {
 
 	jobNmae, err := b.createKubeconfigJob(ctx, &cluster, cfg)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to create kubeconfig generation job for cluster %s", cluster.ID)
-		return inventory.NewInstallClusterInternalServerError(), true
+		return inventory.NewInstallClusterInternalServerError()
 	}
 
 	if err := b.monitorJob(ctx, jobNmae); err != nil {
 		log.WithError(err).Errorf("Generating kubeconfig files failed for cluster %s", cluster.ID)
-		return inventory.NewInstallClusterInternalServerError(), true
+		return inventory.NewInstallClusterInternalServerError()
 	}
-	return nil, false
+	return nil
 }
 
 func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params inventory.UpdateClusterParams) middleware.Responder {
