@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-openapi/swag"
 
+	"github.com/filanov/bm-inventory/internal/host"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/filanov/bm-inventory/pkg/job"
 	"github.com/filanov/bm-inventory/restapi/operations/inventory"
@@ -33,6 +34,7 @@ func prepareDB() *gorm.DB {
 	Expect(err).ShouldNot(HaveOccurred())
 	//db = db.Debug()
 	db.AutoMigrate(&models.Cluster{})
+	db.AutoMigrate(&models.Host{})
 	return db
 }
 
@@ -42,14 +44,20 @@ func getTestLog() logrus.FieldLogger {
 	return l
 }
 
+func strToUUID(s string) *strfmt.UUID {
+	u := strfmt.UUID(s)
+	return &u
+}
+
 var _ = Describe("GenerateClusterISO", func() {
 	var (
-		bm      *bareMetalInventory
-		cfg     Config
-		db      *gorm.DB
-		ctx     = context.Background()
-		ctrl    *gomock.Controller
-		mockJob *job.MockAPI
+		bm          *bareMetalInventory
+		cfg         Config
+		db          *gorm.DB
+		ctx         = context.Background()
+		ctrl        *gomock.Controller
+		mockJob     *job.MockAPI
+		mockHostApi *host.MockAPI
 	)
 
 	BeforeEach(func() {
@@ -57,7 +65,8 @@ var _ = Describe("GenerateClusterISO", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		db = prepareDB()
 		mockJob = job.NewMockAPI(ctrl)
-		bm = NewBareMetalInventory(db, getTestLog(), nil, cfg, mockJob)
+		mockHostApi = host.NewMockAPI(ctrl)
+		bm = NewBareMetalInventory(db, getTestLog(), mockHostApi, cfg, mockJob)
 	})
 
 	registerCluster := func() *models.Cluster {
@@ -66,6 +75,19 @@ var _ = Describe("GenerateClusterISO", func() {
 		})
 		Expect(reply).Should(BeAssignableToTypeOf(inventory.NewRegisterClusterCreated()))
 		return reply.(*inventory.RegisterClusterCreated).Payload
+	}
+
+	registerHost := func(clusterID strfmt.UUID) *models.Host {
+		hostID := strToUUID(uuid.New().String())
+		mockHostApi.EXPECT().RegisterHost(gomock.Any(), gomock.Any())
+		reply := bm.RegisterHost(context.Background(), inventory.RegisterHostParams{
+			ClusterID: clusterID,
+			NewHostParams: &models.HostCreateParams{
+				HostID: hostID,
+			},
+		})
+		Expect(reply).Should(BeAssignableToTypeOf(inventory.NewRegisterHostCreated()))
+		return reply.(*inventory.RegisterHostCreated).Payload
 	}
 
 	It("success", func() {
@@ -108,8 +130,31 @@ var _ = Describe("GenerateClusterISO", func() {
 		Expect(generateReply).Should(BeAssignableToTypeOf(inventory.NewGenerateClusterISOInternalServerError()))
 	})
 
+	It("get_next_steps_unknown_host", func() {
+		clusterId := registerCluster().ID
+		unregistered_hostID := strToUUID(uuid.New().String())
+
+		generateReply := bm.GetNextSteps(ctx, inventory.GetNextStepsParams{
+			ClusterID: *clusterId,
+			HostID:    *unregistered_hostID,
+		})
+		Expect(generateReply).Should(BeAssignableToTypeOf(inventory.NewGetNextStepsNotFound()))
+	})
+
+	It("get_next_steps", func() {
+		clusterId := registerCluster().ID
+		host := registerHost(*clusterId)
+
+		generateReply := bm.GetNextSteps(ctx, inventory.GetNextStepsParams{
+			ClusterID: *clusterId,
+			HostID:    *host.ID,
+		})
+		Expect(generateReply).Should(BeAssignableToTypeOf(inventory.NewGetNextStepsNotFound()))
+	})
+
 	AfterEach(func() {
 		ctrl.Finish()
 		db.Close()
 	})
+
 })
