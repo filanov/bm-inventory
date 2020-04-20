@@ -1,5 +1,4 @@
-[![Actions Status](https://github.com/filanov/bm-inventory/workflows/Lint/badge.svg)](https://github.com/filanov/bm-inventory/actions)# bm-inventory
-[![Actions Status](https://github.com/filanov/bm-inventory/workflows/unit-test/badge.svg)](https://github.com/filanov/bm-inventory/actions)# bm-inventory
+[![Actions Status](https://github.com/filanov/bm-inventory/workflows/unit-test/badge.svg)](https://github.com/filanov/bm-inventory/actions)
 
 1. docker
 2. skipper https://github.com/stratoscale/skipper
