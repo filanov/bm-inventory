@@ -23,10 +23,8 @@ func NewValidator(cfg ValidatorCfg) Validator {
 }
 
 type ValidatorCfg struct {
-	MinCPUCores       int64 `envconfig:"HW_VALIDATOR_MIN_CPU_CORES" default:"2"`
 	MinCPUCoresWorker int64 `envconfig:"HW_VALIDATOR_MIN_CPU_CORES_WORKER" default:"2"`
 	MinCPUCoresMaster int64 `envconfig:"HW_VALIDATOR_MIN_CPU_CORES_MASTER" default:"4"`
-	MinRamGib         int64 `envconfig:"HW_VALIDATOR_MIN_RAM_GIB" default:"8"`
 	MinRamGibWorker   int64 `envconfig:"HW_VALIDATOR_MIN_RAM_GIB_WORKER" default:"8"`
 	MinRamGibMaster   int64 `envconfig:"HW_VALIDATOR_MIN_RAM_GIB_MASTER" default:"16"`
 }
@@ -45,16 +43,13 @@ func (v *validator) IsSufficient(host *models.Host) (*IsSufficientReply, error) 
 		return nil, err
 	}
 
-	var minCpuCoresRequired int64 = v.MinCPUCores
-	var minRamRequired int64 = gibToBytes(v.MinRamGib)
+	var minCpuCoresRequired = v.MinCPUCoresWorker
+	var minRamRequired = gibToBytes(v.MinRamGibWorker)
 
 	switch host.Role {
 	case "master":
 		minCpuCoresRequired = v.MinCPUCoresMaster
 		minRamRequired = gibToBytes(v.MinRamGibMaster)
-	case "worker":
-		minCpuCoresRequired = v.MinCPUCoresWorker
-		minRamRequired = gibToBytes(v.MinRamGibWorker)
 	}
 
 	if hwInfo.CPU.Cpus < minCpuCoresRequired {
