@@ -2,6 +2,7 @@ PWD = $(shell pwd)
 UID = $(shell id -u)
 
 SERVICE := $(or ${SERVICE},quay.io/mfilanov/bm-inventory:latest)
+INSTALLER := $(or ${INSTALLER},quay.io/eranco74/assisted_installer:latest)
 
 all: build
 
@@ -30,6 +31,10 @@ generate-from-swagger:
 update: build
 	docker build -f Dockerfile.bm-inventory . -t $(SERVICE)
 	docker push $(SERVICE)
+
+update_installer:
+	docker build -f Dockerfile.bm-inventory . -t $(INSTALLER)
+	docker push $(INSTALLER)
 
 deploy-for-test: deploy-mariadb deploy-s3-configmap deploy-service-for-test
 
