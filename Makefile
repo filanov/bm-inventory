@@ -80,9 +80,11 @@ deploy-service-for-test: deploy-service-requirements
 	rm deploy/bm-inventory-tmp.yaml
 
 deploy-service: deploy-service-requirements
-	sed "s#REPLACE_IMAGE#${SERVICE}#g" deploy/bm-inventory.yaml > deploy/bm-inventory-tmp.yaml
-	kubectl apply -f deploy/bm-inventory-tmp.yaml
-	rm deploy/bm-inventory-tmp.yaml
+	if test "$(CUSTOM_DEPLOYMENT)" = "" ; then \
+		cp deploy/bm-inventory.yaml build/bm-inventory.yaml; \
+		sed -i "s#REPLACE_IMAGE#${SERVICE}#g" build/bm-inventory.yaml; \
+	fi
+	kubectl apply -f build/bm-inventory.yaml
 
 deploy-role:
 	kubectl apply -f deploy/roles/role_binding.yaml
