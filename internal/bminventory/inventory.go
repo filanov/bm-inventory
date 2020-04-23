@@ -375,7 +375,9 @@ func (b *bareMetalInventory) InstallCluster(ctx context.Context, params inventor
 	}
 
 	// Temporary hack - use debug API for setting the executing install command:
-	b.addInstallCommand(masterNodesIds, log, params, cluster, ctx)
+	if err := b.addInstallCommand(masterNodesIds, log, params, cluster, ctx); err != nil {
+		return inventory.NewInstallClusterInternalServerError()
+	}
 
 	// move hosts states to installing
 	for i := range cluster.Hosts {
@@ -421,7 +423,7 @@ func generateClusterInstallConfig(b *bareMetalInventory, cluster models.Cluster,
 	return nil
 }
 
-func (b *bareMetalInventory) addInstallCommand(masterNodesIds []*strfmt.UUID, log logrus.FieldLogger, params inventory.InstallClusterParams, cluster models.Cluster, ctx context.Context) {
+func (b *bareMetalInventory) addInstallCommand(masterNodesIds []*strfmt.UUID, log logrus.FieldLogger, params inventory.InstallClusterParams, cluster models.Cluster, ctx context.Context) error {
 	// set one of the master nodes as bootstrap
 	bootstrapId := masterNodesIds[len(masterNodesIds)-1]
 	log.Debugf("Bootstrap ID is %s", bootstrapId)
@@ -445,7 +447,8 @@ func (b *bareMetalInventory) addInstallCommand(masterNodesIds []*strfmt.UUID, lo
 
 		buf := &bytes.Buffer{}
 		if err := t.Execute(buf, data); err != nil {
-			panic(err)
+			log.WithError(err).Errorf("failed to format command for cluster %s", cluster.ID)
+			return err
 		}
 		command := buf.String()
 		b.SetDebugStep(ctx, inventory.SetDebugStepParams{
@@ -455,6 +458,7 @@ func (b *bareMetalInventory) addInstallCommand(masterNodesIds []*strfmt.UUID, lo
 		},
 		)
 	}
+	return nil
 }
 
 func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params inventory.UpdateClusterParams) middleware.Responder {
@@ -822,7 +826,7 @@ func (b *bareMetalInventory) DownloadClusterFiles(ctx context.Context, params in
 		if gorm.IsRecordNotFoundError(err) {
 			return inventory.NewDownloadClusterFilesNotFound()
 		} else {
-			return inventory.NewDownloadClusterISOInternalServerError()
+			return inventory.NewDownloadClusterFilesInternalServerError()
 		}
 	}
 	clusterStatus := swag.StringValue(cluster.Status)
