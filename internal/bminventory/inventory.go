@@ -11,6 +11,7 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/internal/host"
 	"github.com/filanov/bm-inventory/internal/installcfg"
 	"github.com/filanov/bm-inventory/models"
@@ -103,6 +104,7 @@ type bareMetalInventory struct {
 	log           logrus.FieldLogger
 	job           job.API
 	hostApi       host.API
+	validator     hardware.Validator
 }
 
 func NewBareMetalInventory(db *gorm.DB, log logrus.FieldLogger, hostApi host.API, cfg Config,
@@ -466,18 +468,20 @@ func (b *bareMetalInventory) addInstallCommand(ctx context.Context, masterNodesI
 	bootstrapId := masterNodesIds[len(masterNodesIds)-1]
 	log.Debugf("Bootstrap ID is %s", bootstrapId)
 
-	const cmdTmpl = `sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host  {{.INSTALLER}} --role {{.ROLE}}  --cluster-id {{.CLUSTER_ID}}  --host {{.HOST}} --port {{.PORT}} --boot-device /dev/vda`
+	const cmdTmpl = `sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host  {{.INSTALLER}} --role {{.ROLE}}  --cluster-id {{.CLUSTER_ID}}  --host {{.HOST}} --port {{.PORT}} --boot-device {{.BOOT_DEVICE}}`
+
 	t, err := template.New("cmd").Parse(cmdTmpl)
 	if err != nil {
 		return err
 	}
 
 	data := map[string]string{
-		"HOST":       b.InventoryURL,
-		"PORT":       b.InventoryPort,
-		"CLUSTER_ID": string(params.ClusterID),
-		"ROLE":       "",
-		"INSTALLER":  b.Config.InstallerImage,
+		"HOST":        b.InventoryURL,
+		"PORT":        b.InventoryPort,
+		"CLUSTER_ID":  string(params.ClusterID),
+		"ROLE":        "",
+		"INSTALLER":   b.Config.InstallerImage,
+		"BOOT_DEVICE": "",
 	}
 	for i := range cluster.Hosts {
 		role := cluster.Hosts[i].Role
@@ -485,7 +489,12 @@ func (b *bareMetalInventory) addInstallCommand(ctx context.Context, masterNodesI
 			role = bootstrap
 		}
 		data["ROLE"] = role
-
+		disks, err := b.validator.GetHostValidDisks(cluster.Hosts[i])
+		if err != nil {
+			log.Errorf("Failed to get valid disks on host with id %s", cluster.Hosts[i].ID)
+			return err
+		}
+		data["BOOT_DEVICE"] = fmt.Sprintf("/dev/%s", disks[0].Name)
 		buf := &bytes.Buffer{}
 		if err := t.Execute(buf, data); err != nil {
 			return err
