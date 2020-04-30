@@ -11,6 +11,7 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/internal/host"
 	"github.com/filanov/bm-inventory/internal/installcfg"
 	"github.com/filanov/bm-inventory/models"
@@ -472,18 +473,19 @@ func (b *bareMetalInventory) addInstallCommand(ctx context.Context, masterNodesI
 	bootstrapId := masterNodesIds[len(masterNodesIds)-1]
 	log.Debugf("Bootstrap ID is %s", bootstrapId)
 
-	const cmdTmpl = `sudo podman run -v /dev:/dev:rw --privileged --pid=host  {{.INSTALLER}} --role {{.ROLE}}  --cluster-id {{.CLUSTER_ID}}  --s3-bucket {{.S3_BUCKET}}  --s3-endpoint {{.S3_URL}} --boot-device /dev/vda`
+	const cmdTmpl = `sudo podman run -v /dev:/dev:rw --privileged --pid=host  {{.INSTALLER}} --role {{.ROLE}}  --cluster-id {{.CLUSTER_ID}}  --s3-bucket {{.S3_BUCKET}}  --s3-endpoint {{.S3_URL}} --boot-device {{.BOOT_DEVICE}}`
 	t, err := template.New("cmd").Parse(cmdTmpl)
 	if err != nil {
 		return err
 	}
 
 	data := map[string]string{
-		"S3_URL":     b.S3EndpointURL,
-		"S3_BUCKET":  b.S3Bucket,
-		"CLUSTER_ID": string(params.ClusterID),
-		"ROLE":       "",
-		"INSTALLER":  b.Config.InstallerImage,
+		"S3_URL":      b.S3EndpointURL,
+		"S3_BUCKET":   b.S3Bucket,
+		"CLUSTER_ID":  string(params.ClusterID),
+		"ROLE":        "",
+		"INSTALLER":   b.Config.InstallerImage,
+		"BOOT_DEVICE": "",
 	}
 	for i := range cluster.Hosts {
 		role := cluster.Hosts[i].Role
@@ -491,8 +493,13 @@ func (b *bareMetalInventory) addInstallCommand(ctx context.Context, masterNodesI
 			role = bootstrap
 		}
 		data["ROLE"] = role
-
+		disks, err := hardware.GetHostDisks(cluster.Hosts[i])
+		if err != nil {
+			return err
+		}
+		data["BOOT_DEVICE"] = fmt.Sprintf("/dev/%s", disks[0].Name)
 		buf := &bytes.Buffer{}
+		log.Debugf("Start executing install command on host %s with params %s", cluster.Hosts[i].HostID, data)
 		if err := t.Execute(buf, data); err != nil {
 			return err
 		}
