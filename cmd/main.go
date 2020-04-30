@@ -70,10 +70,10 @@ func main() {
 	if err = db.AutoMigrate(&models.Host{}, &models.Cluster{}).Error; err != nil {
 		log.Fatal("failed to auto migrate, ", err)
 	}
-
-	hostApi := host.NewManager(log.WithField("pkg", "host-state"), db, hardware.NewValidator(Options.HWValidatorConfig))
+	validator := hardware.NewValidator(Options.HWValidatorConfig)
+	hostApi := host.NewManager(log.WithField("pkg", "host-state"), db, validator)
 	jobApi := job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
-	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, Options.BMConfig, jobApi)
+	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, Options.BMConfig, jobApi, validator)
 	h, err := restapi.Handler(restapi.Config{
 		InventoryAPI: bm,
 		Logger:       log.Printf,

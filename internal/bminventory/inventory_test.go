@@ -57,7 +57,7 @@ var _ = Describe("GenerateClusterISO", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		db = prepareDB()
 		mockJob = job.NewMockAPI(ctrl)
-		bm = NewBareMetalInventory(db, getTestLog(), nil, cfg, mockJob)
+		bm = NewBareMetalInventory(db, getTestLog(), nil, cfg, mockJob, nil)
 	})
 
 	registerCluster := func() *models.Cluster {
