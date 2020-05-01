@@ -9,11 +9,19 @@ import (
 )
 
 func GetHostDisks(host *models.Host) ([]*models.BlockDevice, error) {
-	var disks []*models.BlockDevice
 	var hwInfo models.Introspection
 	if err := json.Unmarshal([]byte(host.HardwareInfo), &hwInfo); err != nil {
 		return nil, err
 	}
+	disks := getDisksList(hwInfo)
+	if len(disks) == 0 {
+		return nil, fmt.Errorf("host %s doesn't have disks", host.HostID)
+	}
+	return disks, nil
+}
+
+func getDisksList(hwInfo models.Introspection) []*models.BlockDevice {
+	var disks []*models.BlockDevice
 	for _, blockDevice := range hwInfo.BlockDevices {
 		if blockDevice.DeviceType == "disk" {
 			disks = append(disks, blockDevice)
@@ -23,8 +31,5 @@ func GetHostDisks(host *models.Host) ([]*models.BlockDevice, error) {
 	sort.Slice(disks, func(i, j int) bool {
 		return disks[i].Name < disks[j].Name
 	})
-	if len(disks) == 0 {
-		return nil, fmt.Errorf("host %s doesn't have disks", host.HostID)
-	}
-	return disks, nil
+	return disks
 }

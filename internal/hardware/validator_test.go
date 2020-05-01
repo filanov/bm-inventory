@@ -35,6 +35,9 @@ var _ = Describe("hardware_validator", func() {
 		hwInfo := &models.Introspection{
 			CPU:    &models.CPU{Cpus: 16},
 			Memory: []*models.Memory{{Name: "Mem", Total: int64(32 * units.GiB)}},
+			BlockDevices: []*models.BlockDevice{
+				{DeviceType: "loop", Fstype: "squashfs", MajorDeviceNumber: 7, MinorDeviceNumber: 0, Mountpoint: "/sysroot", Name: "loop0", ReadOnly: true, RemovableDevice: 1, Size: 746217472},
+				{DeviceType: "disk", Fstype: "iso9660", MajorDeviceNumber: 11, Mountpoint: "/test", Name: "sdb", RemovableDevice: 1, Size: 822083584}},
 		}
 		hw, err := json.Marshal(&hwInfo)
 		Expect(err).NotTo(HaveOccurred())
@@ -51,6 +54,9 @@ var _ = Describe("hardware_validator", func() {
 		hwInfo := &models.Introspection{
 			CPU:    &models.CPU{Cpus: 1},
 			Memory: []*models.Memory{{Name: "Mem", Total: int64(3 * units.GiB)}},
+			BlockDevices: []*models.BlockDevice{
+				{DeviceType: "loop", Fstype: "squashfs", MajorDeviceNumber: 7, MinorDeviceNumber: 0, Mountpoint: "/sysroot", Name: "loop0", ReadOnly: true, RemovableDevice: 1, Size: 746217472},
+				{DeviceType: "disk", Fstype: "iso9660", MajorDeviceNumber: 11, Mountpoint: "/test", Name: "sdb", RemovableDevice: 1, Size: 822083584}},
 		}
 		hw, err := json.Marshal(&hwInfo)
 		Expect(err).NotTo(HaveOccurred())
@@ -63,10 +69,13 @@ var _ = Describe("hardware_validator", func() {
 		}
 	})
 
-	It("insufficent_master_but_valid_worker", func() {
+	It("insufficient_master_but_valid_worker", func() {
 		hwInfo := &models.Introspection{
 			CPU:    &models.CPU{Cpus: 8},
 			Memory: []*models.Memory{{Name: "Mem", Total: int64(8 * units.GiB)}},
+			BlockDevices: []*models.BlockDevice{
+				{DeviceType: "loop", Fstype: "squashfs", MajorDeviceNumber: 7, MinorDeviceNumber: 0, Mountpoint: "/sysroot", Name: "loop0", ReadOnly: true, RemovableDevice: 1, Size: 746217472},
+				{DeviceType: "disk", Fstype: "iso9660", MajorDeviceNumber: 11, Mountpoint: "/test", Name: "sdb", RemovableDevice: 1, Size: 822083584}},
 		}
 		hw, err := json.Marshal(&hwInfo)
 		Expect(err).NotTo(HaveOccurred())
@@ -75,6 +84,19 @@ var _ = Describe("hardware_validator", func() {
 		insufficient(hwvalidator.IsSufficient(host))
 		host.Role = "worker"
 		sufficient(hwvalidator.IsSufficient(host))
+	})
+
+	It("insufficient_number_of disks", func() {
+		hwInfo := &models.Introspection{
+			CPU:    &models.CPU{Cpus: 8},
+			Memory: []*models.Memory{{Name: "Mem", Total: int64(8 * units.GiB)}},
+			BlockDevices: []*models.BlockDevice{
+				{DeviceType: "loop", Fstype: "squashfs", MajorDeviceNumber: 7, MinorDeviceNumber: 0, Mountpoint: "/sysroot", Name: "loop0", ReadOnly: true, RemovableDevice: 1, Size: 746217472}},
+		}
+		hw, err := json.Marshal(&hwInfo)
+		Expect(err).NotTo(HaveOccurred())
+		host.HardwareInfo = string(hw)
+		insufficient(hwvalidator.IsSufficient(host))
 	})
 
 	It("invalid_hw_info", func() {

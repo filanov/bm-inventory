@@ -66,6 +66,10 @@ func (v *validator) IsSufficient(host *models.Host) (*IsSufficientReply, error) 
 			units.Base2Bytes(minRamRequired), units.Base2Bytes(total))
 	}
 
+	if disks := getDisksList(hwInfo); len(disks) < 1 {
+		reason += ",  insufficient number of disks, expected at least 1 got 0"
+	}
+
 	// TODO: check disk space
 
 	if len(reason) == 0 {
