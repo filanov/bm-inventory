@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	Initializing = stateful.DefaultState("Initializing")
+	Discovering = stateful.DefaultState("Discovering")
 	Known = stateful.DefaultState("Known")
 	Insufficient      = stateful.DefaultState("Insufficient")
 	Disconnected = stateful.DefaultState("Disconnected")
@@ -20,93 +22,16 @@ const (
 	Error  = stateful.DefaultState("Error")
 )
 
-type BaseState struct {
-	// Register a new host
-	ID string
-}
 
-func (b *BaseState) GetID() string {
-	return b.ID
-}
-
-func (b *BaseState)  IsWildCard() bool {
-	return false
-}
-
-type StateInterface interface {
-	stateful.State
-	RegisterHost(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error)
-	// Set a new HW information
-	UpdateHwInfo(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error)
-	// Set host state
-	UpdateRole(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error)
-	RefreshStatus(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error)
-	Install(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error)
-	EnableHost(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error)
-	DisableHost(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error)
-}
-
-// Register a new host
-func (b *BaseState) RegisterHost(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error){
-	return b, nil
-}
-// Set a new HW information
-func (b *BaseState)  UpdateHwInfo(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error){
-	return b, nil
-}
-// Set host state
-func (b *BaseState) UpdateRole(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error){
-	return b, nil
-}
-// check keep alive
-func (b *BaseState) RefreshStatus(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error){
-	return b, nil
-}
-// Install host - db is optional, for transactions
-func (b *BaseState) Install(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error){
-	return b, nil
-}
-// Enable host to get requests (disabled by default)
-func (b *BaseState) EnableHost(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error){
-	return b, nil
-}
-// Disable host from getting any requests
-func (b *BaseState) DisableHost(_ *HostStatemachine, _ stateful.TransitionArguments) (stateful.State, error){
-	return b, nil
-}
-
-var (
-	Initializing *InitializingState = &InitializingState{BaseState{ID:"Initializing"}}
-	Discovering *DiscoveringState = &DiscoveringState{BaseState{ID:"Discovering"}}
-)
-
-type InitializingState struct {
-	BaseState
-}
-
-func (i *InitializingState)  RegisterHost(h *HostStatemachine, params stateful.TransitionArguments) (stateful.State, error){
-	// Implement logic here
-	return i, nil
-}
-
-type DiscoveringState struct {
-	BaseState
-}
-
-func (d *DiscoveringState)  RegisterHost(h *HostStatemachine, params stateful.TransitionArguments) (stateful.State, error){
-	// Implement logic here
-	return d, nil
-}
-
-type HostStatemachine struct {
+type StatefulHost struct {
 	host models.Host
-	state StateInterface
+	state stateful.State
 	db  *gorm.DB
 	ctx context.Context
 	log logrus.FieldLogger
 }
 
-func (h *HostStatemachine) Reload(id, clusterId strfmt.UUID) error {
+func (h *StatefulHost) Reload(id, clusterId strfmt.UUID) error {
 	if err := h.db.First(&h.host, "id = ? and cluster_id = ?", id, clusterId).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			h.state = Initializing
@@ -124,8 +49,18 @@ func (h *HostStatemachine) Reload(id, clusterId strfmt.UUID) error {
 	return nil
 }
 
+func (h *StatefulHost) State() stateful.State {
+	return h.state
+}
 
-func (h *HostStatemachine) RegisterHost(params stateful.TransitionArguments) (stateful.State, error){
+func (h *StatefulHost) SetState(state stateful.State) error {
+	// Save in database?
+	h.state = state
+	return nil
+}
+
+
+func (h *StatefulHost) RegisterHost(params stateful.TransitionArguments) (stateful.State, error){
 	hostParams, ok := params.(*models.Host)
 	if !ok {
 		return nil, fmt.Errorf("Expected host as argument")
@@ -133,6 +68,33 @@ func (h *HostStatemachine) RegisterHost(params stateful.TransitionArguments) (st
 	if err := h.Reload(*hostParams.ID, hostParams.ClusterID); err != nil {
 		return nil, err
 	}
-	return h.state.RegisterHost(h, params)
+	nextState := h.state
+	switch h.state {
+	case Initializing:
+		// One logic
+		nextState = Discovering
+	case Discovering:
+		//
+	}
+	return nextState, nil
 }
 
+
+func newStateMachine(h *models.Host) *stateful.StateMachine {
+	sh := StatefulHost{}
+	sh.Reload(*h.ID, h.ClusterID)
+	ret := stateful.StateMachine{StatefulObject:&sh}
+
+	ret.AddTransition(
+		sh.RegisterHost,
+		stateful.States{Initializing},
+		stateful.States{Discovering},
+		)
+	return &ret
+}
+
+func RegisterHost(ctx context.Context, h *models.Host) error {
+	sm := newStateMachine(h)
+	sh := sm.StatefulObject.(*StatefulHost)
+	return sm.Run(sh.RegisterHost, h)
+}
