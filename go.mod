@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d
+	github.com/bykof/stateful v0.0.7 // indirect
 	github.com/go-openapi/errors v0.19.3
 	github.com/go-openapi/loads v0.19.4
 	github.com/go-openapi/runtime v0.19.11
