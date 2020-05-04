@@ -19,6 +19,10 @@ func NewInstalledState(log logrus.FieldLogger, db *gorm.DB) *installedState {
 
 type installedState baseState
 
+func (i *installedState) AnotherFunc12(ctx context.Context, h *models.Host) error {
+	i.log.Warnf("hello12")
+	return nil
+}
 func (i *installedState) AnotherFunc11(ctx context.Context, h *models.Host) error {
 	i.log.Warnf("hello11")
 	return nil

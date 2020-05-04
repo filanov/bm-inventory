@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - ronnie/coverage
+      - ronnie/codecov3
+      - ronnie/codecov4
       - master
 
 jobs:
