@@ -74,6 +74,12 @@ jobs:
     - name: test
       run: |
         skipper make build
+    - name: verify-code-generation-clean
+      run: |
+        git status -s
+        skipper make generate
+        git status -s
+        [[ -z $(git status -s) ]] || /bin/false
     - name: apply label
       uses: actions/github-script@0.9.0
       if: github.event_name == 'pull_request'
