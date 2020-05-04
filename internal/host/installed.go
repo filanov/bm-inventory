@@ -19,6 +19,10 @@ func NewInstalledState(log logrus.FieldLogger, db *gorm.DB) *installedState {
 
 type installedState baseState
 
+func (i *installedState) AnotherFunc(ctx context.Context, h *models.Host) error {
+	i.log.Warnf("hello")
+	return nil
+}
 func (i *installedState) RegisterHost(ctx context.Context, h *models.Host) (*UpdateReply, error) {
 	return nil, errors.Errorf("unable to register host <%s> in <%s> status",
 		h.ID, swag.StringValue(h.Status))
