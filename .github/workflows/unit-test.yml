@@ -74,16 +74,11 @@ jobs:
     - name: test
       run: |
         skipper make build
-    - name: Convert coverage to lcov
-      uses: jandelgado/gcov2lcov-action@v1.0.0
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
       with:
-          infile: coverage.out
-          outfile: coverage.lcov
-    - name: Coveralls
-      uses: coverallsapp/github-action@v1.0.1
-      with:
-          github-token: ${{ secrets.github_token }}
-          path-to-lcov: coverage.lcov
+        token: ${{ secrets.github_token }}
+        file: ./coverage.out
 
     - name: apply label
       uses: actions/github-script@0.9.0
