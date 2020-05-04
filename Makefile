@@ -104,7 +104,7 @@ test:
 		go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v $(SYSTEM_TEST)
 
 unit-test:
-	go test -v $(shell go list ./... | grep -v subsystem) -cover
+	go test -v $(shell go list ./... | grep -v subsystem) -covermode=count -coverprofile=coverage.out
 
 .PHONY: subsystem
 subsystem: deploy-all subsystem-run
