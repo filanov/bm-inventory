@@ -42,6 +42,22 @@ var _ = Describe("installed_state", func() {
 		expectedReply = &expect{expectedState: currentState}
 	})
 
+	It("another func", func() {
+		_ = state.AnotherFunc(ctx, &host)
+	})
+
+	It("another func11", func() {
+		_ = state.AnotherFunc11(ctx, &host)
+	})
+
+	It("another func12", func() {
+		_ = state.AnotherFunc12(ctx, &host)
+	})
+
+	It("another func14", func() {
+		_ = state.AnotherFunc14(ctx, &host)
+	})
+
 	It("register_host", func() {
 		updateReply, updateErr = state.RegisterHost(ctx, &host)
 		expectedReply.expectError = true
