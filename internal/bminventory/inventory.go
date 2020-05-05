@@ -85,7 +85,7 @@ const ignitionConfigFormat = `{
 "units": [{
 "name": "agent.service",
 "enabled": true,
-"contents": "[Service]\nType=simple\nExecStartPre=docker run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host {{.InventoryURL}} --port {{.InventoryPort}} --cluster-id {{.clusterId}}\n\n[Install]\nWantedBy=multi-user.target"
+"contents": "[Service]\nType=simple\nEnvironment=PROXY_URL={{.ProxyURL}}\nEnvironment=PROXY_PORT={{.ProxyPort}}\nExecStartPre=docker run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host {{.InventoryURL}} --port {{.InventoryPort}} --cluster-id {{.clusterId}}\n\n[Install]\nWantedBy=multi-user.target"
 }]
 }
 }`
@@ -197,9 +197,11 @@ func (b *bareMetalInventory) formatIgnitionFile(cluster *models.Cluster, params 
 	var ignitionParams = map[string]string{
 		"userSshKey":     b.getUserSshKey(params),
 		"AgentDockerImg": b.AgentDockerImg,
-		"InventoryURL":   b.getURLForIngnition(params),
-		"InventoryPort":  b.getPortForIgnition(params),
+		"InventoryURL":   b.InventoryURL,
+		"InventoryPort":  b.InventoryPort,
 		"clusterId":      cluster.ID.String(),
+		"ProxyURL":       params.ImageCreateParams.ProxyIP,
+		"ProxyPort":      b.getProxyPort(params),
 	}
 	tmpl, err := template.New("ignitionConfig").Parse(ignitionConfigFormat)
 	if err != nil {
@@ -226,18 +228,11 @@ func (b *bareMetalInventory) getUserSshKey(params inventory.GenerateClusterISOPa
 		"groups": [ "sudo" ]}`, sshKey)
 }
 
-func (b *bareMetalInventory) getURLForIngnition(params inventory.GenerateClusterISOParams) string {
-	if params.ImageCreateParams.ProxyIP != "" {
-		return params.ImageCreateParams.ProxyIP
-	}
-	return b.InventoryURL
-}
-
-func (b *bareMetalInventory) getPortForIgnition(params inventory.GenerateClusterISOParams) string {
+func (b *bareMetalInventory) getProxyPort(params inventory.GenerateClusterISOParams) string {
 	if params.ImageCreateParams.ProxyPort != nil {
 		return strconv.FormatInt(*params.ImageCreateParams.ProxyPort, 10)
 	}
-	return b.InventoryPort
+	return ""
 }
 
 func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params inventory.RegisterClusterParams) middleware.Responder {
