@@ -3,6 +3,8 @@ package cluster
 import (
 	context "context"
 
+	"github.com/pkg/errors"
+
 	"github.com/go-openapi/swag"
 
 	"github.com/filanov/bm-inventory/models"
@@ -55,6 +57,36 @@ func (r *registrar) RegisterCluster(ctx context.Context, c *models.Cluster) (*Up
 
 	return &UpdateReply{
 		State:     clusterStatusInsufficient,
+		IsChanged: true,
+	}, nil
+}
+
+func (r *registrar) DeregisterCluster(ctx context.Context, cluster *models.Cluster) (*UpdateReply, error) {
+	var txErr error
+	tx := r.db.Begin()
+
+	defer func() {
+		if txErr != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if txErr = tx.Where("cluster_id = ?", cluster.ID).Delete(&models.Host{}).Error; txErr != nil {
+		tx.Rollback()
+		return nil, errors.Errorf("failed to deregister host while unregistering cluster %s", cluster.ID)
+	}
+
+	if txErr = tx.Delete(cluster).Error; txErr != nil {
+		tx.Rollback()
+		return nil, errors.Errorf("failed to delete cluster %s", cluster.ID)
+	}
+
+	if tx.Commit().Error != nil {
+		tx.Rollback()
+		return nil, errors.Errorf("failed to delete cluster %s, commit tx", cluster.ID)
+	}
+	return &UpdateReply{
+		State:     "unregistered",
 		IsChanged: true,
 	}, nil
 }

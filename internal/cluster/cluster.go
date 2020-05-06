@@ -15,8 +15,6 @@ import (
 type StateAPI interface {
 	// Refresh state in case of hosts update7
 	RefreshStatus(ctx context.Context, c *models.Cluster, db *gorm.DB) (*UpdateReply, error)
-	//deregister cluster
-	DeregisterCluster(ctx context.Context, c *models.Cluster) (*UpdateReply, error)
 	// Install cluster
 	Install(ctx context.Context, c *models.Cluster) (*UpdateReply, error)
 }
@@ -24,6 +22,8 @@ type StateAPI interface {
 type RegistrationAPI interface {
 	// Register a new cluster
 	RegisterCluster(ctx context.Context, c *models.Cluster) (*UpdateReply, error)
+	//deregister cluster
+	DeregisterCluster(ctx context.Context, c *models.Cluster) (*UpdateReply, error)
 }
 
 type API interface {
@@ -72,6 +72,10 @@ func (m *Manager) RegisterCluster(ctx context.Context, c *models.Cluster) (*Upda
 	return m.registrationAPI.RegisterCluster(ctx, c)
 }
 
+func (m *Manager) DeregisterCluster(ctx context.Context, c *models.Cluster) (*UpdateReply, error) {
+	return m.registrationAPI.DeregisterCluster(ctx, c)
+}
+
 func (m *Manager) RefreshStatus(ctx context.Context, c *models.Cluster, db *gorm.DB) (*UpdateReply, error) {
 	state, err := m.getCurrentState(swag.StringValue(c.Status))
 	if err != nil {
@@ -86,12 +90,4 @@ func (m *Manager) Install(ctx context.Context, c *models.Cluster) (*UpdateReply,
 		return nil, err
 	}
 	return state.Install(ctx, c)
-}
-
-func (m *Manager) DeregisterCluster(ctx context.Context, c *models.Cluster) (*UpdateReply, error) {
-	state, err := m.getCurrentState(swag.StringValue(c.Status))
-	if err != nil {
-		return nil, err
-	}
-	return state.DeregisterCluster(ctx, c)
 }
