@@ -49,10 +49,6 @@ const (
 	ResourceKindCluster = "cluster"
 )
 
-const (
-	bootstrap = "bootstrap"
-)
-
 type Config struct {
 	ImageBuilder        string `envconfig:"IMAGE_BUILDER" default:"quay.io/oscohen/installer-image-build"`
 	ImageBuilderCmd     string `envconfig:"IMAGE_BUILDER_CMD" default:"echo hello"`
@@ -64,7 +60,6 @@ type Config struct {
 	S3Bucket            string `envconfig:"S3_BUCKET" default:"test"`
 	AwsAccessKeyID      string `envconfig:"AWS_ACCESS_KEY_ID" default:"accessKey1"`
 	AwsSecretAccessKey  string `envconfig:"AWS_SECRET_ACCESS_KEY" default:"verySecretKey1"`
-	InstallerImage      string `envconfig:"INSTALLER_IMAGE" default:"quay.io/ocpmetal/assisted-installer:stable"`
 }
 
 const ignitionConfigFormat = `{
@@ -375,22 +370,29 @@ func (b *bareMetalInventory) InstallCluster(ctx context.Context, params inventor
 		return inventory.NewInstallClusterConflict()
 	}
 
-	// Temporary hack - use debug API for setting the executing install command:
+	// set one of the master nodes as bootstrap
 	masterNodesIds, err := b.clusterApi.GetMasterNodesIds(ctx, &cluster, tx)
 	if err != nil {
 		tx.Rollback()
 		log.WithError(err).Errorf("failed to get cluster %s master node id's", cluster.ID)
 		return inventory.NewInstallClusterInternalServerError()
 	}
-	if err = b.addInstallCommand(ctx, masterNodesIds, log, params, cluster); err != nil {
-		tx.Rollback()
-		log.WithError(err).Errorf("failed to add install command to cluster <%s>", params.ClusterID)
-		return inventory.NewInstallClusterInternalServerError()
+	bootstrapId := masterNodesIds[len(masterNodesIds)-1]
+	log.Debugf("Bootstrap ID is %s", bootstrapId)
+	for i := range cluster.Hosts {
+		if cluster.Hosts[i].ID.String() == bootstrapId.String() {
+			err = b.hostApi.UpdateBootstrap(ctx, cluster.Hosts[i], true)
+			if err != nil {
+				tx.Rollback()
+				log.WithError(err).Errorf("failed to update bootstrap host for cluster %s", params.ClusterID)
+				return inventory.NewInstallClusterInternalServerError()
+			}
+		}
 	}
 
 	// move hosts states to installing
 	for i := range cluster.Hosts {
-		if _, err = b.hostApi.Install(ctx, cluster.Hosts[i], tx); err != nil {
+		if _, err := b.hostApi.Install(ctx, cluster.Hosts[i], tx); err != nil {
 			log.WithError(err).Errorf("failed to install hosts <%s> in cluster: %s",
 				cluster.Hosts[i].ID.String(), cluster.ID.String())
 			tx.Rollback()
@@ -429,54 +431,6 @@ func (b *bareMetalInventory) generateClusterInstallConfig(ctx context.Context, c
 	if err := b.job.Monitor(ctx, jobName, defaultJobNamespace); err != nil {
 		log.WithError(err).Errorf("Generating kubeconfig files %s failed for cluster %s", jobName, cluster.ID)
 		return inventory.NewInstallClusterInternalServerError()
-	}
-	return nil
-}
-
-func (b *bareMetalInventory) addInstallCommand(ctx context.Context, masterNodesIds []*strfmt.UUID,
-	log logrus.FieldLogger, params inventory.InstallClusterParams, cluster models.Cluster) error {
-	// set one of the master nodes as bootstrap
-	bootstrapId := masterNodesIds[len(masterNodesIds)-1]
-	log.Debugf("Bootstrap ID is %s", bootstrapId)
-
-	const cmdTmpl = `sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host  {{.INSTALLER}} --role {{.ROLE}}  --cluster-id {{.CLUSTER_ID}}  --host {{.HOST}} --port {{.PORT}} --boot-device {{.BOOT_DEVICE}} --host-id {{.HOST_ID}}`
-
-	t, err := template.New("cmd").Parse(cmdTmpl)
-	if err != nil {
-		return err
-	}
-
-	data := map[string]string{
-		"HOST":        b.InventoryURL,
-		"PORT":        b.InventoryPort,
-		"CLUSTER_ID":  string(params.ClusterID),
-		"ROLE":        "",
-		"INSTALLER":   b.Config.InstallerImage,
-		"BOOT_DEVICE": "",
-	}
-	for i := range cluster.Hosts {
-		role := cluster.Hosts[i].Role
-		if cluster.Hosts[i].ID == bootstrapId {
-			role = bootstrap
-		}
-		data["ROLE"] = role
-		disks, err := b.hostApi.GetHostValidDisks(cluster.Hosts[i])
-		if err != nil {
-			log.Errorf("Failed to get valid disks on host with id %s", cluster.Hosts[i].ID)
-			return err
-		}
-		data["BOOT_DEVICE"] = fmt.Sprintf("/dev/%s", disks[0].Name)
-		data["HOST_ID"] = string(*cluster.Hosts[i].ID)
-		buf := &bytes.Buffer{}
-		if err := t.Execute(buf, data); err != nil {
-			return err
-		}
-		command := buf.String()
-		b.SetDebugStep(ctx, inventory.SetDebugStepParams{
-			ClusterID: params.ClusterID,
-			HostID:    *cluster.Hosts[i].ID,
-			Step:      &models.DebugStep{Command: &command},
-		})
 	}
 	return nil
 }
@@ -660,7 +614,7 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params inventory.
 	var err error
 	steps, err = b.hostApi.GetNextSteps(ctx, &host)
 	if err != nil {
-		log.WithError(err).Errorf("failed to get steps for host %s cluster %s", params.ClusterID, params.HostID)
+		log.WithError(err).Errorf("failed to get steps for host %s cluster %s", params.HostID, params.ClusterID)
 	}
 
 	b.debugCmdMux.Lock()

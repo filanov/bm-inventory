@@ -349,3 +349,17 @@ func (mr *MockAPIMockRecorder) UpdateInstallProgress(ctx, h, progress interface{
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateInstallProgress", reflect.TypeOf((*MockAPI)(nil).UpdateInstallProgress), ctx, h, progress)
 }
+
+// UpdateBootstrap mocks base method.
+func (m *MockAPI) UpdateBootstrap(ctx context.Context, h *models.Host, isbootstrap bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateBootstrap", ctx, h, isbootstrap)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateBootstrap indicates an expected call of UpdateBootstrap.
+func (mr *MockAPIMockRecorder) UpdateBootstrap(ctx, h, isbootstrap interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBootstrap", reflect.TypeOf((*MockAPI)(nil).UpdateBootstrap), ctx, h, isbootstrap)
+}

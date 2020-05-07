@@ -36,7 +36,7 @@ var _ = Describe("statemachine", func() {
 		db = prepareDB()
 		ctrl = gomock.NewController(GinkgoT())
 		mockValidator = hardware.NewMockValidator(ctrl)
-		state = NewManager(getTestLog(), db, mockValidator)
+		state = NewManager(getTestLog(), db, mockValidator, nil)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
 		host = models.Host{
@@ -100,7 +100,7 @@ var _ = Describe("update_progress", func() {
 
 	BeforeEach(func() {
 		db = prepareDB()
-		state = NewManager(getTestLog(), db, nil)
+		state = NewManager(getTestLog(), db, nil, nil)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
 		host = models.Host{
@@ -119,7 +119,7 @@ var _ = Describe("update_progress", func() {
 		It("some_progress", func() {
 			Expect(state.UpdateInstallProgress(ctx, &host, "some progress")).ShouldNot(HaveOccurred())
 			h := getHost(*host.ID, host.ClusterID, db)
-			Expect(*h.Status).Should(Equal(HostStatusInstalling))
+			Expect(*h.Status).Should(Equal(HostStatusInstallingInProgress))
 			Expect(h.StatusInfo).Should(Equal("some progress"))
 		})
 

@@ -35,14 +35,21 @@ type SpecificHardwareParams interface {
 }
 
 const (
-	HostStatusDiscovering  = "discovering"
-	HostStatusKnown        = "known"
-	HostStatusDisconnected = "disconnected"
-	HostStatusInsufficient = "insufficient"
-	HostStatusDisabled     = "disabled"
-	HostStatusInstalling   = "installing"
-	HostStatusInstalled    = "installed"
-	HostStatusError        = "error"
+	HostStatusDiscovering          = "discovering"
+	HostStatusKnown                = "known"
+	HostStatusDisconnected         = "disconnected"
+	HostStatusInsufficient         = "insufficient"
+	HostStatusDisabled             = "disabled"
+	HostStatusInstalling           = "installing"
+	HostStatusInstallingInProgress = "installing-in-progress"
+	HostStatusInstalled            = "installed"
+	HostStatusError                = "error"
+)
+
+const (
+	RoleMaster    = "master"
+	RoleBootstrap = "bootstrap"
+	RoleWorker    = "worker"
 )
 
 type API interface {
@@ -50,6 +57,7 @@ type API interface {
 	InstructionApi
 	SpecificHardwareParams
 	UpdateInstallProgress(ctx context.Context, h *models.Host, progress string) error
+	UpdateBootstrap(ctx context.Context, h *models.Host, isbootstrap bool) error
 }
 
 type Manager struct {
@@ -67,7 +75,7 @@ type Manager struct {
 	hwValidator    hardware.Validator
 }
 
-func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator) *Manager {
+func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator, instructionApi InstructionApi) *Manager {
 	return &Manager{
 		log:            log,
 		db:             db,
@@ -79,7 +87,7 @@ func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Valida
 		installing:     NewInstallingState(log, db),
 		installed:      NewInstalledState(log, db),
 		error:          NewErrorState(log, db),
-		instructionApi: NewInstructionManager(log, db),
+		instructionApi: instructionApi,
 		hwValidator:    hwValidator,
 	}
 }
@@ -172,7 +180,7 @@ func (m *Manager) GetHostValidDisks(host *models.Host) ([]*models.BlockDevice, e
 }
 
 func (m *Manager) UpdateInstallProgress(ctx context.Context, h *models.Host, progress string) error {
-	if swag.StringValue(h.Status) != HostStatusInstalling {
+	if swag.StringValue(h.Status) != HostStatusInstalling && swag.StringValue(h.Status) != HostStatusInstallingInProgress {
 		return fmt.Errorf("can't set progress to host in status <%s>", swag.StringValue(h.Status))
 	}
 
@@ -184,6 +192,16 @@ func (m *Manager) UpdateInstallProgress(ctx context.Context, h *models.Host, pro
 	}
 
 	_, err := updateStateWithParams(logutil.FromContext(ctx, m.log),
-		HostStatusInstalling, progress, h, m.db)
+		HostStatusInstallingInProgress, progress, h, m.db)
 	return err
+}
+
+func (m *Manager) UpdateBootstrap(ctx context.Context, h *models.Host, isbootstrap bool) error {
+	if h.Bootstrap != isbootstrap {
+		err := m.db.Model(h).Update("bootstrap", isbootstrap).Error
+		if err != nil {
+			return fmt.Errorf("can't set bootstrap to host <%s>", h.ID)
+		}
+	}
+	return nil
 }
