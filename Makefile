@@ -1,6 +1,7 @@
 PWD = $(shell pwd)
 UID = $(shell id -u)
 
+
 SERVICE := $(or ${SERVICE},quay.io/ocpmetal/bm-inventory:stable)
 
 all: build
