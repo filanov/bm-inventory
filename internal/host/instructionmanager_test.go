@@ -26,14 +26,7 @@ var _ = Describe("instructionmanager", func() {
 		instMng = NewInstructionManager(getTestLog(), db)
 		id = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
-		host = models.Host{
-			Base: models.Base{
-				ID: &id,
-			},
-			ClusterID:    clusterId,
-			Status:       swag.String("unknown invalid state"),
-			HardwareInfo: defaultHwInfo,
-		}
+		host = getTestHost(id, clusterId, "unknown invalid state")
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 	})
 
@@ -67,7 +60,6 @@ var _ = Describe("instructionmanager", func() {
 	})
 
 	AfterEach(func() {
-
 		// cleanup
 		db.Close()
 		stepsReply = nil

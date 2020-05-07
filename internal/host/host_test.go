@@ -39,14 +39,7 @@ var _ = Describe("statemachine", func() {
 		state = NewManager(getTestLog(), db, mockValidator)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
-		host = models.Host{
-			Base: models.Base{
-				ID: &id,
-			},
-			ClusterID:    clusterId,
-			Status:       swag.String("unknown invalid state"),
-			HardwareInfo: defaultHwInfo,
-		}
+		host = getTestHost(id, clusterId, "unknown invalid state")
 	})
 
 	Context("unknown_host_state", func() {
@@ -103,13 +96,7 @@ var _ = Describe("update_progress", func() {
 		state = NewManager(getTestLog(), db, nil)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
-		host = models.Host{
-			Base: models.Base{
-				ID: &id,
-			},
-			ClusterID:    clusterId,
-			HardwareInfo: defaultHwInfo,
-		}
+		host = getTestHost(id, clusterId, "")
 	})
 	Context("installaing host", func() {
 		BeforeEach(func() {
@@ -120,14 +107,14 @@ var _ = Describe("update_progress", func() {
 			Expect(state.UpdateInstallProgress(ctx, &host, "some progress")).ShouldNot(HaveOccurred())
 			h := getHost(*host.ID, host.ClusterID, db)
 			Expect(*h.Status).Should(Equal(HostStatusInstalling))
-			Expect(h.StatusInfo).Should(Equal("some progress"))
+			Expect(*h.StatusInfo).Should(Equal("some progress"))
 		})
 
 		It("done", func() {
 			Expect(state.UpdateInstallProgress(ctx, &host, "done")).ShouldNot(HaveOccurred())
 			h := getHost(*host.ID, host.ClusterID, db)
 			Expect(*h.Status).Should(Equal(HostStatusInstalled))
-			Expect(h.StatusInfo).Should(Equal(HostStatusInstalled))
+			Expect(*h.StatusInfo).Should(Equal(HostStatusInstalled))
 		})
 	})
 
@@ -191,4 +178,13 @@ func getTestLog() logrus.FieldLogger {
 	l := logrus.New()
 	l.SetOutput(ioutil.Discard)
 	return l
+}
+
+func getTestHost(hostID, clusterID strfmt.UUID, state string) models.Host {
+	return models.Host{
+		ID:           &hostID,
+		ClusterID:    clusterID,
+		Status:       swag.String(state),
+		HardwareInfo: defaultHwInfo,
+	}
 }
