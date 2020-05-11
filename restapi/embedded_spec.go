@@ -935,6 +935,17 @@ func init() {
         }
       }
     },
+    "boot": {
+      "type": "object",
+      "properties": {
+        "current_boot_mode": {
+          "type": "string"
+        },
+        "pxe_interface": {
+          "type": "string"
+        }
+      }
+    },
     "cidr": {
       "type": "object",
       "properties": {
@@ -1291,6 +1302,29 @@ func init() {
         "architecture": {
           "type": "string"
         },
+        "count": {
+          "type": "integer"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frequency": {
+          "type": "number"
+        },
+        "model_name": {
+          "type": "string"
+        }
+      }
+    },
+    "cpu_details": {
+      "type": "object",
+      "properties": {
+        "architecture": {
+          "type": "string"
+        },
         "cpu_mhz": {
           "type": "number"
         },
@@ -1315,6 +1349,41 @@ func init() {
       ],
       "properties": {
         "command": {
+          "type": "string"
+        }
+      }
+    },
+    "disk": {
+      "type": "object",
+      "properties": {
+        "by_path": {
+          "type": "string"
+        },
+        "drive_type": {
+          "type": "string"
+        },
+        "hctl": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "serial": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer"
+        },
+        "vendor": {
+          "type": "string"
+        },
+        "wwn": {
           "type": "string"
         }
       }
@@ -1467,22 +1536,69 @@ func init() {
         }
       }
     },
+    "interface": {
+      "type": "object",
+      "properties": {
+        "biosdevname": {
+          "type": "string"
+        },
+        "client_id": {
+          "type": "string"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "has_carrier": {
+          "type": "boolean"
+        },
+        "ipv4_addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ipv6_addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mac_address": {
+          "type": "string"
+        },
+        "mtu": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "vendor": {
+          "type": "string"
+        }
+      }
+    },
     "introspection": {
       "type": "object",
       "properties": {
-        "block_devices": {
+        "block-devices": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/block-device"
           }
         },
         "cpu": {
-          "$ref": "#/definitions/cpu"
+          "$ref": "#/definitions/cpu_details"
         },
         "memory": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/memory"
+            "$ref": "#/definitions/memory_details"
           }
         },
         "nics": {
@@ -1490,6 +1606,44 @@ func init() {
           "items": {
             "$ref": "#/definitions/nic"
           }
+        }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "properties": {
+        "bmc_address": {
+          "type": "string"
+        },
+        "bmc_v6address": {
+          "type": "string"
+        },
+        "boot": {
+          "$ref": "#/definitions/boot"
+        },
+        "cpu": {
+          "$ref": "#/definitions/cpu"
+        },
+        "disks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/disk"
+          }
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/interface"
+          }
+        },
+        "memory": {
+          "$ref": "#/definitions/memory"
+        },
+        "system_vendor": {
+          "$ref": "#/definitions/system_vendor"
         }
       }
     },
@@ -1528,6 +1682,17 @@ func init() {
       }
     },
     "memory": {
+      "type": "object",
+      "properties": {
+        "physical_bytes": {
+          "type": "integer"
+        },
+        "usable_bytes": {
+          "type": "integer"
+        }
+      }
+    },
+    "memory_details": {
       "type": "object",
       "properties": {
         "available": {
@@ -1618,7 +1783,8 @@ func init() {
       "enum": [
         "hardware-info",
         "connectivity-check",
-        "execute"
+        "execute",
+        "inventory"
       ]
     },
     "steps": {
@@ -1631,6 +1797,20 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/step-reply"
+      }
+    },
+    "system_vendor": {
+      "type": "object",
+      "properties": {
+        "manufacturer": {
+          "type": "string"
+        },
+        "product_name": {
+          "type": "string"
+        },
+        "serial_number": {
+          "type": "string"
+        }
       }
     }
   },
@@ -2575,6 +2755,17 @@ func init() {
         }
       }
     },
+    "boot": {
+      "type": "object",
+      "properties": {
+        "current_boot_mode": {
+          "type": "string"
+        },
+        "pxe_interface": {
+          "type": "string"
+        }
+      }
+    },
     "cidr": {
       "type": "object",
       "properties": {
@@ -2918,6 +3109,29 @@ func init() {
         "architecture": {
           "type": "string"
         },
+        "count": {
+          "type": "integer"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frequency": {
+          "type": "number"
+        },
+        "model_name": {
+          "type": "string"
+        }
+      }
+    },
+    "cpu_details": {
+      "type": "object",
+      "properties": {
+        "architecture": {
+          "type": "string"
+        },
         "cpu_mhz": {
           "type": "number"
         },
@@ -2942,6 +3156,41 @@ func init() {
       ],
       "properties": {
         "command": {
+          "type": "string"
+        }
+      }
+    },
+    "disk": {
+      "type": "object",
+      "properties": {
+        "by_path": {
+          "type": "string"
+        },
+        "drive_type": {
+          "type": "string"
+        },
+        "hctl": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "serial": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer"
+        },
+        "vendor": {
+          "type": "string"
+        },
+        "wwn": {
           "type": "string"
         }
       }
@@ -3094,22 +3343,69 @@ func init() {
         }
       }
     },
+    "interface": {
+      "type": "object",
+      "properties": {
+        "biosdevname": {
+          "type": "string"
+        },
+        "client_id": {
+          "type": "string"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "has_carrier": {
+          "type": "boolean"
+        },
+        "ipv4_addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ipv6_addresses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mac_address": {
+          "type": "string"
+        },
+        "mtu": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "product": {
+          "type": "string"
+        },
+        "vendor": {
+          "type": "string"
+        }
+      }
+    },
     "introspection": {
       "type": "object",
       "properties": {
-        "block_devices": {
+        "block-devices": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/block-device"
           }
         },
         "cpu": {
-          "$ref": "#/definitions/cpu"
+          "$ref": "#/definitions/cpu_details"
         },
         "memory": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/memory"
+            "$ref": "#/definitions/memory_details"
           }
         },
         "nics": {
@@ -3117,6 +3413,44 @@ func init() {
           "items": {
             "$ref": "#/definitions/nic"
           }
+        }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "properties": {
+        "bmc_address": {
+          "type": "string"
+        },
+        "bmc_v6address": {
+          "type": "string"
+        },
+        "boot": {
+          "$ref": "#/definitions/boot"
+        },
+        "cpu": {
+          "$ref": "#/definitions/cpu"
+        },
+        "disks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/disk"
+          }
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/interface"
+          }
+        },
+        "memory": {
+          "$ref": "#/definitions/memory"
+        },
+        "system_vendor": {
+          "$ref": "#/definitions/system_vendor"
         }
       }
     },
@@ -3155,6 +3489,17 @@ func init() {
       }
     },
     "memory": {
+      "type": "object",
+      "properties": {
+        "physical_bytes": {
+          "type": "integer"
+        },
+        "usable_bytes": {
+          "type": "integer"
+        }
+      }
+    },
+    "memory_details": {
       "type": "object",
       "properties": {
         "available": {
@@ -3245,7 +3590,8 @@ func init() {
       "enum": [
         "hardware-info",
         "connectivity-check",
-        "execute"
+        "execute",
+        "inventory"
       ]
     },
     "steps": {
@@ -3258,6 +3604,20 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/step-reply"
+      }
+    },
+    "system_vendor": {
+      "type": "object",
+      "properties": {
+        "manufacturer": {
+          "type": "string"
+        },
+        "product_name": {
+          "type": "string"
+        },
+        "serial_number": {
+          "type": "string"
+        }
       }
     }
   },
