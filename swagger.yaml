@@ -136,9 +136,7 @@ paths:
           required: true
       responses:
         204:
-          description: Error.
-          schema:
-            $ref: '#/definitions/error'
+          description: Success.
         404:
           description: Error.
           schema:
