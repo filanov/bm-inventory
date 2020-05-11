@@ -9,11 +9,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-openapi/errors"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // GenerateClusterISOReader is a Reader for the GenerateClusterISO structure.
@@ -156,34 +154,11 @@ swagger:model GenerateClusterISOCreatedBody
 type GenerateClusterISOCreatedBody struct {
 
 	// image Id
-	// Format: uuid
-	ImageID strfmt.UUID `json:"imageId,omitempty"`
+	ImageID string `json:"imageId,omitempty"`
 }
 
 // Validate validates this generate cluster i s o created body
 func (o *GenerateClusterISOCreatedBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateImageID(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *GenerateClusterISOCreatedBody) validateImageID(formats strfmt.Registry) error {
-
-	if swag.IsZero(o.ImageID) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("generateClusterISOCreated"+"."+"imageId", "body", "uuid", o.ImageID.String(), formats); err != nil {
-		return err
-	}
-
 	return nil
 }
 

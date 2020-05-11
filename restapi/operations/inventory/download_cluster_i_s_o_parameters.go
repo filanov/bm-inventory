@@ -40,7 +40,7 @@ type DownloadClusterISOParams struct {
 	  Required: true
 	  In: query
 	*/
-	ImageID strfmt.UUID
+	ImageID string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -119,25 +119,7 @@ func (o *DownloadClusterISOParams) bindImageID(rawData []string, hasKey bool, fo
 		return err
 	}
 
-	// Format: uuid
-	value, err := formats.Parse("uuid", raw)
-	if err != nil {
-		return errors.InvalidType("imageId", "query", "strfmt.UUID", raw)
-	}
-	o.ImageID = *(value.(*strfmt.UUID))
+	o.ImageID = raw
 
-	if err := o.validateImageID(formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// validateImageID carries on validations for parameter ImageID
-func (o *DownloadClusterISOParams) validateImageID(formats strfmt.Registry) error {
-
-	if err := validate.FormatOf("imageId", "query", "uuid", o.ImageID.String(), formats); err != nil {
-		return err
-	}
 	return nil
 }

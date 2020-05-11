@@ -312,7 +312,6 @@ func init() {
           },
           {
             "type": "string",
-            "format": "uuid",
             "description": "The ID of a previously-created image",
             "name": "imageId",
             "in": "query",
@@ -370,8 +369,7 @@ func init() {
               "type": "object",
               "properties": {
                 "imageId": {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "string"
                 }
               }
             }
@@ -1788,7 +1786,6 @@ func init() {
           },
           {
             "type": "string",
-            "format": "uuid",
             "description": "The ID of a previously-created image",
             "name": "imageId",
             "in": "query",
@@ -1846,8 +1843,7 @@ func init() {
               "type": "object",
               "properties": {
                 "imageId": {
-                  "type": "string",
-                  "format": "uuid"
+                  "type": "string"
                 }
               }
             }

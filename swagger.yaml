@@ -158,7 +158,6 @@ paths:
             properties:
               imageId:
                 type: string
-                format: uuid
         400:
           description: Invalid input
         404:
@@ -185,7 +184,6 @@ paths:
           name: imageId
           description: The ID of a previously-created image
           type: string
-          format: uuid
           required: true
       responses:
         200:

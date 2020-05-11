@@ -18,7 +18,7 @@ import (
 type DownloadClusterISOURL struct {
 	ClusterID strfmt.UUID
 
-	ImageID strfmt.UUID
+	ImageID string
 
 	_basePath string
 	// avoid unkeyed usage
@@ -61,7 +61,7 @@ func (o *DownloadClusterISOURL) Build() (*url.URL, error) {
 
 	qs := make(url.Values)
 
-	imageIDQ := o.ImageID.String()
+	imageIDQ := o.ImageID
 	if imageIDQ != "" {
 		qs.Set("imageId", imageIDQ)
 	}

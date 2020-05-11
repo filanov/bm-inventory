@@ -3,6 +3,7 @@ package bminventory
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -306,7 +307,7 @@ func (b *bareMetalInventory) DownloadClusterISO(ctx context.Context, params inve
 	}
 
 	return filemiddleware.NewResponder(inventory.NewDownloadClusterISOOK().WithPayload(resp.Body),
-		fmt.Sprintf("%s-cluster-%s-discovery.iso", params.ImageID.String(), params.ClusterID.String()))
+		fmt.Sprintf("%s-cluster-%s-discovery.iso", params.ImageID, params.ClusterID.String()))
 }
 
 // GenerateClusterISO and return image ID that can be used to download the ISO
@@ -318,8 +319,9 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inve
 		log.WithError(err).Errorf("failed to get cluster %s", params.ClusterID)
 		return inventory.NewGenerateClusterISONotFound()
 	}
-	// generating a new uuid for each call to prevent races between concurrent requests
-	imgId := strfmt.UUID(uuid.New().String())
+	// generate an ID based on the parameters to prevent creation of multiple identical images
+	// NOTE: This needs to always include all of GenerateClusterISOParams
+	imgId := fmt.Sprintf("%x", md5.Sum([]byte(params.ImageCreateParams.ProxyURL + params.ImageCreateParams.SSHPublicKey)))
 	imgName := getImageName(params.ClusterID, imgId)
 	// max job name is 63 chars
 	jobName := fmt.Sprintf("create-image-%s-%s", cluster.ID, imgId)[:63]
@@ -345,7 +347,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inve
 		WithPayload(&inventory.GenerateClusterISOCreatedBody{ImageID: imgId})
 }
 
-func getImageName(clusterID, id strfmt.UUID) string {
+func getImageName(clusterID strfmt.UUID, id string) string {
 	return fmt.Sprintf("discovery-image-%s-%s", clusterID.String(), id)
 }
 

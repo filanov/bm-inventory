@@ -58,7 +58,7 @@ var _ = Describe("system-test image tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(s.Size()).ShouldNot(Equal(0))
 		By("non_existing_image")
-		dummyId := strfmt.UUID(uuid.New().String())
+		dummyId := "dummyID"
 		_, err = bmclient.Inventory.DownloadClusterISO(ctx, &inventory.DownloadClusterISOParams{
 			ClusterID: clusterID,
 			ImageID:   dummyId,
