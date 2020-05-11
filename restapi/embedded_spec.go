@@ -191,10 +191,7 @@ func init() {
         ],
         "responses": {
           "204": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
+            "description": "Success."
           },
           "404": {
             "description": "Error.",
@@ -1818,10 +1815,7 @@ func init() {
         ],
         "responses": {
           "204": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
+            "description": "Success."
           },
           "404": {
             "description": "Error.",

@@ -16,16 +16,11 @@ import (
 // DeregisterClusterNoContentCode is the HTTP code returned for type DeregisterClusterNoContent
 const DeregisterClusterNoContentCode int = 204
 
-/*DeregisterClusterNoContent Error.
+/*DeregisterClusterNoContent Success.
 
 swagger:response deregisterClusterNoContent
 */
 type DeregisterClusterNoContent struct {
-
-	/*
-	  In: Body
-	*/
-	Payload *models.Error `json:"body,omitempty"`
 }
 
 // NewDeregisterClusterNoContent creates DeregisterClusterNoContent with default headers values
@@ -34,27 +29,12 @@ func NewDeregisterClusterNoContent() *DeregisterClusterNoContent {
 	return &DeregisterClusterNoContent{}
 }
 
-// WithPayload adds the payload to the deregister cluster no content response
-func (o *DeregisterClusterNoContent) WithPayload(payload *models.Error) *DeregisterClusterNoContent {
-	o.Payload = payload
-	return o
-}
-
-// SetPayload sets the payload to the deregister cluster no content response
-func (o *DeregisterClusterNoContent) SetPayload(payload *models.Error) {
-	o.Payload = payload
-}
-
 // WriteResponse to the client
 func (o *DeregisterClusterNoContent) WriteResponse(rw http.ResponseWriter, producer runtime.Producer) {
 
+	rw.Header().Del(runtime.HeaderContentType) //Remove Content-Type on empty responses
+
 	rw.WriteHeader(204)
-	if o.Payload != nil {
-		payload := o.Payload
-		if err := producer.Produce(rw, payload); err != nil {
-			panic(err) // let the recovery middleware deal with this
-		}
-	}
 }
 
 // DeregisterClusterNotFoundCode is the HTTP code returned for type DeregisterClusterNotFound

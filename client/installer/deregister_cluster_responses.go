@@ -60,28 +60,16 @@ func NewDeregisterClusterNoContent() *DeregisterClusterNoContent {
 
 /*DeregisterClusterNoContent handles this case with default header values.
 
-Error.
+Success.
 */
 type DeregisterClusterNoContent struct {
-	Payload *models.Error
 }
 
 func (o *DeregisterClusterNoContent) Error() string {
-	return fmt.Sprintf("[DELETE /clusters/{cluster_id}][%d] deregisterClusterNoContent  %+v", 204, o.Payload)
-}
-
-func (o *DeregisterClusterNoContent) GetPayload() *models.Error {
-	return o.Payload
+	return fmt.Sprintf("[DELETE /clusters/{cluster_id}][%d] deregisterClusterNoContent ", 204)
 }
 
 func (o *DeregisterClusterNoContent) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
-
-	o.Payload = new(models.Error)
-
-	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
-		return err
-	}
 
 	return nil
 }
