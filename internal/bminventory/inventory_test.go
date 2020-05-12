@@ -412,21 +412,6 @@ var _ = Describe("cluster", func() {
 
 			Expect(reply).Should(BeAssignableToTypeOf(inventory.NewInstallClusterInternalServerError()))
 		})
-		//GetHostValidDisks
-		It("GetHostValidDisks returns err", func() {
-
-			setDefaultInstall(mockClusterApi)
-			setDefaultGetMasterNodesIds(mockClusterApi)
-
-			setDefaultHostInstall(mockClusterApi)
-			mockHostApi.EXPECT().GetHostValidDisks(gomock.Any()).Return(nil, errors.Errorf("you fail")).AnyTimes()
-
-			reply := bm.InstallCluster(ctx, inventory.InstallClusterParams{
-				ClusterID: clusterID,
-			})
-
-			Expect(reply).Should(BeAssignableToTypeOf(inventory.NewInstallClusterInternalServerError()))
-		})
 	})
 	AfterEach(func() {
 		ctrl.Finish()
