@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/filanov/bm-inventory/internal/cluster"
 	"github.com/filanov/bm-inventory/internal/host"
@@ -121,7 +122,7 @@ func NewBareMetalInventory(db *gorm.DB, log logrus.FieldLogger, hostApi host.API
 }
 
 // create discovery image generation job, return job name and error
-func (b *bareMetalInventory) createImageJob(cluster *models.Cluster, jobName, imgName, ignitionConfig string) *batch.Job {
+func (b *bareMetalInventory) createImageJob(cluster *models.Cluster, jobName, imgName, prevJobName, ignitionConfig string) *batch.Job {
 	return &batch.Job{
 		TypeMeta: meta.TypeMeta{
 			Kind:       "Job",
@@ -157,6 +158,10 @@ func (b *bareMetalInventory) createImageJob(cluster *models.Cluster, jobName, im
 								{
 									Name:  "IMAGE_NAME",
 									Value: imgName,
+								},
+								{
+									Name:  "PREV_JOB_NAME",
+									Value: prevJobName,
 								},
 								{
 									Name:  "S3_BUCKET",
@@ -272,7 +277,7 @@ func (b *bareMetalInventory) DownloadClusterISO(ctx context.Context, params inst
 		return installer.NewDownloadClusterISONotFound().
 			WithPayload(generateError(http.StatusNotFound, err))
 	}
-	imgName := getImageName(params.ClusterID, params.ImageID)
+	imgName := getImageName(params.ClusterID)
 	imageURL := fmt.Sprintf("%s/%s/%s", b.S3EndpointURL, b.S3Bucket, imgName)
 
 	log.Info("Image URL: ", imageURL)
@@ -296,24 +301,93 @@ func (b *bareMetalInventory) DownloadClusterISO(ctx context.Context, params inst
 	}
 
 	return filemiddleware.NewResponder(installer.NewDownloadClusterISOOK().WithPayload(resp.Body),
-		fmt.Sprintf("%s-cluster-%s-discovery.iso", params.ImageID.String(), params.ClusterID.String()))
+		fmt.Sprintf("cluster-%s-discovery.iso", params.ClusterID.String()))
 }
 
-// GenerateClusterISO and return image ID that can be used to download the ISO
 func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params installer.GenerateClusterISOParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	log.Infof("prepare image for cluster %s", params.ClusterID)
 	var cluster models.Cluster
-	if err := b.db.First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
-		log.WithError(err).Errorf("failed to get cluster %s", params.ClusterID)
+
+	tx := b.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("generate cluster ISO failed")
+			tx.Rollback()
+		}
+	}()
+
+	if tx.Error != nil {
+		log.WithError(tx.Error).Error("failed to start transaction")
+	}
+
+	if err := tx.First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
+		log.WithError(err).Errorf("failed to get cluster: %s", params.ClusterID)
+		tx.Rollback()
 		return installer.NewGenerateClusterISONotFound().
 			WithPayload(generateError(http.StatusNotFound, err))
 	}
-	// generating a new uuid for each call to prevent races between concurrent requests
-	imgId := strfmt.UUID(uuid.New().String())
-	imgName := getImageName(params.ClusterID, imgId)
-	// max job name is 63 chars
-	jobName := fmt.Sprintf("create-image-%s-%s", cluster.ID, imgId)[:63]
+
+	fmt.Println("Hello 1")
+	if cluster.ImageInfo == nil {
+		cluster.ImageInfo = &models.ClusterImageInfo{}
+	}
+
+	fmt.Println("Hello 2")
+
+	/* We need to ensure that the metadata in the DB matches the image that will be uploaded to S3,
+	so we check that at least 10 seconds have past since the previous request to reduce the chance
+	of a race between two consecutive requests.
+	*/
+	now := time.Now()
+	//previousCreatedAt := time.Time{}
+	fmt.Printf("image info: %#v\n", cluster.ImageInfo)
+	fmt.Printf("created at: %#v\n", cluster.ImageInfo.CreatedAt)
+	previousCreatedAt := time.Time(cluster.ImageInfo.CreatedAt)
+	fmt.Println("Hello 3")
+	if previousCreatedAt.Add(10 * time.Second).After(now) {
+		log.Error("request came too soon after previous request")
+		tx.Rollback()
+		return installer.NewGenerateClusterISOConflict()
+	}
+	fmt.Println("Hello 4")
+
+	cluster.ImageInfo.ProxyURL = params.ImageCreateParams.ProxyURL
+	cluster.ImageInfo.SSHPublicKey = params.ImageCreateParams.SSHPublicKey
+	cluster.ImageInfo.CreatedAt = strfmt.DateTime(now)
+
+	if err := tx.Model(&cluster).Update(cluster).Error; err != nil {
+		tx.Rollback()
+		log.WithError(err).Errorf("failed to update cluster: %s", params.ClusterID)
+		return installer.NewUpdateClusterInternalServerError()
+	}
+	fmt.Println("Hello 5")
+
+	if tx.Commit().Error != nil {
+		tx.Rollback()
+		return installer.NewUpdateClusterInternalServerError()
+	}
+
+	//REMOVE THIS!
+	fmt.Println("Hello 6")
+	var newcluster models.Cluster
+	if err := b.db.First(&newcluster, "id = ?", params.ClusterID.String()).Error; err != nil {
+		log.WithError(err).Errorf("failed to get cluster: %s", params.ClusterID.String())
+		return installer.NewRegisterHostBadRequest().
+			WithPayload(generateError(http.StatusBadRequest, err))
+	}
+	fmt.Printf("new image info: %#v\n", newcluster.ImageInfo)
+
+
+	// we save one image per cluster at a time - if an image already exists it will be overwritten
+	imgName := getImageName(params.ClusterID)
+	/* We include the timestamp in the job name so that a job can kill the job that came before it if it's
+	still running.
+	This job name is exactly 63 characters which is the maximum for a job - be careful if modifying
+	*/
+	jobName := fmt.Sprintf("createimage-%s-%s", cluster.ID, now.Format("20060102150405"))
+	prevJobName := fmt.Sprintf("createimage-%s-%s", cluster.ID, previousCreatedAt.Format("20060102150405"))
+	fmt.Println("Hello 6")
 
 	ignitionConfig, formatErr := b.formatIgnitionFile(&cluster, params)
 	if formatErr != nil {
@@ -322,7 +396,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 			WithPayload(generateError(http.StatusInternalServerError, formatErr))
 	}
 
-	if err := b.job.Create(ctx, b.createImageJob(&cluster, jobName, imgName, ignitionConfig)); err != nil {
+	if err := b.job.Create(ctx, b.createImageJob(&cluster, jobName, imgName, prevJobName, ignitionConfig)); err != nil {
 		log.WithError(err).Error("failed to create image job")
 		return installer.NewGenerateClusterISOInternalServerError().
 			WithPayload(generateError(http.StatusInternalServerError, err))
@@ -334,13 +408,12 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 			WithPayload(generateError(http.StatusInternalServerError, err))
 	}
 
-	log.Info("Generated cluster <%s> image <%s> with ignition config %s", params.ClusterID, imgId, ignitionConfig)
-	return installer.NewGenerateClusterISOCreated().
-		WithPayload(&installer.GenerateClusterISOCreatedBody{ImageID: imgId})
+	log.Info("Generated cluster <%s> image with ignition config %s", params.ClusterID, ignitionConfig)
+	return installer.NewGenerateClusterISOCreated().WithPayload(&cluster)
 }
 
-func getImageName(clusterID, id strfmt.UUID) string {
-	return fmt.Sprintf("discovery-image-%s-%s", clusterID.String(), id)
+func getImageName(clusterID strfmt.UUID) string {
+	return fmt.Sprintf("discovery-image-%s", clusterID.String())
 }
 
 func (b *bareMetalInventory) InstallCluster(ctx context.Context, params installer.InstallClusterParams) middleware.Responder {

@@ -33,7 +33,7 @@ func TestValidator(t *testing.T) {
 func prepareDB() *gorm.DB {
 	db, err := gorm.Open("sqlite3", ":memory:")
 	Expect(err).ShouldNot(HaveOccurred())
-	//db = db.Debug()
+	db = db.Debug()
 	db.AutoMigrate(&models.Cluster{}, &models.Host{})
 	return db
 }
