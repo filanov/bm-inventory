@@ -1,0 +1,3 @@
+FROM scratch
+ADD build/git_revision /etc/git_revision_another
+CMD ["/bm-inventory"]

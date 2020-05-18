@@ -45,6 +45,7 @@ generate-from-swagger:
 
 .PHONY: update_revision_file
 update_revision_file:
+	mkdir -p build
 	git rev-parse HEAD > build/git_revision
 
 update: update_revision_file build
