@@ -1,3 +1,5 @@
 FROM scratch
+ARG GIT_REVISION
 ADD build/git_revision /etc/git_revision_another
+LABEL "git_revision"=${GIT_REVISION}
 CMD ["/bm-inventory"]
