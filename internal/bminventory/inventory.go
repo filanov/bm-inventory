@@ -51,7 +51,7 @@ type Config struct {
 	ImageBuilder        string `envconfig:"IMAGE_BUILDER" default:"quay.io/oscohen/installer-image-build"`
 	ImageBuilderCmd     string `envconfig:"IMAGE_BUILDER_CMD" default:"echo hello"`
 	AgentDockerImg      string `envconfig:"AGENT_DOCKER_IMAGE" default:"quay.io/oamizur/agent:latest"`
-	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/oscohen/ignition-manifests-and-kubeconfig-generate"`
+	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/yshnaidm/ignition-manifests-and-kubeconfig-generate:baremetal_vm_v2"`
 	InventoryURL        string `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
 	InventoryPort       string `envconfig:"INVENTORY_PORT" default:"30485"`
 	S3EndpointURL       string `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
@@ -801,7 +801,7 @@ func (b *bareMetalInventory) createKubeconfigJob(cluster *models.Cluster, jobNam
 								},
 								{
 									Name:  "OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE",
-									Value: "quay.io/openshift-release-dev/ocp-release:4.4.0-rc.7-x86_64", //TODO: change this to match the cluster openshift version
+									Value: "registry.svc.ci.openshift.org/ocp/release:4.5.0-0.ci-2020-05-17-191604", //TODO: change this to match the cluster openshift version
 								},
 								{
 									Name:  "aws_access_key_id",
