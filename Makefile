@@ -18,6 +18,8 @@ SERVICE := $(or ${SERVICE},quay.io/ocpmetal/bm-inventory:stable)
 OBJEXP := $(or ${OBJEXP},quay.io/ocpmetal/s3-object-expirer:stable)
 GIT_REVISION := $(shell git rev-parse HEAD)
 
+.EXPORT_ALL_VARIABLES:
+
 all: build
 
 lint:
