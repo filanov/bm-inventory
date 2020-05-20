@@ -777,7 +777,7 @@ definitions:
         description: Name of the OpenShift cluster.
       openshift_version:
         type: string
-        enum: ['4.4']
+        enum: ['4.4', '4.5']
         description: Version of the OpenShift cluster.
       base_dns_domain:
         type: string
@@ -794,6 +794,10 @@ definitions:
       service_network_cidr:
         type: string
         description: The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.
+        pattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$'
+      machine_network_cidr:
+        type: string
+        description: The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.
         pattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$'
       api_vip:
         type: string
@@ -835,6 +839,10 @@ definitions:
       service_network_cidr:
         type: string
         description: The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.
+        pattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$'
+      machine_network_cidr:
+        type: string
+        description: The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.
         pattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$'
       api_vip:
         type: string
@@ -894,7 +902,7 @@ definitions:
         description: Name of the OpenShift cluster.
       openshift_version:
         type: string
-        enum: ['4.4']
+        enum: ['4.4', '4.5']
         description: Version of the OpenShift cluster.
       base_dns_domain:
         type: string
@@ -911,6 +919,10 @@ definitions:
       service_network_cidr:
         type: string
         description: The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.
+        pattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$'
+      machine_network_cidr:
+        type: string
+        description: The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.
         pattern: '^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$'
       api_vip:
         type: string

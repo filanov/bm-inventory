@@ -76,7 +76,7 @@ deploy-service: deploy-service-requirements deploy-role
 	python3 ./tools/deploy_assisted_installer.py
 
 deploy-expirer: deploy-role
-	python3 ./tools/deploy_s3_object_expirer.py
+	OBJEXP=$(OBJEXP)  python3 ./tools/deploy_s3_object_expirer.py
 
 deploy-role:
 	python3 ./tools/deploy_role.py

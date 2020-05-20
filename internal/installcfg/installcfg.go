@@ -123,7 +123,7 @@ func GetInstallConfig(cluster *models.Cluster) ([]byte, error) {
 				MachineNetwork: []struct {
 					Cidr string `yaml:"cidr"`
 				}{
-					{Cidr: "192.168.126.0/24"},
+					{Cidr: cluster.MachineNetworkCidr},
 				},
 				ServiceNetwork: []string{cluster.ServiceNetworkCidr},
 			},

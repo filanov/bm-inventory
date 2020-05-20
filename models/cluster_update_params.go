@@ -47,6 +47,10 @@ type ClusterUpdateParams struct {
 	// Format: ipv4
 	IngressVip strfmt.IPv4 `json:"ingress_vip,omitempty"`
 
+	// The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.
+	// Pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$
+	MachineNetworkCidr string `json:"machine_network_cidr,omitempty"`
+
 	// OpenShift cluster name
 	Name string `json:"name,omitempty"`
 
@@ -86,6 +90,10 @@ func (m *ClusterUpdateParams) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateIngressVip(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMachineNetworkCidr(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -187,6 +195,19 @@ func (m *ClusterUpdateParams) validateIngressVip(formats strfmt.Registry) error 
 	}
 
 	if err := validate.FormatOf("ingress_vip", "body", "ipv4", m.IngressVip.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterUpdateParams) validateMachineNetworkCidr(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.MachineNetworkCidr) { // not required
+		return nil
+	}
+
+	if err := validate.Pattern("machine_network_cidr", "body", string(m.MachineNetworkCidr), `^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$`); err != nil {
 		return err
 	}
 

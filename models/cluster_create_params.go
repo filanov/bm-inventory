@@ -43,13 +43,17 @@ type ClusterCreateParams struct {
 	// Format: ipv4
 	IngressVip strfmt.IPv4 `json:"ingress_vip,omitempty"`
 
+	// The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.
+	// Pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$
+	MachineNetworkCidr string `json:"machine_network_cidr,omitempty"`
+
 	// Name of the OpenShift cluster.
 	// Required: true
 	Name *string `json:"name"`
 
 	// Version of the OpenShift cluster.
 	// Required: true
-	// Enum: [4.4]
+	// Enum: [4.4 4.5]
 	OpenshiftVersion *string `json:"openshift_version"`
 
 	// The pull secret that obtained from the Pull Secret page on the Red Hat OpenShift Cluster Manager site.
@@ -84,6 +88,10 @@ func (m *ClusterCreateParams) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateIngressVip(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMachineNetworkCidr(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -174,6 +182,19 @@ func (m *ClusterCreateParams) validateIngressVip(formats strfmt.Registry) error 
 	return nil
 }
 
+func (m *ClusterCreateParams) validateMachineNetworkCidr(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.MachineNetworkCidr) { // not required
+		return nil
+	}
+
+	if err := validate.Pattern("machine_network_cidr", "body", string(m.MachineNetworkCidr), `^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$`); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *ClusterCreateParams) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
@@ -187,7 +208,7 @@ var clusterCreateParamsTypeOpenshiftVersionPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["4.4"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["4.4","4.5"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -199,6 +220,9 @@ const (
 
 	// ClusterCreateParamsOpenshiftVersionNr44 captures enum value "4.4"
 	ClusterCreateParamsOpenshiftVersionNr44 string = "4.4"
+
+	// ClusterCreateParamsOpenshiftVersionNr45 captures enum value "4.5"
+	ClusterCreateParamsOpenshiftVersionNr45 string = "4.5"
 )
 
 // prop value enum

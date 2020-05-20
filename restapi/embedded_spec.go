@@ -1041,6 +1041,11 @@ func init() {
             "Cluster"
           ]
         },
+        "machine_network_cidr": {
+          "description": "The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.",
+          "type": "string",
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+        },
         "name": {
           "description": "Name of the OpenShift cluster.",
           "type": "string"
@@ -1049,7 +1054,8 @@ func init() {
           "description": "Version of the OpenShift cluster.",
           "type": "string",
           "enum": [
-            "4.4"
+            "4.4",
+            "4.5"
           ]
         },
         "pull_secret": {
@@ -1127,6 +1133,11 @@ func init() {
           "type": "string",
           "format": "ipv4"
         },
+        "machine_network_cidr": {
+          "description": "The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.",
+          "type": "string",
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+        },
         "name": {
           "description": "Name of the OpenShift cluster.",
           "type": "string"
@@ -1135,7 +1146,8 @@ func init() {
           "description": "Version of the OpenShift cluster.",
           "type": "string",
           "enum": [
-            "4.4"
+            "4.4",
+            "4.5"
           ]
         },
         "pull_secret": {
@@ -1212,6 +1224,11 @@ func init() {
           "description": "Virtual IP used for cluster ingress traffic.",
           "type": "string",
           "format": "ipv4"
+        },
+        "machine_network_cidr": {
+          "description": "The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.",
+          "type": "string",
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
         },
         "name": {
           "description": "OpenShift cluster name",
@@ -2873,6 +2890,11 @@ func init() {
             "Cluster"
           ]
         },
+        "machine_network_cidr": {
+          "description": "The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.",
+          "type": "string",
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+        },
         "name": {
           "description": "Name of the OpenShift cluster.",
           "type": "string"
@@ -2881,7 +2903,8 @@ func init() {
           "description": "Version of the OpenShift cluster.",
           "type": "string",
           "enum": [
-            "4.4"
+            "4.4",
+            "4.5"
           ]
         },
         "pull_secret": {
@@ -2959,6 +2982,11 @@ func init() {
           "type": "string",
           "format": "ipv4"
         },
+        "machine_network_cidr": {
+          "description": "The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.",
+          "type": "string",
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+        },
         "name": {
           "description": "Name of the OpenShift cluster.",
           "type": "string"
@@ -2967,7 +2995,8 @@ func init() {
           "description": "Version of the OpenShift cluster.",
           "type": "string",
           "enum": [
-            "4.4"
+            "4.4",
+            "4.5"
           ]
         },
         "pull_secret": {
@@ -3031,6 +3060,11 @@ func init() {
           "description": "Virtual IP used for cluster ingress traffic.",
           "type": "string",
           "format": "ipv4"
+        },
+        "machine_network_cidr": {
+          "description": "The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.",
+          "type": "string",
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
         },
         "name": {
           "description": "OpenShift cluster name",

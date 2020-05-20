@@ -73,11 +73,15 @@ type Cluster struct {
 	// Enum: [Cluster]
 	Kind *string `json:"kind"`
 
+	// The IP address pool used by the nodes(hosts) IPs. You can enter only one IP address pool.
+	// Pattern: ^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$
+	MachineNetworkCidr string `json:"machine_network_cidr,omitempty"`
+
 	// Name of the OpenShift cluster.
 	Name string `json:"name,omitempty"`
 
 	// Version of the OpenShift cluster.
-	// Enum: [4.4]
+	// Enum: [4.4 4.5]
 	OpenshiftVersion string `json:"openshift_version,omitempty"`
 
 	// The pull secret that obtained from the Pull Secret page on the Red Hat OpenShift Cluster Manager site.
@@ -153,6 +157,10 @@ func (m *Cluster) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKind(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMachineNetworkCidr(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -377,11 +385,24 @@ func (m *Cluster) validateKind(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *Cluster) validateMachineNetworkCidr(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.MachineNetworkCidr) { // not required
+		return nil
+	}
+
+	if err := validate.Pattern("machine_network_cidr", "body", string(m.MachineNetworkCidr), `^([0-9]{1,3}\.){3}[0-9]{1,3}\/[0-9]|[1-2][0-9]|3[0-2]?$`); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 var clusterTypeOpenshiftVersionPropEnum []interface{}
 
 func init() {
 	var res []string
-	if err := json.Unmarshal([]byte(`["4.4"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["4.4","4.5"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
@@ -393,6 +414,9 @@ const (
 
 	// ClusterOpenshiftVersionNr44 captures enum value "4.4"
 	ClusterOpenshiftVersionNr44 string = "4.4"
+
+	// ClusterOpenshiftVersionNr45 captures enum value "4.5"
+	ClusterOpenshiftVersionNr45 string = "4.5"
 )
 
 // prop value enum

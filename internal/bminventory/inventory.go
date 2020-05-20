@@ -225,6 +225,7 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 		APIVip:                   params.NewClusterParams.APIVip,
 		BaseDNSDomain:            params.NewClusterParams.BaseDNSDomain,
 		ClusterNetworkCidr:       params.NewClusterParams.ClusterNetworkCidr,
+		MachineNetworkCidr:       params.NewClusterParams.MachineNetworkCidr,
 		ClusterNetworkHostPrefix: params.NewClusterParams.ClusterNetworkHostPrefix,
 		DNSVip:                   params.NewClusterParams.DNSVip,
 		IngressVip:               params.NewClusterParams.IngressVip,
@@ -476,6 +477,7 @@ func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params installer
 	cluster.APIVip = params.ClusterUpdateParams.APIVip
 	cluster.BaseDNSDomain = params.ClusterUpdateParams.BaseDNSDomain
 	cluster.ClusterNetworkCidr = params.ClusterUpdateParams.ClusterNetworkCidr
+	cluster.MachineNetworkCidr = params.ClusterUpdateParams.MachineNetworkCidr
 	cluster.ClusterNetworkHostPrefix = params.ClusterUpdateParams.ClusterNetworkHostPrefix
 	cluster.DNSVip = params.ClusterUpdateParams.DNSVip
 	cluster.IngressVip = params.ClusterUpdateParams.IngressVip
