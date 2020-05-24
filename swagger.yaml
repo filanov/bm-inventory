@@ -983,6 +983,7 @@ definitions:
       created_at:
         type: string
         format: date-time
+        x-go-custom-tag: gorm:"type:datetime"
 
   cluster-list:
     type: array
