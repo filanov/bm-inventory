@@ -1009,21 +1009,8 @@ func init() {
           "x-go-custom-tag": "gorm:\"primary_key\""
         },
         "image_info": {
-          "type": "object",
-          "properties": {
-            "created_at": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "proxy_url": {
-              "description": "The URL of the HTTP/S proxy that agents should use to access the discovery service\nhttp://\\\u003cuser\\\u003e:\\\u003cpassword\\\u003e@\\\u003cserver\\\u003e:\\\u003cport\\\u003e/\n",
-              "type": "string"
-            },
-            "ssh_public_key": {
-              "description": "SSH public key for debugging the installation",
-              "type": "string"
-            }
-          }
+          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:image_\"",
+          "$ref": "#/definitions/image_info"
         },
         "ingress_vip": {
           "description": "Virtual IP used for cluster ingress traffic.",
@@ -1549,6 +1536,23 @@ func init() {
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging the installation.",
+          "type": "string"
+        }
+      }
+    },
+    "image_info": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "proxy_url": {
+          "description": "The URL of the HTTP/S proxy that agents should use to access the discovery service\nhttp://\\\u003cuser\\\u003e:\\\u003cpassword\\\u003e@\\\u003cserver\\\u003e:\\\u003cport\\\u003e/\n",
+          "type": "string"
+        },
+        "ssh_public_key": {
+          "description": "SSH public key for debugging the installation",
           "type": "string"
         }
       }
@@ -2717,23 +2721,6 @@ func init() {
     }
   },
   "definitions": {
-    "ClusterImageInfo": {
-      "type": "object",
-      "properties": {
-        "created_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "proxy_url": {
-          "description": "The URL of the HTTP/S proxy that agents should use to access the discovery service\nhttp://\\\u003cuser\\\u003e:\\\u003cpassword\\\u003e@\\\u003cserver\\\u003e:\\\u003cport\\\u003e/\n",
-          "type": "string"
-        },
-        "ssh_public_key": {
-          "description": "SSH public key for debugging the installation",
-          "type": "string"
-        }
-      }
-    },
     "ClusterUpdateParamsHostsRolesItems0": {
       "type": "object",
       "properties": {
@@ -2866,21 +2853,8 @@ func init() {
           "x-go-custom-tag": "gorm:\"primary_key\""
         },
         "image_info": {
-          "type": "object",
-          "properties": {
-            "created_at": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "proxy_url": {
-              "description": "The URL of the HTTP/S proxy that agents should use to access the discovery service\nhttp://\\\u003cuser\\\u003e:\\\u003cpassword\\\u003e@\\\u003cserver\\\u003e:\\\u003cport\\\u003e/\n",
-              "type": "string"
-            },
-            "ssh_public_key": {
-              "description": "SSH public key for debugging the installation",
-              "type": "string"
-            }
-          }
+          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:image_\"",
+          "$ref": "#/definitions/image_info"
         },
         "ingress_vip": {
           "description": "Virtual IP used for cluster ingress traffic.",
@@ -3393,6 +3367,23 @@ func init() {
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging the installation.",
+          "type": "string"
+        }
+      }
+    },
+    "image_info": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "proxy_url": {
+          "description": "The URL of the HTTP/S proxy that agents should use to access the discovery service\nhttp://\\\u003cuser\\\u003e:\\\u003cpassword\\\u003e@\\\u003cserver\\\u003e:\\\u003cport\\\u003e/\n",
+          "type": "string"
+        },
+        "ssh_public_key": {
+          "description": "SSH public key for debugging the installation",
           "type": "string"
         }
       }

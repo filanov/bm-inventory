@@ -328,6 +328,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 			WithPayload(generateError(http.StatusNotFound, err))
 	}
 
+	fmt.Printf("image info: %#v\n", cluster.ImageInfo)
 	fmt.Println("Hello 1")
 	if cluster.ImageInfo == nil {
 		cluster.ImageInfo = &models.ClusterImageInfo{}

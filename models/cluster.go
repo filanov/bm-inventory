@@ -58,7 +58,7 @@ type Cluster struct {
 
 	// image info
 	// Required: true
-	ImageInfo *ClusterImageInfo `json:"image_info"`
+	ImageInfo *ImageInfo `json:"image_info" gorm:"embedded;embedded_prefix:image_"`
 
 	// Virtual IP used for cluster ingress traffic.
 	// Format: ipv4
@@ -541,69 +541,6 @@ func (m *Cluster) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *Cluster) UnmarshalBinary(b []byte) error {
 	var res Cluster
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// ClusterImageInfo cluster image info
-//
-// swagger:model ClusterImageInfo
-type ClusterImageInfo struct {
-
-	// created at
-	// Format: date-time
-	CreatedAt strfmt.DateTime `json:"created_at,omitempty"`
-
-	// The URL of the HTTP/S proxy that agents should use to access the discovery service
-	// http://\<user\>:\<password\>@\<server\>:\<port\>/
-	//
-	ProxyURL string `json:"proxy_url,omitempty"`
-
-	// SSH public key for debugging the installation
-	SSHPublicKey string `json:"ssh_public_key,omitempty"`
-}
-
-// Validate validates this cluster image info
-func (m *ClusterImageInfo) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := m.validateCreatedAt(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (m *ClusterImageInfo) validateCreatedAt(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.CreatedAt) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("image_info"+"."+"created_at", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *ClusterImageInfo) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *ClusterImageInfo) UnmarshalBinary(b []byte) error {
-	var res ClusterImageInfo
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
