@@ -891,19 +891,8 @@ definitions:
         enum: ['4.4']
         description: Version of the OpenShift cluster.
       image_info:
-        type: object
-        properties:
-          proxy_url:
-            type: string
-            description: |
-              The URL of the HTTP/S proxy that agents should use to access the discovery service
-              http://\<user\>:\<password\>@\<server\>:\<port\>/
-          ssh_public_key:
-            type: string
-            description: SSH public key for debugging the installation
-          created_at:
-            type: string
-            format: date-time
+        $ref: '#/definitions/image_info'
+        x-go-custom-tag: gorm:"embedded;embedded_prefix:image_"
       base_dns_domain:
         type: string
         description: Base domain of the cluster. All DNS records must be sub-domains of this base and include the cluster name.
@@ -979,6 +968,21 @@ definitions:
         format: date-time
         x-go-custom-tag: gorm:"type:datetime;default:0"
         description: The time that this cluster completed installation.
+
+  image_info:
+    type: object
+    properties:
+      proxy_url:
+        type: string
+        description: |
+          The URL of the HTTP/S proxy that agents should use to access the discovery service
+          http://\<user\>:\<password\>@\<server\>:\<port\>/
+      ssh_public_key:
+        type: string
+        description: SSH public key for debugging the installation
+      created_at:
+        type: string
+        format: date-time
 
   cluster-list:
     type: array

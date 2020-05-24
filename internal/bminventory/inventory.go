@@ -378,7 +378,6 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 	}
 	fmt.Printf("new image info: %#v\n", newcluster.ImageInfo)
 
-
 	// we save one image per cluster at a time - if an image already exists it will be overwritten
 	imgName := getImageName(params.ClusterID)
 	/* We include the timestamp in the job name so that a job can kill the job that came before it if it's
