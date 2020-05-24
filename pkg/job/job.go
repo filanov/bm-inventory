@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	batch "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -19,6 +20,8 @@ type API interface {
 	Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error
 	// Monitor k8s job return error in case job fails
 	Monitor(ctx context.Context, name, namespace string) error
+	// Delete k8s job
+	Delete(ctx context.Context, name, namespace string) error
 }
 
 type Config struct {
@@ -45,16 +48,17 @@ func (k *kubeJob) Create(ctx context.Context, obj runtime.Object, opts ...client
 	return k.kube.Create(ctx, obj, opts...)
 }
 
-// Monitor k8s job
-func (k *kubeJob) Monitor(ctx context.Context, name, namespace string) error {
+func getJob(k *kubeJob, ctx context.Context, job *batch.Job, name, namespace string) error {
 	log := logutil.FromContext(ctx, k.log)
-	var job batch.Job
+	// TODO: Don't retry if not found
 	retry := func(f func() error) error {
 		var err error
 		for i := k.RetryAttempts; i > 0; i-- {
 			if err = f(); err == nil {
 				return nil
 			}
+			// TODO REMOVE PRINT
+			log.WithError(err).Errorf("Failed to get job <%s>", name)
 			time.Sleep(k.RetryInterval)
 		}
 		return err
@@ -64,19 +68,25 @@ func (k *kubeJob) Monitor(ctx context.Context, name, namespace string) error {
 		return k.kube.Get(ctx, client.ObjectKey{
 			Namespace: namespace,
 			Name:      name,
-		}, &job)
+		}, job)
 	}); err != nil {
 		return errors.Wrapf(err, "failed to get job <%s>", name)
+	}
+	return nil
+}
+
+// Monitor k8s job
+func (k *kubeJob) Monitor(ctx context.Context, name, namespace string) error {
+	log := logutil.FromContext(ctx, k.log)
+	var job batch.Job
+
+	if err := getJob(k, ctx, &job, name, namespace); err != nil {
+		return err
 	}
 
 	for job.Status.Succeeded == 0 && job.Status.Failed < swag.Int32Value(job.Spec.BackoffLimit)+1 {
 		time.Sleep(k.MonitorLoopInterval)
-		if err := retry(func() error {
-			return k.kube.Get(ctx, client.ObjectKey{
-				Namespace: namespace,
-				Name:      name,
-			}, &job)
-		}); err != nil {
+		if err := getJob(k, ctx, &job, name, namespace); err != nil {
 			return errors.Wrapf(err, "failed to get job <%s>", name)
 		}
 	}
@@ -92,5 +102,28 @@ func (k *kubeJob) Monitor(ctx context.Context, name, namespace string) error {
 	}
 
 	log.Infof("Job <%s> completed successfully", name)
+	return nil
+}
+
+// Delete k8s job
+func (k *kubeJob) Delete(ctx context.Context, name, namespace string) error {
+	log := logutil.FromContext(ctx, k.log)
+	var job batch.Job
+
+	//TODO: Don't return error if not found, return nil
+	if err := getJob(k, ctx, &job, name, namespace); err != nil {
+		return err
+	}
+
+	// not deleting a job if it failed
+	if job.Status.Failed >= swag.Int32Value(job.Spec.BackoffLimit)+1 {
+		return nil
+	}
+
+	dp := metav1.DeletePropagationForeground
+	gp := int64(0)
+	if err := k.kube.Delete(ctx, &job, client.PropagationPolicy(dp), client.GracePeriodSeconds(gp)); err != nil {
+		log.WithError(err).Errorf("Failed to delete job <%s>", name)
+	}
 	return nil
 }
