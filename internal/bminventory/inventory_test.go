@@ -33,7 +33,7 @@ func TestValidator(t *testing.T) {
 func prepareDB() *gorm.DB {
 	db, err := gorm.Open("sqlite3", ":memory:")
 	Expect(err).ShouldNot(HaveOccurred())
-	db = db.Debug()
+	//db = db.Debug()
 	db.AutoMigrate(&models.Cluster{}, &models.Host{})
 	return db
 }
@@ -78,6 +78,7 @@ var _ = Describe("GenerateClusterISO", func() {
 
 	It("success", func() {
 		clusterId := registerCluster().ID
+		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Monitor(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(nil).Times(1)
 		generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
@@ -89,6 +90,7 @@ var _ = Describe("GenerateClusterISO", func() {
 
 	It("success with proxy", func() {
 		clusterId := registerCluster().ID
+		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Monitor(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(nil).Times(1)
 		generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
@@ -107,6 +109,7 @@ var _ = Describe("GenerateClusterISO", func() {
 
 	It("failed_to_create_job", func() {
 		clusterId := registerCluster().ID
+		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).Times(1)
 		generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
 			ClusterID:         *clusterId,
@@ -117,6 +120,7 @@ var _ = Describe("GenerateClusterISO", func() {
 
 	It("job_failed", func() {
 		clusterId := registerCluster().ID
+		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Monitor(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(fmt.Errorf("error")).Times(1)
 		generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
@@ -302,7 +306,7 @@ var _ = Describe("cluster", func() {
 	setDefaultJobCreate := func(mockJobApi *job.MockAPI) {
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	}
-	setDefaultJobMaonitor := func(mockJobApi *job.MockAPI) {
+	setDefaultJobMonitor := func(mockJobApi *job.MockAPI) {
 		mockJob.EXPECT().Monitor(gomock.Any(), gomock.Any(), defaultJobNamespace).Return(nil).Times(1)
 	}
 	setDefaultHostInstall := func(mockClusterApi *cluster.MockAPI) {
@@ -345,7 +349,7 @@ var _ = Describe("cluster", func() {
 			setDefaultGetMasterNodesIds(mockClusterApi)
 
 			setDefaultJobCreate(mockJob)
-			setDefaultJobMaonitor(mockJob)
+			setDefaultJobMonitor(mockJob)
 
 			setDefaultHostInstall(mockClusterApi)
 			setDefaultHostGetHostValidDisks(mockClusterApi)

@@ -122,7 +122,7 @@ func NewBareMetalInventory(db *gorm.DB, log logrus.FieldLogger, hostApi host.API
 }
 
 // create discovery image generation job, return job name and error
-func (b *bareMetalInventory) createImageJob(cluster *models.Cluster, jobName, imgName, prevJobName, ignitionConfig string) *batch.Job {
+func (b *bareMetalInventory) createImageJob(cluster *models.Cluster, jobName, imgName, ignitionConfig string) *batch.Job {
 	return &batch.Job{
 		TypeMeta: meta.TypeMeta{
 			Kind:       "Job",
@@ -158,10 +158,6 @@ func (b *bareMetalInventory) createImageJob(cluster *models.Cluster, jobName, im
 								{
 									Name:  "IMAGE_NAME",
 									Value: imgName,
-								},
-								{
-									Name:  "PREV_JOB_NAME",
-									Value: prevJobName,
 								},
 								{
 									Name:  "S3_BUCKET",
@@ -328,30 +324,17 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 			WithPayload(generateError(http.StatusNotFound, err))
 	}
 
-	fmt.Printf("image info: %#v\n", cluster.ImageInfo)
-	fmt.Println("Hello 1")
-	if cluster.ImageInfo == nil {
-		cluster.ImageInfo = &models.ClusterImageInfo{}
-	}
-
-	fmt.Println("Hello 2")
-
 	/* We need to ensure that the metadata in the DB matches the image that will be uploaded to S3,
 	so we check that at least 10 seconds have past since the previous request to reduce the chance
 	of a race between two consecutive requests.
 	*/
 	now := time.Now()
-	//previousCreatedAt := time.Time{}
-	fmt.Printf("image info: %#v\n", cluster.ImageInfo)
-	fmt.Printf("created at: %#v\n", cluster.ImageInfo.CreatedAt)
 	previousCreatedAt := time.Time(cluster.ImageInfo.CreatedAt)
-	fmt.Println("Hello 3")
 	if previousCreatedAt.Add(10 * time.Second).After(now) {
 		log.Error("request came too soon after previous request")
 		tx.Rollback()
 		return installer.NewGenerateClusterISOConflict()
 	}
-	fmt.Println("Hello 4")
 
 	cluster.ImageInfo.ProxyURL = params.ImageCreateParams.ProxyURL
 	cluster.ImageInfo.SSHPublicKey = params.ImageCreateParams.SSHPublicKey
@@ -362,32 +345,28 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 		log.WithError(err).Errorf("failed to update cluster: %s", params.ClusterID)
 		return installer.NewUpdateClusterInternalServerError()
 	}
-	fmt.Println("Hello 5")
 
 	if tx.Commit().Error != nil {
 		tx.Rollback()
 		return installer.NewUpdateClusterInternalServerError()
 	}
 
-	//REMOVE THIS!
-	fmt.Println("Hello 6")
-	var newcluster models.Cluster
-	if err := b.db.First(&newcluster, "id = ?", params.ClusterID.String()).Error; err != nil {
-		log.WithError(err).Errorf("failed to get cluster: %s", params.ClusterID.String())
-		return installer.NewRegisterHostBadRequest().
-			WithPayload(generateError(http.StatusBadRequest, err))
-	}
-	fmt.Printf("new image info: %#v\n", newcluster.ImageInfo)
-
 	// we save one image per cluster at a time - if an image already exists it will be overwritten
 	imgName := getImageName(params.ClusterID)
+
 	/* We include the timestamp in the job name so that a job can kill the job that came before it if it's
 	still running.
 	This job name is exactly 63 characters which is the maximum for a job - be careful if modifying
 	*/
 	jobName := fmt.Sprintf("createimage-%s-%s", cluster.ID, now.Format("20060102150405"))
+
+	// Kill the previous job in case it's still running
 	prevJobName := fmt.Sprintf("createimage-%s-%s", cluster.ID, previousCreatedAt.Format("20060102150405"))
-	fmt.Println("Hello 6")
+	if err := b.job.Delete(ctx, prevJobName, defaultJobNamespace); err != nil {
+		log.WithError(err).Errorf("failed to kill previous job in cluster %s", cluster.ID)
+		return installer.NewGenerateClusterISOInternalServerError().
+			WithPayload(generateError(http.StatusInternalServerError, err))
+	}
 
 	ignitionConfig, formatErr := b.formatIgnitionFile(&cluster, params)
 	if formatErr != nil {
@@ -396,7 +375,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 			WithPayload(generateError(http.StatusInternalServerError, formatErr))
 	}
 
-	if err := b.job.Create(ctx, b.createImageJob(&cluster, jobName, imgName, prevJobName, ignitionConfig)); err != nil {
+	if err := b.job.Create(ctx, b.createImageJob(&cluster, jobName, imgName, ignitionConfig)); err != nil {
 		log.WithError(err).Error("failed to create image job")
 		return installer.NewGenerateClusterISOInternalServerError().
 			WithPayload(generateError(http.StatusInternalServerError, err))
