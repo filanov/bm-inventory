@@ -30,6 +30,7 @@ type InstallerAPI interface {
 	DisableHost(ctx context.Context, params installer.DisableHostParams) middleware.Responder
 	DownloadClusterFiles(ctx context.Context, params installer.DownloadClusterFilesParams) middleware.Responder
 	DownloadClusterISO(ctx context.Context, params installer.DownloadClusterISOParams) middleware.Responder
+	DownloadClusterKubeconfig(ctx context.Context, params installer.DownloadClusterKubeconfigParams) middleware.Responder
 	EnableHost(ctx context.Context, params installer.EnableHostParams) middleware.Responder
 	GenerateClusterISO(ctx context.Context, params installer.GenerateClusterISOParams) middleware.Responder
 	GetCluster(ctx context.Context, params installer.GetClusterParams) middleware.Responder
@@ -44,6 +45,7 @@ type InstallerAPI interface {
 	SetDebugStep(ctx context.Context, params installer.SetDebugStepParams) middleware.Responder
 	UpdateCluster(ctx context.Context, params installer.UpdateClusterParams) middleware.Responder
 	UpdateHostInstallProgress(ctx context.Context, params installer.UpdateHostInstallProgressParams) middleware.Responder
+	UploadClusterIngressCert(ctx context.Context, params installer.UploadClusterIngressCertParams) middleware.Responder
 }
 
 // Config is configuration for Handler
@@ -101,6 +103,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 		ctx := params.HTTPRequest.Context()
 		return c.InstallerAPI.DownloadClusterISO(ctx, params)
 	})
+	api.InstallerDownloadClusterKubeconfigHandler = installer.DownloadClusterKubeconfigHandlerFunc(func(params installer.DownloadClusterKubeconfigParams) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		return c.InstallerAPI.DownloadClusterKubeconfig(ctx, params)
+	})
 	api.InstallerEnableHostHandler = installer.EnableHostHandlerFunc(func(params installer.EnableHostParams) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		return c.InstallerAPI.EnableHost(ctx, params)
@@ -156,6 +162,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 	api.InstallerUpdateHostInstallProgressHandler = installer.UpdateHostInstallProgressHandlerFunc(func(params installer.UpdateHostInstallProgressParams) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		return c.InstallerAPI.UpdateHostInstallProgress(ctx, params)
+	})
+	api.InstallerUploadClusterIngressCertHandler = installer.UploadClusterIngressCertHandlerFunc(func(params installer.UploadClusterIngressCertParams) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		return c.InstallerAPI.UploadClusterIngressCert(ctx, params)
 	})
 	api.ServerShutdown = func() {}
 	return api.Serve(c.InnerMiddleware), api, nil
