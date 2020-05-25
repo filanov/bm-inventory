@@ -70,6 +70,7 @@ type API interface {
 	UpdateInstallProgress(ctx context.Context, h *models.Host, progress string) error
 	SetBootstrap(ctx context.Context, h *models.Host, isbootstrap bool) error
 	UpdateConnectivityReport(ctx context.Context, h *models.Host, connectivityReport string) error
+	HostMonitoring()
 }
 
 type Manager struct {
@@ -256,5 +257,31 @@ func (m *Manager) UpdateConnectivityReport(ctx context.Context, h *models.Host, 
 		}
 	}
 	return nil
+}
 
+func (m *Manager) HostMonitoring() {
+	var hosts []*models.Host
+
+	monitorStates := []string{HostStatusDiscovering, HostStatusKnown, HostStatusDisconnected, HostStatusInsufficient}
+	if err := m.db.Where("status IN (?)", monitorStates).Find(&hosts).Error; err != nil {
+		m.log.WithError(err).Errorf("failed to get hosts")
+		return
+	}
+	for _, host := range hosts {
+		m.log.Infof("examining host: %s", host.ID)
+		state, err := m.getCurrentState(swag.StringValue(host.Status))
+		if err != nil {
+			m.log.WithError(err).Errorf("failed to get host %s current state", host.ID)
+			continue
+
+		}
+		stateReply, err := state.RefreshStatus(context.Background(), host)
+		if err != nil {
+			m.log.WithError(err).Errorf("failed to refresh host %s state", host.ID)
+			continue
+		}
+		if stateReply.IsChanged {
+			m.log.Infof("host %s updated to state %s via monitor", host.ID, stateReply.State)
+		}
+	}
 }

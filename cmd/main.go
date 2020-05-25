@@ -42,6 +42,7 @@ var Options struct {
 	JobConfig                   job.Config
 	InstructionConfig           host.InstructionConfig
 	ClusterStateMonitorInterval time.Duration `envconfig:"CLUSTER_MONITOR_INTERVAL" default:"10s"`
+	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"30s"`
 }
 
 func main() {
@@ -86,9 +87,14 @@ func main() {
 	clusterApi := cluster.NewManager(log.WithField("pkg", "cluster-state"), db, eventsHandler)
 
 	clusterStateMonitor := thread.New(
-		log.WithField("pkg", "cluster-monitor"), "State Monitor", Options.ClusterStateMonitorInterval, clusterApi.ClusterMonitoring)
+		log.WithField("pkg", "cluster-monitor"), "Cluster State Monitor", Options.ClusterStateMonitorInterval, clusterApi.ClusterMonitoring)
 	clusterStateMonitor.Start()
 	defer clusterStateMonitor.Stop()
+
+	hostStateMonitor := thread.New(
+		log.WithField("pkg", "host-monitor"), "Host State Monitor", Options.HostStateMonitorInterval, hostApi.HostMonitoring)
+	hostStateMonitor.Start()
+	defer hostStateMonitor.Stop()
 
 	jobApi := job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
 	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobApi, eventsHandler)

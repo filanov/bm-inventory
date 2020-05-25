@@ -33,7 +33,7 @@ func updateState(log logrus.FieldLogger, state, stateInfo string, h *models.Host
 }
 
 func updateByKeepAlive(log logrus.FieldLogger, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
-	if time.Since(time.Time(h.UpdatedAt)) > 3*time.Minute {
+	if time.Since(time.Time(h.CheckedInAt)) > 3*time.Minute {
 		return updateState(log, HostStatusDisconnected, statusInfoDisconnected, h, db)
 	}
 	return &UpdateReply{
