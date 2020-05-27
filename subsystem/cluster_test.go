@@ -335,13 +335,8 @@ var _ = Describe("system-test cluster install", func() {
 					"RsQa1w9ZGebtEWLuGsrJtR7gaFECqJnDbb0aPUMixmpMHID8kt154TrLhVFmMEqGGC1GvZVlQ9Of3GP9y7X4vDpHshdlWotOnYKHaeu2d5cRVFHhEbrslkISgh/TRuyl7VIpnjOYUwMBpCiVH6M" +
 					"2lyDI6UR3Fbz4pVVAxGXnVhBExjBE=\n-----END CERTIFICATE-----"
 				installCluster(clusterID)
-				res, err := bmclient.Installer.UploadClusterIngressCert(ctx, &installer.UploadClusterIngressCertParams{ClusterID: clusterID, IngressCertParams: models.IngressCertParams(ingressCa)})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(reflect.TypeOf(res)).Should(Equal(reflect.TypeOf(installer.NewUploadClusterIngressCertCreated())))
-			}
-			By("Test download kubeconfig happy flow")
-			{
-				// Download kubeconfig happy flow
+
+				// Download kubeconfig before uploading
 				kubeconfigNoIngress, err := ioutil.TempFile("", "tmp")
 				Expect(err).NotTo(HaveOccurred())
 				_, err = bmclient.Installer.DownloadClusterFiles(ctx, &installer.DownloadClusterFilesParams{ClusterID: clusterID, FileName: "kubeconfig"}, kubeconfigNoIngress)
@@ -350,6 +345,11 @@ var _ = Describe("system-test cluster install", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(sni.Size()).ShouldNot(Equal(0))
 
+				res, err := bmclient.Installer.UploadClusterIngressCert(ctx, &installer.UploadClusterIngressCertParams{ClusterID: clusterID, IngressCertParams: models.IngressCertParams(ingressCa)})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(reflect.TypeOf(res)).Should(Equal(reflect.TypeOf(installer.NewUploadClusterIngressCertCreated())))
+
+				// Download kubeconfig after uploading
 				file, err := ioutil.TempFile("", "tmp")
 				Expect(err).NotTo(HaveOccurred())
 				_, err = bmclient.Installer.DownloadClusterKubeconfig(ctx, &installer.DownloadClusterKubeconfigParams{ClusterID: clusterID}, file)
@@ -359,6 +359,7 @@ var _ = Describe("system-test cluster install", func() {
 				Expect(s.Size()).ShouldNot(Equal(0))
 
 				Expect(s.Size()).ShouldNot(Equal(sni.Size()))
+
 			}
 		})
 	})
