@@ -1425,6 +1425,9 @@ func init() {
     "credentials": {
       "type": "object",
       "properties": {
+        "console_url": {
+          "type": "string"
+        },
         "password": {
           "type": "string"
         },
@@ -3390,6 +3393,9 @@ func init() {
     "credentials": {
       "type": "object",
       "properties": {
+        "console_url": {
+          "type": "string"
+        },
         "password": {
           "type": "string"
         },
