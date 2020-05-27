@@ -22,6 +22,10 @@ type Host struct {
 	// bootstrap
 	Bootstrap bool `json:"bootstrap,omitempty"`
 
+	// checked in at
+	// Format: date-time
+	CheckedInAt strfmt.DateTime `json:"checked_in_at,omitempty" gorm:"type:datetime"`
+
 	// The cluster that this host is associated with.
 	// Format: uuid
 	ClusterID strfmt.UUID `json:"cluster_id,omitempty" gorm:"primary_key;foreignkey:Cluster"`
@@ -75,6 +79,10 @@ type Host struct {
 func (m *Host) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCheckedInAt(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateClusterID(formats); err != nil {
 		res = append(res, err)
 	}
@@ -114,6 +122,19 @@ func (m *Host) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *Host) validateCheckedInAt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.CheckedInAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("checked_in_at", "body", "date-time", m.CheckedInAt.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 

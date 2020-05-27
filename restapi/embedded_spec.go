@@ -1565,6 +1565,11 @@ func init() {
         "bootstrap": {
           "type": "boolean"
         },
+        "checked_in_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:datetime\""
+        },
         "cluster_id": {
           "description": "The cluster that this host is associated with.",
           "type": "string",
@@ -3529,6 +3534,11 @@ func init() {
       "properties": {
         "bootstrap": {
           "type": "boolean"
+        },
+        "checked_in_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-custom-tag": "gorm:\"type:datetime\""
         },
         "cluster_id": {
           "description": "The cluster that this host is associated with.",
