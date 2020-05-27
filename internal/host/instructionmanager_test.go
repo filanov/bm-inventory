@@ -56,13 +56,13 @@ var _ = Describe("instructionmanager", func() {
 			checkStepsByState(HostStatusKnown, &host, db, instMng, mockValidator, ctx,
 				[]models.StepType{models.StepTypeConnectivityCheck})
 		})
-		It("disconnected", func() {
-			checkStepsByState(HostStatusDisconnected, &host, db, instMng, mockValidator, ctx,
-				[]models.StepType{models.StepTypeHardwareInfo, models.StepTypeInventory, models.StepTypeConnectivityCheck})
-		})
 		It("insufficient", func() {
 			checkStepsByState(HostStatusInsufficient, &host, db, instMng, mockValidator, ctx,
 				[]models.StepType{models.StepTypeConnectivityCheck})
+		})
+		It("disconnected", func() {
+			checkStepsByState(HostStatusDisconnected, &host, db, instMng, mockValidator, ctx,
+				[]models.StepType{})
 		})
 		It("error", func() {
 			checkStepsByState(HostStatusError, &host, db, instMng, mockValidator, ctx,
