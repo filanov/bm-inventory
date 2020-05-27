@@ -6,11 +6,10 @@ package host
 
 import (
 	context "context"
-	reflect "reflect"
-
 	models "github.com/filanov/bm-inventory/models"
 	gomock "github.com/golang/mock/gomock"
 	gorm "github.com/jinzhu/gorm"
+	reflect "reflect"
 )
 
 // MockStateAPI is a mock of StateAPI interface.
@@ -94,6 +93,21 @@ func (m *MockStateAPI) RefreshStatus(ctx context.Context, h *models.Host) (*Upda
 func (mr *MockStateAPIMockRecorder) RefreshStatus(ctx, h interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshStatus", reflect.TypeOf((*MockStateAPI)(nil).RefreshStatus), ctx, h)
+}
+
+// RefreshState mocks base method.
+func (m *MockStateAPI) RefreshState(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefreshState", ctx, h, db)
+	ret0, _ := ret[0].(*UpdateReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefreshState indicates an expected call of RefreshState.
+func (mr *MockStateAPIMockRecorder) RefreshState(ctx, h, db interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshState", reflect.TypeOf((*MockStateAPI)(nil).RefreshState), ctx, h, db)
 }
 
 // Install mocks base method.
@@ -274,6 +288,21 @@ func (m *MockAPI) RefreshStatus(ctx context.Context, h *models.Host) (*UpdateRep
 func (mr *MockAPIMockRecorder) RefreshStatus(ctx, h interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshStatus", reflect.TypeOf((*MockAPI)(nil).RefreshStatus), ctx, h)
+}
+
+// RefreshState mocks base method.
+func (m *MockAPI) RefreshState(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefreshState", ctx, h, db)
+	ret0, _ := ret[0].(*UpdateReply)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefreshState indicates an expected call of RefreshState.
+func (mr *MockAPIMockRecorder) RefreshState(ctx, h, db interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshState", reflect.TypeOf((*MockAPI)(nil).RefreshState), ctx, h, db)
 }
 
 // Install mocks base method.
