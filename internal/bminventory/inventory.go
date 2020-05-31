@@ -411,62 +411,54 @@ func getImageName(clusterID strfmt.UUID) string {
 	return fmt.Sprintf("discovery-image-%s", clusterID.String())
 }
 
-func logAndGenerateError(id int32, errStr string) *models.Error {
-	logrus.Error(errStr)
-	return common.GenerateError(id, errors.New(errStr))
+type inventoryError struct {
+	httpStatus int32
+	err        error
 }
 
-func (b *bareMetalInventory) InstallCluster(ctx context.Context, params installer.InstallClusterParams) middleware.Responder {
-	log := logutil.FromContext(ctx, b.log)
+func (i *inventoryError) Error() string {
+	if i.err != nil {
+		return i.err.Error()
+	} else {
+		return "Error is nil"
+	}
+}
+
+func newInvetoryError(httpStatus int32, err error) *inventoryError {
+	return &inventoryError{httpStatus: httpStatus, err: err}
+}
+
+type clusterInstaller struct {
+	ctx    context.Context
+	b      *bareMetalInventory
+	params installer.InstallClusterParams
+}
+
+func (c clusterInstaller) install(tx *gorm.DB) error {
 	var cluster models.Cluster
 	var err error
-
-	tx := b.db.Begin()
-	if tx.Error != nil {
-		log.WithError(tx.Error).Errorf("failed to start db transaction")
-		return installer.NewInstallClusterInternalServerError().
-			WithPayload(common.GenerateInternalFromError(err))
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			log.Error("update cluster failed")
-			tx.Rollback()
-		}
-	}()
-
-	if err = tx.Preload("Hosts").First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
-		return installer.NewInstallClusterNotFound().
-			WithPayload(common.GenerateError(http.StatusNotFound, err))
+	if err = tx.Preload("Hosts").First(&cluster, "id = ?", c.params.ClusterID).Error; err != nil {
+		return newInvetoryError(http.StatusNotFound, err)
 	}
 
 	cidr, err := common.CalculateMachineNetworkCIDR(&cluster)
 	if err != nil {
-		tx.Rollback()
-		return installer.NewInstallClusterBadRequest().WithPayload(common.GenerateError(http.StatusBadRequest, err))
+		return newInvetoryError(http.StatusBadRequest, err)
 	}
 	if cidr != cluster.MachineNetworkCidr {
-		tx.Rollback()
-		return installer.NewInstallClusterBadRequest().WithPayload(
-			logAndGenerateError(http.StatusBadRequest,
-				fmt.Sprintf("Cluster machine CIDR %s is different than the calculated CIDR %s", cluster.MachineNetworkCidr, cidr)))
+		return newInvetoryError(http.StatusBadRequest,
+			fmt.Errorf("Cluster machine CIDR %s is different than the calculated CIDR %s", cluster.MachineNetworkCidr, cidr))
 	}
 	if err = common.VerifyVips(&cluster); err != nil {
-		tx.Rollback()
-		return installer.NewInstallClusterBadRequest().WithPayload(common.GenerateError(http.StatusBadRequest, err))
+		return newInvetoryError(http.StatusBadRequest, err)
 	}
 	machineCidrHosts, err := common.GetMachineCIDRHosts(&cluster)
 	if err != nil {
-		tx.Rollback()
-		return installer.NewInstallClusterInternalServerError().WithPayload(
-			logAndGenerateError(http.StatusInternalServerError,
-				fmt.Sprintf("Could not get machine CIDR hosts for cluster %s", params.ClusterID)))
+		return newInvetoryError(http.StatusBadRequest, err)
 	}
-	masterNodesIds, err := b.clusterApi.GetMasterNodesIds(ctx, &cluster, tx)
+	masterNodesIds, err := c.b.clusterApi.GetMasterNodesIds(c.ctx, &cluster, tx)
 	if err != nil {
-		tx.Rollback()
-		return installer.NewInstallClusterInternalServerError().WithPayload(
-			logAndGenerateError(http.StatusInternalServerError,
-				fmt.Sprintf("Could not get master node ids cluster %s: %s", params.ClusterID, err.Error())))
+		return newInvetoryError(http.StatusInternalServerError, err)
 	}
 	hostIDInCidrHosts := func(id strfmt.UUID, hosts []*models.Host) bool {
 		for _, h := range hosts {
@@ -479,46 +471,69 @@ func (b *bareMetalInventory) InstallCluster(ctx context.Context, params installe
 
 	for _, id := range masterNodesIds {
 		if !hostIDInCidrHosts(*id, machineCidrHosts) {
-			tx.Rollback()
-			return installer.NewInstallClusterBadRequest().WithPayload(
-				logAndGenerateError(http.StatusBadRequest,
-					fmt.Sprintf("Master id %s does not have an interface with IP belonging to machine CIDR %s",
-						*id, cluster.MachineNetworkCidr)))
+			return newInvetoryError(http.StatusBadRequest,
+				fmt.Errorf("Master id %s does not have an interface with IP belonging to machine CIDR %s",
+					*id, cluster.MachineNetworkCidr))
 		}
 	}
 
-	if err = b.clusterApi.Install(ctx, &cluster, tx); err != nil {
-		log.WithError(err).Errorf("failed to install cluster %s", cluster.ID.String())
-		tx.Rollback()
-		return installer.NewInstallClusterConflict().WithPayload(common.GenerateError(http.StatusConflict, err))
+	if err = c.b.clusterApi.Install(c.ctx, &cluster, tx); err != nil {
+		return newInvetoryError(http.StatusConflict, errors.Wrapf(err, "failed to install cluster %s", cluster.ID.String()))
 	}
 
 	// set one of the master nodes as bootstrap
-	if err = b.setBootstrapHost(ctx, cluster, tx); err != nil {
-		tx.Rollback()
-		return installer.NewInstallClusterInternalServerError().
-			WithPayload(common.GenerateInternalFromError(err))
+	if err = c.b.setBootstrapHost(c.ctx, cluster, tx); err != nil {
+		return newInvetoryError(http.StatusInternalServerError, err)
 	}
 
 	// move hosts states to installing
 	for i := range cluster.Hosts {
-		if _, err = b.hostApi.Install(ctx, cluster.Hosts[i], tx); err != nil {
-			log.WithError(err).Errorf("failed to install hosts <%s> in cluster: %s",
-				cluster.Hosts[i].ID.String(), cluster.ID.String())
-			tx.Rollback()
-			return installer.NewInstallClusterConflict().WithPayload(common.GenerateError(http.StatusConflict, err))
+		if _, err = c.b.hostApi.Install(c.ctx, cluster.Hosts[i], tx); err != nil {
+			return newInvetoryError(http.StatusConflict, errors.Wrapf(err, "failed to install hosts <%s> in cluster: %s",
+				cluster.Hosts[i].ID.String(), cluster.ID.String()))
 		}
 	}
-	if err = b.generateClusterInstallConfig(ctx, cluster); err != nil {
-		tx.Rollback()
-		return installer.NewInstallClusterInternalServerError().
-			WithPayload(common.GenerateInternalFromError(err))
+	if err = c.b.generateClusterInstallConfig(c.ctx, cluster); err != nil {
+		return newInvetoryError(http.StatusInternalServerError, err)
 	}
-	if err = tx.Commit().Error; err != nil {
-		tx.Rollback()
-		log.WithError(err).Errorf("failed to commit cluster %s changes on installation", cluster.ID.String())
-		return installer.NewInstallClusterInternalServerError().
-			WithPayload(common.GenerateInternalFromError(err))
+	return nil
+}
+
+func (b *bareMetalInventory) InstallCluster(ctx context.Context, params installer.InstallClusterParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	var cluster models.Cluster
+	var err error
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("update cluster failed")
+		}
+	}()
+	err = b.db.Transaction(clusterInstaller{
+		ctx:    ctx,
+		b:      b,
+		params: params,
+	}.install)
+
+	if err != nil {
+		log.WithError(err).Warn("Cluster install")
+		switch errValue := err.(type) {
+		case *inventoryError:
+			switch errValue.httpStatus {
+			case http.StatusInternalServerError:
+				return installer.NewInstallClusterInternalServerError().WithPayload(common.GenerateError(errValue.httpStatus, err))
+			case http.StatusConflict:
+				return installer.NewInstallClusterConflict().WithPayload(common.GenerateError(errValue.httpStatus, err))
+			case http.StatusNotFound:
+				return installer.NewInstallClusterNotFound().WithPayload(common.GenerateError(errValue.httpStatus, err))
+			case http.StatusBadRequest:
+				return installer.NewInstallClusterBadRequest().WithPayload(common.GenerateError(errValue.httpStatus, err))
+			default:
+				return installer.NewInstallClusterInternalServerError().WithPayload(common.GenerateError(errValue.httpStatus, err))
+			}
+		default:
+			return installer.NewInstallClusterInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+		}
 	}
 	if err = b.db.Preload("Hosts").First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
 		return installer.NewInstallClusterInternalServerError().
