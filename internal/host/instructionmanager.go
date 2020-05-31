@@ -45,7 +45,6 @@ func NewInstructionManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hard
 		stateToSteps: stateToStepsMap{
 			HostStatusKnown:        {connectivityCmd},
 			HostStatusInsufficient: {connectivityCmd},
-			HostStatusDisconnected: {hwCmd, inventoryCmd, connectivityCmd},
 			HostStatusDiscovering:  {hwCmd, inventoryCmd, connectivityCmd},
 			HostStatusInstalling:   {installCmd},
 		},

@@ -83,8 +83,7 @@ var _ = Describe("Host tests", func() {
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "disconnected").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
-		Expect(ok).Should(Equal(true))
+		Expect(len(steps)).Should(Equal(0))
 	})
 
 	It("hardware_info_store_only_relevant_hw_reply", func() {
