@@ -1279,13 +1279,15 @@ func init() {
         "cluster_network_cidr": {
           "description": "IP address block from which Pod IPs are allocated This block must not overlap with existing physical networks. These IP addresses are used for the Pod network, and if you need to access the Pods from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
+          "x-go-custom-tag": "gorm:\"type:string;default:10.128.0.0/14\""
         },
         "cluster_network_host_prefix": {
           "description": "The subnet prefix length to assign to each individual node. For example, if clusterNetworkHostPrefix is set to 23, then each node is assigned a /23 subnet out of the given cidr (clusterNetworkCIDR), which allows for 510 (2^(32 - 23) - 2) pod IPs addresses. If you are required to provide access to nodes from an external network, configure load balancers and routers to manage the traffic.",
           "type": "integer",
           "maximum": 32,
-          "minimum": 1
+          "minimum": 1,
+          "x-go-custom-tag": "gorm:\"type:int;default:23\""
         },
         "dns_vip": {
           "description": "Virtual IP used internally by the cluster for automating internal DNS requirements.",
@@ -1315,7 +1317,8 @@ func init() {
         "service_network_cidr": {
           "description": "The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
+          "x-go-custom-tag": "gorm:\"type:string;default:172.30.0.0/16\""
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
@@ -3359,13 +3362,15 @@ func init() {
         "cluster_network_cidr": {
           "description": "IP address block from which Pod IPs are allocated This block must not overlap with existing physical networks. These IP addresses are used for the Pod network, and if you need to access the Pods from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
+          "x-go-custom-tag": "gorm:\"type:string;default:10.128.0.0/14\""
         },
         "cluster_network_host_prefix": {
           "description": "The subnet prefix length to assign to each individual node. For example, if clusterNetworkHostPrefix is set to 23, then each node is assigned a /23 subnet out of the given cidr (clusterNetworkCIDR), which allows for 510 (2^(32 - 23) - 2) pod IPs addresses. If you are required to provide access to nodes from an external network, configure load balancers and routers to manage the traffic.",
           "type": "integer",
           "maximum": 32,
-          "minimum": 1
+          "minimum": 1,
+          "x-go-custom-tag": "gorm:\"type:int;default:23\""
         },
         "dns_vip": {
           "description": "Virtual IP used internally by the cluster for automating internal DNS requirements.",
@@ -3395,7 +3400,8 @@ func init() {
         "service_network_cidr": {
           "description": "The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
+          "x-go-custom-tag": "gorm:\"type:string;default:172.30.0.0/16\""
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
