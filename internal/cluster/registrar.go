@@ -3,13 +3,17 @@ package cluster
 import (
 	context "context"
 
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/go-openapi/swag"
 
-	"github.com/filanov/bm-inventory/models"
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
+
+	"github.com/filanov/bm-inventory/models"
+	installer2 "github.com/filanov/bm-inventory/restapi/operations/installer"
 )
 
 func NewRegistrar(log logrus.FieldLogger, db *gorm.DB) *registrar {
@@ -24,7 +28,13 @@ type registrar struct {
 	db  *gorm.DB
 }
 
-func (r *registrar) RegisterCluster(ctx context.Context, cluster *models.Cluster) error {
+func (r *registrar) RegisterCluster(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
+	id := strfmt.UUID(uuid.New().String())
+
+	cluster.ID = &id
+	url := installer2.GetClusterURL{ClusterID: id}
+	cluster.Href = swag.String(url.String())
+
 	cluster.Status = swag.String(clusterStatusInsufficient)
 	cluster.StatusInfo = swag.String(statusInfoInsufficient)
 	tx := r.db.Begin()
@@ -41,15 +51,15 @@ func (r *registrar) RegisterCluster(ctx context.Context, cluster *models.Cluster
 	if err := tx.Preload("Hosts").Create(cluster).Error; err != nil {
 		r.log.Errorf("Error registering cluster %s", cluster.Name)
 		tx.Rollback()
-		return err
+		return cluster, err
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return err
+		return cluster, err
 	}
 
-	return nil
+	return cluster, nil
 }
 
 func (r *registrar) DeregisterCluster(ctx context.Context, cluster *models.Cluster) error {
