@@ -257,6 +257,7 @@ func getTestHost(hostID, clusterID strfmt.UUID, state string) models.Host {
 		ID:           &hostID,
 		ClusterID:    clusterID,
 		Status:       swag.String(state),
+		StatusInfo:   &state,
 		HardwareInfo: defaultHwInfo,
 		Inventory:    defaultInventory(),
 	}
