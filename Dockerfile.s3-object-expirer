@@ -1,7 +1,9 @@
 FROM python:3
 
 ARG GIT_REVISION
+ARG QUAY_TAG_EXPIRATION
 LABEL "git_revision"=${GIT_REVISION}
+LABEL "${QUAY_TAG_EXPIRATION}"=2h
 
 ADD tools/expirer.py /
 RUN pip install --no-cache-dir boto3 pytz

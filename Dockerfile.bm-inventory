@@ -1,5 +1,8 @@
 FROM scratch
 ARG GIT_REVISION
+ARG QUAY_TAG_EXPIRATION
 LABEL "git_revision"=${GIT_REVISION}
+LABEL "${QUAY_TAG_EXPIRATION}"=2h
+
 ADD build/bm-inventory /bm-inventory
 CMD ["/bm-inventory"]
