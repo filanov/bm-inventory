@@ -20,6 +20,7 @@ var _ = Describe("registrar", func() {
 		id              strfmt.UUID
 		updateErr       error
 		cluster         models.Cluster
+		c               *models.Cluster
 		host            models.Host
 	)
 
@@ -34,21 +35,11 @@ var _ = Describe("registrar", func() {
 		}
 
 		//register cluster
-		updateErr = registerManager.RegisterCluster(ctx, &cluster)
+		c, updateErr = registerManager.RegisterCluster(ctx, &cluster)
 		Expect(updateErr).Should(BeNil())
-		Expect(swag.StringValue(cluster.Status)).Should(Equal(clusterStatusInsufficient))
+		Expect(swag.StringValue(c.Status)).Should(Equal(clusterStatusInsufficient))
 		cluster = geCluster(*cluster.ID, db)
 		Expect(swag.StringValue(cluster.Status)).Should(Equal(clusterStatusInsufficient))
-	})
-
-	Context("register cluster", func() {
-		It("register a registered cluster", func() {
-			updateErr = registerManager.RegisterCluster(ctx, &cluster)
-			Expect(updateErr).Should(HaveOccurred())
-
-			cluster = geCluster(*cluster.ID, db)
-			Expect(swag.StringValue(cluster.Status)).Should(Equal(clusterStatusInsufficient))
-		})
 	})
 
 	Context("deregister", func() {
