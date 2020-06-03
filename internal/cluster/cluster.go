@@ -3,7 +3,12 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/filanov/bm-inventory/internal/common"
+	"github.com/filanov/bm-inventory/internal/host"
+	"github.com/pkg/errors"
 
 	"github.com/filanov/bm-inventory/internal/events"
 
@@ -153,4 +158,21 @@ func (m *Manager) ClusterMonitoring() {
 			m.log.Infof("cluster %s updated to state %s via monitor", cluster.ID, stateReply.State)
 		}
 	}
+}
+
+func RefreshClusterHosts(ctx context.Context, cluster *models.Cluster, hostApi host.API, tx *gorm.DB) *common.ApiErrorResponse {
+	for _, h := range cluster.Hosts {
+		var host models.Host
+		var err error
+		if err = tx.Take(&host, "id = ? and cluster_id = ?",
+			h.ID.String(), cluster.ID.String()).Error; err != nil {
+			return common.NewApiError(http.StatusNotFound,
+				errors.Wrapf(err, "failed to find host <%s> in cluster <%s>", h.ID.String(), cluster.ID.String()))
+		}
+		if _, err = hostApi.RefreshStatus(ctx, &host, tx); err != nil {
+			return common.NewApiError(http.StatusInternalServerError,
+				errors.Wrapf(err, "failed to refresh state of host %s cluster %s", h.ID.String(), cluster.ID.String()))
+		}
+	}
+	return nil
 }

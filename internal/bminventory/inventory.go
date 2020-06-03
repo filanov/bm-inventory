@@ -594,28 +594,9 @@ func (b *bareMetalInventory) generateClusterInstallConfig(ctx context.Context, c
 	return nil
 }
 
-func (b *bareMetalInventory) refreshClusterHosts(ctx context.Context, cluster *models.Cluster, tx *gorm.DB, log logrus.FieldLogger) middleware.Responder {
-	for _, h := range cluster.Hosts {
-		var host models.Host
-		var err error
-		if err = tx.Take(&host, "id = ? and cluster_id = ?",
-			h.ID.String(), cluster.ID.String()).Error; err != nil {
-			log.WithError(err).Errorf("failed to find host <%s> in cluster <%s>",
-				h.ID.String(), cluster.ID.String())
-			return installer.NewUpdateClusterNotFound().WithPayload(common.GenerateError(http.StatusNotFound, err))
-		}
-		if _, err = b.hostApi.RefreshStatus(ctx, &host, tx); err != nil {
-			log.WithError(err).Errorf("failed to refresh state of host %s cluster %s", *h.ID, cluster.ID.String())
-			return installer.NewInstallClusterInternalServerError().
-				WithPayload(common.GenerateError(http.StatusInternalServerError, err))
-		}
-	}
-	return nil
-}
-
 func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params installer.UpdateClusterParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
-	var cluster models.Cluster
+	var clusterObj models.Cluster
 	var err error
 	log.Info("update cluster ", params.ClusterID)
 
@@ -633,53 +614,44 @@ func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params installer
 			WithPayload(common.GenerateError(http.StatusInternalServerError, errors.New("DB error, failed to start transaction")))
 	}
 
-	if err = tx.Preload("Hosts").First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
+	if err = tx.Preload("Hosts").First(&clusterObj, "id = ?", params.ClusterID).Error; err != nil {
 		log.WithError(err).Errorf("failed to get cluster: %s", params.ClusterID)
 		tx.Rollback()
 		return installer.NewUpdateClusterNotFound().WithPayload(common.GenerateError(http.StatusNotFound, err))
 	}
-	updateIPv4 := func(target *strfmt.IPv4, source *strfmt.IPv4) {
-		if source != nil {
-			*target = *source
-		}
+	clusterObj.Name = params.ClusterUpdateParams.Name
+	if params.ClusterUpdateParams.APIVip != "" {
+		clusterObj.APIVip = params.ClusterUpdateParams.APIVip
 	}
-	updateString := func(target *string, source *string) {
-		if source != nil {
-			*target = *source
-		}
+	if params.ClusterUpdateParams.IngressVip != "" {
+		clusterObj.IngressVip = params.ClusterUpdateParams.IngressVip
 	}
+	clusterObj.BaseDNSDomain = params.ClusterUpdateParams.BaseDNSDomain
+	clusterObj.ClusterNetworkCidr = params.ClusterUpdateParams.ClusterNetworkCidr
+	clusterObj.ClusterNetworkHostPrefix = params.ClusterUpdateParams.ClusterNetworkHostPrefix
+	clusterObj.ServiceNetworkCidr = params.ClusterUpdateParams.ServiceNetworkCidr
 
-	updateString(&cluster.Name, params.ClusterUpdateParams.Name)
-	updateIPv4(&cluster.APIVip, params.ClusterUpdateParams.APIVip)
-	updateString(&cluster.BaseDNSDomain, params.ClusterUpdateParams.BaseDNSDomain)
-	if params.ClusterUpdateParams.ClusterNetworkCidr != nil {
-		cluster.ClusterNetworkCidr = *params.ClusterUpdateParams.ClusterNetworkCidr
-	}
-	if params.ClusterUpdateParams.ClusterNetworkHostPrefix != nil {
-		cluster.ClusterNetworkHostPrefix = *params.ClusterUpdateParams.ClusterNetworkHostPrefix
-	}
-	if params.ClusterUpdateParams.ServiceNetworkCidr != nil {
-		cluster.ServiceNetworkCidr = *params.ClusterUpdateParams.ServiceNetworkCidr
-	}
-	updateIPv4(&cluster.IngressVip, params.ClusterUpdateParams.IngressVip)
-	updateString(&cluster.SSHPublicKey, params.ClusterUpdateParams.SSHPublicKey)
+	clusterObj.ClusterNetworkCidr = params.ClusterUpdateParams.ClusterNetworkCidr
+	clusterObj.ClusterNetworkHostPrefix = params.ClusterUpdateParams.ClusterNetworkHostPrefix
+	clusterObj.ServiceNetworkCidr = params.ClusterUpdateParams.ServiceNetworkCidr
+	clusterObj.SSHPublicKey = params.ClusterUpdateParams.SSHPublicKey
 	var machineCidr string
-	if machineCidr, err = common.CalculateMachineNetworkCIDR(&cluster); err != nil {
+	if machineCidr, err = common.CalculateMachineNetworkCIDR(&clusterObj); err != nil {
 		tx.Rollback()
 		log.WithError(err).Errorf("failed to calculate machine network cidr for cluster: %s", params.ClusterID)
 		return installer.NewUpdateClusterBadRequest().WithPayload(common.GenerateError(http.StatusBadRequest, err))
 	}
-	machineCidrUpdated := machineCidr != cluster.MachineNetworkCidr
-	cluster.MachineNetworkCidr = machineCidr
-	err = common.VerifyVips(&cluster, false)
+	machineCidrUpdated := machineCidr != clusterObj.MachineNetworkCidr
+	clusterObj.MachineNetworkCidr = machineCidr
+	err = common.VerifyVips(&clusterObj, false)
 	if err != nil {
 		tx.Rollback()
 		log.WithError(err).Errorf("VIP verification failed for cluster: %s", params.ClusterID)
 		return installer.NewUpdateClusterBadRequest().WithPayload(common.GenerateError(http.StatusBadRequest, err))
 	}
-	setPullSecret(&cluster, swag.StringValue(params.ClusterUpdateParams.PullSecret))
+	setPullSecret(&clusterObj, params.ClusterUpdateParams.PullSecret)
 
-	if err = tx.Model(&cluster).Update(cluster).Error; err != nil {
+	if err = tx.Model(&clusterObj).Update(clusterObj).Error; err != nil {
 		tx.Rollback()
 		log.WithError(err).Errorf("failed to update cluster: %s", params.ClusterID)
 		return installer.NewUpdateClusterInternalServerError().
@@ -707,14 +679,15 @@ func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params installer
 	}
 
 	if machineCidrUpdated {
-		responder := b.refreshClusterHosts(ctx, &cluster, tx, log)
-		if responder != nil {
+		responderErr := cluster.RefreshClusterHosts(ctx, &clusterObj, b.hostApi, tx)
+		if responderErr != nil {
 			tx.Rollback()
-			return responder
+			log.WithError(responderErr).Error("Refresh cluster hosts")
+			return responderErr
 		}
 	}
 
-	if _, err = b.clusterApi.RefreshStatus(ctx, &cluster, tx); err != nil {
+	if _, err = b.clusterApi.RefreshStatus(ctx, &clusterObj, tx); err != nil {
 		tx.Rollback()
 		log.WithError(err).Errorf("failed to validate or update cluster %s state", params.ClusterID)
 		return installer.NewUpdateClusterInternalServerError().
@@ -727,14 +700,14 @@ func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params installer
 			WithPayload(common.GenerateError(http.StatusInternalServerError, errors.New("DB error, failed to commit")))
 	}
 
-	if err := b.db.Preload("Hosts").First(&cluster, "id = ?", params.ClusterID).Error; err != nil {
+	if err := b.db.Preload("Hosts").First(&clusterObj, "id = ?", params.ClusterID).Error; err != nil {
 		log.WithError(err).Errorf("failed to get cluster %s after update", params.ClusterID)
 		return installer.NewUpdateClusterInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
 
-	cluster.HostNetworks = calculateHostNetworks(&cluster)
-	return installer.NewUpdateClusterCreated().WithPayload(&cluster)
+	clusterObj.HostNetworks = calculateHostNetworks(&clusterObj)
+	return installer.NewUpdateClusterCreated().WithPayload(&clusterObj)
 }
 
 func calculateHostNetworks(cluster *models.Cluster) []*models.HostNetwork {

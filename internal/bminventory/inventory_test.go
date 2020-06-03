@@ -464,7 +464,7 @@ var _ = Describe("cluster", func() {
 			reply := bm.UpdateCluster(ctx, installer.UpdateClusterParams{
 				ClusterID: clusterID,
 				ClusterUpdateParams: &models.ClusterUpdateParams{
-					APIVip: &apiVip,
+					APIVip: apiVip,
 				},
 			})
 			Expect(reply).To(BeAssignableToTypeOf(installer.NewUpdateClusterBadRequest()))
@@ -475,8 +475,8 @@ var _ = Describe("cluster", func() {
 			reply := bm.UpdateCluster(ctx, installer.UpdateClusterParams{
 				ClusterID: clusterID,
 				ClusterUpdateParams: &models.ClusterUpdateParams{
-					APIVip:     &apiVip,
-					IngressVip: &ingressVip,
+					APIVip:     apiVip,
+					IngressVip: ingressVip,
 				},
 			})
 			Expect(reply).To(BeAssignableToTypeOf(installer.NewUpdateClusterBadRequest()))
@@ -489,8 +489,8 @@ var _ = Describe("cluster", func() {
 			reply := bm.UpdateCluster(ctx, installer.UpdateClusterParams{
 				ClusterID: clusterID,
 				ClusterUpdateParams: &models.ClusterUpdateParams{
-					APIVip:     &apiVip,
-					IngressVip: &ingressVip,
+					APIVip:     apiVip,
+					IngressVip: ingressVip,
 				},
 			})
 			Expect(reply).To(BeAssignableToTypeOf(installer.NewUpdateClusterCreated()))

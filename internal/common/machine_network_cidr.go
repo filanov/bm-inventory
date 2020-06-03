@@ -2,9 +2,10 @@ package common
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net"
+
+	"github.com/pkg/errors"
 
 	"github.com/go-openapi/strfmt"
 

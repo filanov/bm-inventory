@@ -1346,26 +1346,22 @@ func init() {
         "api_vip": {
           "description": "Virtual IP used to reach the OpenShift cluster API.",
           "type": "string",
-          "format": "ipv4",
-          "x-nullable": true
+          "format": "ipv4"
         },
         "base_dns_domain": {
           "description": "Base domain of the cluster. All DNS records must be sub-domains of this base and include the cluster name.",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         },
         "cluster_network_cidr": {
           "description": "IP address block from which Pod IPs are allocated This block must not overlap with existing physical networks. These IP addresses are used for the Pod network, and if you need to access the Pods from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
-          "x-nullable": true
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
         },
         "cluster_network_host_prefix": {
           "description": "The subnet prefix length to assign to each individual node. For example, if clusterNetworkHostPrefix is set to 23, then each node is assigned a /23 subnet out of the given cidr (clusterNetworkCIDR), which allows for 510 (2^(32 - 23) - 2) pod IPs addresses. If you are required to provide access to nodes from an external network, configure load balancers and routers to manage the traffic.",
           "type": "integer",
           "maximum": 32,
-          "minimum": 1,
-          "x-nullable": true
+          "minimum": 1
         },
         "hosts_roles": {
           "description": "The desired role for hosts associated with the cluster.",
@@ -1386,35 +1382,29 @@ func init() {
               }
             }
           },
-          "x-go-custom-tag": "gorm:\"type:varchar(64)[]\"",
-          "x-nullable": true
+          "x-go-custom-tag": "gorm:\"type:varchar(64)[]\""
         },
         "ingress_vip": {
           "description": "Virtual IP used for cluster ingress traffic.",
           "type": "string",
-          "format": "ipv4",
-          "x-nullable": true
+          "format": "ipv4"
         },
         "name": {
           "description": "OpenShift cluster name",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         },
         "pull_secret": {
           "description": "The pull secret that obtained from the Pull Secret page on the Red Hat OpenShift Cluster Manager site.",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         },
         "service_network_cidr": {
           "description": "The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
-          "x-nullable": true
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         }
       }
     },
@@ -3469,26 +3459,22 @@ func init() {
         "api_vip": {
           "description": "Virtual IP used to reach the OpenShift cluster API.",
           "type": "string",
-          "format": "ipv4",
-          "x-nullable": true
+          "format": "ipv4"
         },
         "base_dns_domain": {
           "description": "Base domain of the cluster. All DNS records must be sub-domains of this base and include the cluster name.",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         },
         "cluster_network_cidr": {
           "description": "IP address block from which Pod IPs are allocated This block must not overlap with existing physical networks. These IP addresses are used for the Pod network, and if you need to access the Pods from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
-          "x-nullable": true
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
         },
         "cluster_network_host_prefix": {
           "description": "The subnet prefix length to assign to each individual node. For example, if clusterNetworkHostPrefix is set to 23, then each node is assigned a /23 subnet out of the given cidr (clusterNetworkCIDR), which allows for 510 (2^(32 - 23) - 2) pod IPs addresses. If you are required to provide access to nodes from an external network, configure load balancers and routers to manage the traffic.",
           "type": "integer",
           "maximum": 32,
-          "minimum": 1,
-          "x-nullable": true
+          "minimum": 1
         },
         "hosts_roles": {
           "description": "The desired role for hosts associated with the cluster.",
@@ -3496,35 +3482,29 @@ func init() {
           "items": {
             "$ref": "#/definitions/ClusterUpdateParamsHostsRolesItems0"
           },
-          "x-go-custom-tag": "gorm:\"type:varchar(64)[]\"",
-          "x-nullable": true
+          "x-go-custom-tag": "gorm:\"type:varchar(64)[]\""
         },
         "ingress_vip": {
           "description": "Virtual IP used for cluster ingress traffic.",
           "type": "string",
-          "format": "ipv4",
-          "x-nullable": true
+          "format": "ipv4"
         },
         "name": {
           "description": "OpenShift cluster name",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         },
         "pull_secret": {
           "description": "The pull secret that obtained from the Pull Secret page on the Red Hat OpenShift Cluster Manager site.",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         },
         "service_network_cidr": {
           "description": "The IP address pool to use for service IP addresses. You can enter only one IP address pool. If you need to access the services from an external network, configure load balancers and routers to manage the traffic.",
           "type": "string",
-          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$",
-          "x-nullable": true
+          "pattern": "^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]|[1-2][0-9]|3[0-2]?$"
         },
         "ssh_public_key": {
           "description": "SSH public key for debugging OpenShift nodes.",
-          "type": "string",
-          "x-nullable": true
+          "type": "string"
         }
       }
     },

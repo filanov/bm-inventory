@@ -84,7 +84,7 @@ var _ = Describe("Cluster tests", func() {
 
 		c, err := bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{
-				SSHPublicKey: &publicKey,
+				SSHPublicKey: publicKey,
 				HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 					{
 						ID:   *host1.ID,
@@ -453,8 +453,8 @@ var _ = Describe("system-test cluster install", func() {
 				{ID: *h2.ID, Role: "master"},
 				{ID: *h4.ID, Role: "master"},
 			},
-				APIVip:     &apiVip,
-				IngressVip: &ingressVip,
+				APIVip:     apiVip,
+				IngressVip: ingressVip,
 			},
 			ClusterID: clusterID,
 		})
@@ -518,8 +518,8 @@ var _ = Describe("system-test cluster install", func() {
 				{ID: *wh2.ID, Role: "worker"},
 				{ID: *wh3.ID, Role: "worker"},
 			},
-				APIVip:     &apiVip,
-				IngressVip: &ingressVip,
+				APIVip:     apiVip,
+				IngressVip: ingressVip,
 			},
 			ClusterID: clusterID,
 		})
@@ -632,8 +632,8 @@ var _ = Describe("system-test cluster install", func() {
 		ingressVip := strfmt.IPv4("1.2.3.9")
 		_, err := bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{
-				APIVip:     &apiVip,
-				IngressVip: &ingressVip,
+				APIVip:     apiVip,
+				IngressVip: ingressVip,
 			},
 			ClusterID: clusterID,
 		})
@@ -779,8 +779,8 @@ func registerHostsAndSetRoles(clusterID strfmt.UUID, numHosts int) {
 	ingressVip := strfmt.IPv4("1.2.3.9")
 	c, err := bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 		ClusterUpdateParams: &models.ClusterUpdateParams{
-			APIVip:     &apiVip,
-			IngressVip: &ingressVip,
+			APIVip:     apiVip,
+			IngressVip: ingressVip,
 		},
 		ClusterID: clusterID,
 	})
