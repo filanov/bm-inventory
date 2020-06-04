@@ -72,7 +72,7 @@ type Config struct {
 	ImageBuilder        string `envconfig:"IMAGE_BUILDER" default:"quay.io/ocpmetal/installer-image-build:stable"`
 	ImageBuilderCmd     string `envconfig:"IMAGE_BUILDER_CMD" default:"echo hello"`
 	AgentDockerImg      string `envconfig:"AGENT_DOCKER_IMAGE" default:"quay.io/oamizur/agent:latest"`
-	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/ocpmetal/ignition-manifests-and-kubeconfig-generate:stable"`
+	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/yshnaidm/ignition-manifests-and-kubeconfig-generate:non-root2"`
 	InventoryURL        string `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
 	InventoryPort       string `envconfig:"INVENTORY_PORT" default:"30485"`
 	S3EndpointURL       string `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
