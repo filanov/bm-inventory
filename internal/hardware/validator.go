@@ -86,6 +86,11 @@ func (v *validator) IsSufficient(host *models.Host, cluster *models.Cluster) (*I
 	if !common.IsHostInMachineNetCidr(cluster, host) {
 		reason += fmt.Sprintf(", host %s does not belong to cluster machine network %s, The machine network is set by configuring the API-VIP", *host.ID, cluster.MachineNetworkCidr)
 	}
+
+	if !v.isHostnameUnique(cluster, host, hwInfo.Hostname) {
+		reason += fmt.Sprintf(", host with hostname \"%s\" already exists.", hwInfo.Hostname)
+	}
+
 	if len(reason) == 0 {
 		isSufficient = true
 	} else {
@@ -140,4 +145,23 @@ func listValidDisks(inventory models.Inventory, minSizeRequiredInBytes int64) []
 		return disks[i].SizeBytes < disks[j].SizeBytes
 	})
 	return disks
+}
+
+func (v *validator) isHostnameUnique(cluster *models.Cluster, host *models.Host, hostname string) bool {
+	var hwInfo models.Inventory
+	for _, chost := range cluster.Hosts {
+		if host.ID.String() == chost.ID.String() {
+			continue
+		}
+		if chost.Inventory == "" {
+			continue
+		}
+		if err := json.Unmarshal([]byte(chost.Inventory), &hwInfo); err != nil {
+			continue
+		}
+		if hwInfo.Hostname == hostname {
+			return false
+		}
+	}
+	return true
 }
