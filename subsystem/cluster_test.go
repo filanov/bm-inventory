@@ -336,7 +336,7 @@ var _ = Describe("cluster install", func() {
 		It("installation_conflicts", func() {
 			By("try to install host with host without a role")
 			host := registerHost(clusterID)
-			generateHWPostStepReply(host, validHwInfo, "h1")
+			generateHWPostStepReply(host, validHwInfo, "host")
 			_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 			Expect(reflect.TypeOf(err)).To(Equal(reflect.TypeOf(installer.NewInstallClusterConflict())))
 			By("install after disabling host without a role")
@@ -548,7 +548,7 @@ var _ = Describe("cluster install", func() {
 		// Adding one known host and setting as master -> state must be ready
 		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
-				{ID: *hosts[3].ID, Role: "master"},
+				{ID: *hosts[2].ID, Role: "master"},
 			}},
 			ClusterID: clusterID,
 		})
