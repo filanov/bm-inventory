@@ -12,6 +12,7 @@ func NewHostStateMachine(th *transitionHandler) stateswitch.StateMachine {
 
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRegisterHost,
+		Condition:      th.CanHostRegister,
 		SourceStates: []stateswitch.State{
 			"",
 			HostStatusDiscovering,

@@ -75,6 +75,10 @@ type API interface {
 	HostMonitoring()
 }
 
+type ExternalValidations interface {
+	AcceptRegistration(c *models.Cluster) (err error)
+}
+
 type Manager struct {
 	log            logrus.FieldLogger
 	db             *gorm.DB
@@ -91,10 +95,12 @@ type Manager struct {
 	sm             stateswitch.StateMachine
 }
 
-func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator, instructionApi InstructionApi) *Manager {
+func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator,
+	instructionApi InstructionApi, validations ExternalValidations) *Manager {
 	th := &transitionHandler{
-		db:  db,
-		log: log,
+		db:                  db,
+		log:                 log,
+		externalValidations: validations,
 	}
 	return &Manager{
 		log:            log,

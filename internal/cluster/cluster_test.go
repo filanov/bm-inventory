@@ -288,7 +288,7 @@ var _ = Describe("cluster monitor", func() {
 
 })
 
-var _ = Describe("VerifyRegisterHost", func() {
+var _ = Describe("AcceptRegistration", func() {
 	var (
 		db          *gorm.DB
 		id          strfmt.UUID

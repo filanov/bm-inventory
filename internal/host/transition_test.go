@@ -3,6 +3,10 @@ package host
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
+	"github.com/golang/mock/gomock"
+
 	"github.com/go-openapi/swag"
 
 	. "github.com/onsi/gomega"
@@ -17,20 +21,35 @@ import (
 
 var _ = Describe("RegisterHost", func() {
 	var (
-		ctx               = context.Background()
-		hapi              API
-		db                *gorm.DB
-		hostId, clusterId strfmt.UUID
+		ctx                     = context.Background()
+		hapi                    API
+		db                      *gorm.DB
+		ctrl                    *gomock.Controller
+		mockExternalValidations *MockExternalValidations
+		hostId, clusterId       strfmt.UUID
 	)
 
 	BeforeEach(func() {
 		db = prepareDB()
-		hapi = NewManager(getTestLog(), db, nil, nil)
+		ctrl = gomock.NewController(GinkgoT())
+		mockExternalValidations = NewMockExternalValidations(ctrl)
+		hapi = NewManager(getTestLog(), db, nil, nil, mockExternalValidations)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
+		Expect(db.Create(&models.Cluster{ID: &clusterId}).Error).ShouldNot(HaveOccurred())
 	})
 
+	conditionSuccess := func() {
+		mockExternalValidations.EXPECT().AcceptRegistration(gomock.Any()).Return(nil).Times(1)
+	}
+
+	conditionFailed := func() {
+		mockExternalValidations.EXPECT().AcceptRegistration(gomock.Any()).
+			Return(errors.Errorf("error")).Times(1)
+	}
+
 	It("register_new", func() {
+		conditionSuccess()
 		Expect(hapi.RegisterHost(ctx, &models.Host{ID: &hostId, ClusterID: clusterId})).ShouldNot(HaveOccurred())
 		h := getHost(hostId, clusterId, db)
 		Expect(swag.StringValue(h.Status)).Should(Equal(HostStatusDiscovering))
@@ -111,8 +130,8 @@ var _ = Describe("RegisterHost", func() {
 
 		for i := range tests {
 			t := tests[i]
-
 			It(t.name, func() {
+				conditionSuccess()
 				Expect(db.Create(&models.Host{
 					ID:           &hostId,
 					ClusterID:    clusterId,
@@ -135,6 +154,7 @@ var _ = Describe("RegisterHost", func() {
 			name        string
 			srcState    string
 			targetState string
+			condition   func()
 		}{
 			{
 				name:     "disabled",
@@ -148,12 +168,34 @@ var _ = Describe("RegisterHost", func() {
 				name:     "installed",
 				srcState: HostStatusInstalled,
 			},
+			{
+				name:      "discovering",
+				srcState:  HostStatusDiscovering,
+				condition: conditionFailed,
+			},
+			{
+				name:      "insufficient",
+				srcState:  HostStatusInsufficient,
+				condition: conditionFailed,
+			},
+			{
+				name:      "disconnected",
+				srcState:  HostStatusDisconnected,
+				condition: conditionFailed,
+			},
+			{
+				name:      "known",
+				srcState:  HostStatusKnown,
+				condition: conditionFailed,
+			},
 		}
 
 		for i := range tests {
 			t := tests[i]
-
 			It(t.name, func() {
+				if t.condition != nil {
+					t.condition()
+				}
 				Expect(db.Create(&models.Host{
 					ID:           &hostId,
 					ClusterID:    clusterId,
@@ -177,6 +219,7 @@ var _ = Describe("RegisterHost", func() {
 	})
 
 	AfterEach(func() {
+		ctrl.Finish()
 		db.Close()
 	})
 })
@@ -192,7 +235,7 @@ var _ = Describe("HostInstallationFailed", func() {
 
 	BeforeEach(func() {
 		db = prepareDB()
-		hapi = NewManager(getTestLog(), db, nil, nil)
+		hapi = NewManager(getTestLog(), db, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
 		host = getTestHost(hostId, clusterId, "")
