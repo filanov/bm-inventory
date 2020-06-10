@@ -448,3 +448,40 @@ func (mr *MockAPIMockRecorder) HostMonitoring() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostMonitoring", reflect.TypeOf((*MockAPI)(nil).HostMonitoring))
 }
+
+// MockExternalValidations is a mock of ExternalValidations interface
+type MockExternalValidations struct {
+	ctrl     *gomock.Controller
+	recorder *MockExternalValidationsMockRecorder
+}
+
+// MockExternalValidationsMockRecorder is the mock recorder for MockExternalValidations
+type MockExternalValidationsMockRecorder struct {
+	mock *MockExternalValidations
+}
+
+// NewMockExternalValidations creates a new mock instance
+func NewMockExternalValidations(ctrl *gomock.Controller) *MockExternalValidations {
+	mock := &MockExternalValidations{ctrl: ctrl}
+	mock.recorder = &MockExternalValidationsMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockExternalValidations) EXPECT() *MockExternalValidationsMockRecorder {
+	return m.recorder
+}
+
+// AcceptRegistration mocks base method
+func (m *MockExternalValidations) AcceptRegistration(c *models.Cluster) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AcceptRegistration", c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AcceptRegistration indicates an expected call of AcceptRegistration
+func (mr *MockExternalValidationsMockRecorder) AcceptRegistration(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptRegistration", reflect.TypeOf((*MockExternalValidations)(nil).AcceptRegistration), c)
+}
