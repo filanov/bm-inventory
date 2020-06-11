@@ -39,7 +39,7 @@ var _ = Describe("statemachine", func() {
 		db = prepareDB()
 		ctrl = gomock.NewController(GinkgoT())
 		mockValidator = hardware.NewMockValidator(ctrl)
-		state = NewManager(getTestLog(), db, mockValidator, nil)
+		state = NewManager(getTestLog(), db, mockValidator, nil, nil)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
 		host = getTestHost(id, clusterId, "unknown invalid state")
@@ -93,9 +93,10 @@ var _ = Describe("update_progress", func() {
 
 	BeforeEach(func() {
 		db = prepareDB()
-		state = NewManager(getTestLog(), db, nil, nil)
+		state = NewManager(getTestLog(), db, nil, nil, nil)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
+		createCluster(db, clusterId)
 		host = getTestHost(id, clusterId, "")
 	})
 	Context("installaing host", func() {
@@ -129,20 +130,31 @@ var _ = Describe("update_progress", func() {
 	It("invalid state", func() {
 		Expect(state.UpdateInstallProgress(ctx, &host, "don't care")).Should(HaveOccurred())
 	})
+
+	AfterEach(func() {
+		db.Close()
+	})
 })
 
 var _ = Describe("monitor_disconnection", func() {
 	var (
-		ctx   = context.Background()
-		db    *gorm.DB
-		state API
-		host  models.Host
+		ctx                     = context.Background()
+		db                      *gorm.DB
+		state                   API
+		host                    models.Host
+		ctrl                    *gomock.Controller
+		mockExternalValidations *MockExternalValidations
 	)
 
 	BeforeEach(func() {
 		db = prepareDB()
-		state = NewManager(getTestLog(), db, nil, nil)
-		host = getTestHost(strfmt.UUID(uuid.New().String()), strfmt.UUID(uuid.New().String()), HostStatusDiscovering)
+		ctrl = gomock.NewController(GinkgoT())
+		mockExternalValidations = NewMockExternalValidations(ctrl)
+		mockExternalValidations.EXPECT().AcceptRegistration(gomock.Any()).Return(nil).AnyTimes()
+		state = NewManager(getTestLog(), db, nil, nil, mockExternalValidations)
+		clusterID := strfmt.UUID(uuid.New().String())
+		createCluster(db, clusterID)
+		host = getTestHost(strfmt.UUID(uuid.New().String()), clusterID, HostStatusDiscovering)
 		err := state.RegisterHost(ctx, &host)
 		Expect(err).ShouldNot(HaveOccurred())
 		db.First(&host, "id = ? and cluster_id = ?", host.ID, host.ClusterID)
@@ -189,6 +201,7 @@ var _ = Describe("monitor_disconnection", func() {
 	})
 
 	AfterEach(func() {
+		ctrl.Finish()
 		db.Close()
 	})
 })
@@ -286,4 +299,8 @@ func addTestCluster(clusterID strfmt.UUID, apiVip, ingressVip string, machineCid
 		MachineNetworkCidr: machineCidr,
 	}
 	Expect(db.Create(&cluster).Error).To(Not(HaveOccurred()))
+}
+
+func createCluster(db *gorm.DB, clusterID strfmt.UUID) {
+	Expect(db.Create(&models.Cluster{ID: &clusterID}).Error).ShouldNot(HaveOccurred())
 }

@@ -3,7 +3,10 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/filanov/bm-inventory/internal/common"
 
 	"github.com/pkg/errors"
 
@@ -208,7 +211,8 @@ func (m *Manager) AcceptRegistration(c *models.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
 	allowedStatuses := []string{clusterStatusInsufficient, clusterStatusReady}
 	if !funk.ContainsString(allowedStatuses, clusterStatus) {
-		err = errors.Errorf("Cluster %s is in %s state, host can register only in one of %s", c.ID, clusterStatus, allowedStatuses)
+		err = common.NewApiError(http.StatusForbidden,
+			errors.Errorf("Cluster %s is in %s state, host can register only in one of %s", c.ID, clusterStatus, allowedStatuses))
 	}
 	return err
 }

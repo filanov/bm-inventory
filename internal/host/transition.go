@@ -16,8 +16,9 @@ import (
 )
 
 type transitionHandler struct {
-	db  *gorm.DB
-	log logrus.FieldLogger
+	db                  *gorm.DB
+	log                 logrus.FieldLogger
+	externalValidations ExternalValidations
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -26,6 +27,22 @@ type transitionHandler struct {
 
 type TransitionArgsRegisterHost struct {
 	ctx context.Context
+}
+
+func (th *transitionHandler) CanHostRegister(sw stateswitch.StateSwitch, _ stateswitch.TransitionArgs) (bool, error) {
+	sHost, ok := sw.(*stateHost)
+	if !ok {
+		return false, errors.New("PostRegisterHost incompatible type of StateSwitch")
+	}
+	cluster := models.Cluster{}
+	if err := th.db.First(&cluster, "id = ?", sHost.host.ClusterID).Error; err != nil {
+		return false, errors.Wrapf(err, "failed to get cluster <%s>", sHost.host.ClusterID)
+	}
+
+	if err := th.externalValidations.AcceptRegistration(&cluster); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (th *transitionHandler) PostRegisterHost(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) error {

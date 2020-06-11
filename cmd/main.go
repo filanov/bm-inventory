@@ -95,8 +95,8 @@ func main() {
 	eventsHandler := events.New(db, log.WithField("pkg", "events"))
 	hwValidator := hardware.NewValidator(log.WithField("pkg", "validators"), Options.HWValidatorConfig)
 	instructionApi := host.NewInstructionManager(log, db, hwValidator, Options.InstructionConfig)
-	hostApi := host.NewManager(log.WithField("pkg", "host-state"), db, hwValidator, instructionApi)
 	clusterApi := cluster.NewManager(log.WithField("pkg", "cluster-state"), db, eventsHandler)
+	hostApi := host.NewManager(log.WithField("pkg", "host-state"), db, hwValidator, instructionApi, clusterApi)
 
 	clusterStateMonitor := thread.New(
 		log.WithField("pkg", "cluster-monitor"), "Cluster State Monitor", Options.ClusterStateMonitorInterval, clusterApi.ClusterMonitoring)
