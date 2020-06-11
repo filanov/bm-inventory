@@ -867,11 +867,7 @@ func (b *bareMetalInventory) RegisterHost(ctx context.Context, params installer.
 	if err := b.hostApi.RegisterHost(ctx, &host); err != nil {
 		log.WithError(err).Errorf("failed to register host <%s> cluster <%s>",
 			params.NewHostParams.HostID.String(), params.ClusterID.String())
-		if common.IsApiError(err) {
-			return err.(*common.ApiErrorResponse)
-		}
-		return installer.NewRegisterHostBadRequest().
-			WithPayload(common.GenerateError(http.StatusBadRequest, err))
+		return common.GenerateErrorResponderWithDefault(err, http.StatusBadRequest)
 	}
 
 	return installer.NewRegisterHostCreated().WithPayload(&host)

@@ -66,11 +66,11 @@ func GenerateErrorResponder(err error) middleware.Responder {
 	}
 }
 
-func IsApiError(err error) bool {
-	switch err.(type) {
+func GenerateErrorResponderWithDefault(err error, defaultCode int32) middleware.Responder {
+	switch errValue := err.(type) {
 	case *ApiErrorResponse:
-		return true
+		return errValue
 	default:
-		return false
+		return NewApiError(defaultCode, err)
 	}
 }
