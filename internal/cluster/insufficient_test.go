@@ -1,15 +1,15 @@
 package cluster
 
 import (
-	context "context"
+	"context"
 
-	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/filanov/bm-inventory/models"
 )
 
 var _ = Describe("insufficient_state", func() {
@@ -18,7 +18,7 @@ var _ = Describe("insufficient_state", func() {
 		state        API
 		db           *gorm.DB
 		currentState = clusterStatusInsufficient
-		id           strfmt.UUID
+		id           *strfmt.UUID
 		updateReply  *UpdateReply
 		updateErr    error
 		cluster      models.Cluster
@@ -29,16 +29,16 @@ var _ = Describe("insufficient_state", func() {
 		state = &Manager{insufficient: NewInsufficientState(getTestLog(), db)}
 		registerManager := NewRegistrar(getTestLog(), db)
 
-		id = strfmt.UUID(uuid.New().String())
 		cluster = models.Cluster{
-			ID:     &id,
 			Status: swag.String(currentState),
 		}
 
-		replyErr := registerManager.RegisterCluster(ctx, &cluster)
+		c, replyErr := registerManager.RegisterCluster(ctx, &cluster)
+		id = c.ID
 		Expect(replyErr).Should(BeNil())
+		cluster = geCluster(*cluster.ID, db)
+
 		Expect(swag.StringValue(cluster.Status)).Should(Equal(clusterStatusInsufficient))
-		c := geCluster(*cluster.ID, db)
 		Expect(swag.StringValue(c.Status)).Should(Equal(clusterStatusInsufficient))
 	})
 
@@ -52,7 +52,7 @@ var _ = Describe("insufficient_state", func() {
 		})
 
 		It("answering requirement to be ready", func() {
-			addInstallationRequirements(id, db)
+			addInstallationRequirements(*id, db)
 			updateReply, updateErr = state.RefreshStatus(ctx, &cluster, db)
 			Expect(updateErr).Should(BeNil())
 			Expect(updateReply.State).Should(Equal(clusterStatusReady))

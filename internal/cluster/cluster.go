@@ -30,7 +30,7 @@ type StateAPI interface {
 
 type RegistrationAPI interface {
 	// Register a new cluster
-	RegisterCluster(ctx context.Context, c *models.Cluster) error
+	RegisterCluster(ctx context.Context, c *models.Cluster) (*models.Cluster, error)
 	//deregister cluster
 	DeregisterCluster(ctx context.Context, c *models.Cluster) error
 }
@@ -100,8 +100,8 @@ func (m *Manager) getCurrentState(status string) (StateAPI, error) {
 	return nil, fmt.Errorf("not supported cluster status: %s", status)
 }
 
-func (m *Manager) RegisterCluster(ctx context.Context, c *models.Cluster) error {
-	err := m.registrationAPI.RegisterCluster(ctx, c)
+func (m *Manager) RegisterCluster(ctx context.Context, c *models.Cluster) (*models.Cluster, error) {
+	c, err := m.registrationAPI.RegisterCluster(ctx, c)
 	var msg string
 	if err != nil {
 		msg = fmt.Sprintf("Registration of cluster %s failed. Error: %s", c.ID, err.Error())
@@ -109,7 +109,7 @@ func (m *Manager) RegisterCluster(ctx context.Context, c *models.Cluster) error 
 		msg = fmt.Sprintf("Registered cluster %s", c.ID)
 	}
 	m.eventsHandler.AddEvent(ctx, c.ID.String(), msg, time.Now())
-	return err
+	return c, err
 }
 
 func (m *Manager) DeregisterCluster(ctx context.Context, c *models.Cluster) error {

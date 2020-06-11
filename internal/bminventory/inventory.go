@@ -247,8 +247,8 @@ func (b *bareMetalInventory) getUserSshKey(params installer.GenerateClusterISOPa
 
 func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params installer.RegisterClusterParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
+
 	id := strfmt.UUID(uuid.New().String())
-	url := installer.GetClusterURL{ClusterID: id}
 	log.Infof("Register cluster: %s with id %s", swag.StringValue(params.NewClusterParams.Name), id)
 	if params.NewClusterParams.ClusterNetworkCidr == nil {
 		params.NewClusterParams.ClusterNetworkCidr = &DefaultClusterNetworkCidr
@@ -261,8 +261,6 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 	}
 
 	cluster := models.Cluster{
-		ID:                       &id,
-		Href:                     swag.String(url.String()),
 		Kind:                     swag.String(ResourceKindCluster),
 		BaseDNSDomain:            params.NewClusterParams.BaseDNSDomain,
 		ClusterNetworkCidr:       swag.StringValue(params.NewClusterParams.ClusterNetworkCidr),
@@ -284,14 +282,14 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 		setPullSecret(&cluster, params.NewClusterParams.PullSecret)
 	}
 
-	err := b.clusterApi.RegisterCluster(ctx, &cluster)
+	c, err := b.clusterApi.RegisterCluster(ctx, &cluster)
 	if err != nil {
 		log.Errorf("failed to register cluster %s ", swag.StringValue(params.NewClusterParams.Name))
 		return installer.NewRegisterClusterInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
 
-	return installer.NewRegisterClusterCreated().WithPayload(&cluster)
+	return installer.NewRegisterClusterCreated().WithPayload(c)
 }
 
 func (b *bareMetalInventory) DeregisterCluster(ctx context.Context, params installer.DeregisterClusterParams) middleware.Responder {
