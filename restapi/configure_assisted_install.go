@@ -34,6 +34,7 @@ type EventsAPI interface {
 
 // InstallerAPI
 type InstallerAPI interface {
+	CancelInstallation(ctx context.Context, params installer.CancelInstallationParams) middleware.Responder
 	DeregisterCluster(ctx context.Context, params installer.DeregisterClusterParams) middleware.Responder
 	DeregisterHost(ctx context.Context, params installer.DeregisterHostParams) middleware.Responder
 	DisableHost(ctx context.Context, params installer.DisableHostParams) middleware.Responder
@@ -102,6 +103,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 	api.JSONConsumer = runtime.JSONConsumer()
 	api.BinProducer = runtime.ByteStreamProducer()
 	api.JSONProducer = runtime.JSONProducer()
+	api.InstallerCancelInstallationHandler = installer.CancelInstallationHandlerFunc(func(params installer.CancelInstallationParams) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		return c.InstallerAPI.CancelInstallation(ctx, params)
+	})
 	api.InstallerDeregisterClusterHandler = installer.DeregisterClusterHandlerFunc(func(params installer.DeregisterClusterParams) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		return c.InstallerAPI.DeregisterCluster(ctx, params)
