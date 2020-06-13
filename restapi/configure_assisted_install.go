@@ -51,6 +51,7 @@ type InstallerAPI interface {
 	PostStepReply(ctx context.Context, params installer.PostStepReplyParams) middleware.Responder
 	RegisterCluster(ctx context.Context, params installer.RegisterClusterParams) middleware.Responder
 	RegisterHost(ctx context.Context, params installer.RegisterHostParams) middleware.Responder
+	ResetCluster(ctx context.Context, params installer.ResetClusterParams) middleware.Responder
 	SetDebugStep(ctx context.Context, params installer.SetDebugStepParams) middleware.Responder
 	UpdateCluster(ctx context.Context, params installer.UpdateClusterParams) middleware.Responder
 	UpdateHostInstallProgress(ctx context.Context, params installer.UpdateHostInstallProgressParams) middleware.Responder
@@ -168,6 +169,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 	api.InstallerRegisterHostHandler = installer.RegisterHostHandlerFunc(func(params installer.RegisterHostParams) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		return c.InstallerAPI.RegisterHost(ctx, params)
+	})
+	api.InstallerResetClusterHandler = installer.ResetClusterHandlerFunc(func(params installer.ResetClusterParams) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		return c.InstallerAPI.ResetCluster(ctx, params)
 	})
 	api.InstallerSetDebugStepHandler = installer.SetDebugStepHandlerFunc(func(params installer.SetDebugStepParams) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
