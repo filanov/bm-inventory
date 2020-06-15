@@ -65,6 +65,7 @@ const (
 type API interface {
 	// Register a new host
 	RegisterHost(ctx context.Context, h *models.Host) error
+	DeregisterFailedHost(h *models.Host) error
 	HandleInstallationFailure(ctx context.Context, h *models.Host) error
 	StateAPI
 	InstructionApi
@@ -151,6 +152,14 @@ func (m *Manager) RegisterHost(ctx context.Context, h *models.Host) error {
 	return m.sm.Run(TransitionTypeRegisterHost, newStateHost(pHost), &TransitionArgsRegisterHost{
 		ctx: ctx,
 	})
+}
+
+func (m *Manager) DeregisterFailedHost(h *models.Host) error {
+	hostStatus := swag.StringValue(h.Status)
+	if hostStatus == HostStatusError {
+		return fmt.Errorf("unable to deregister host %s in status %s", h.ID.String(), hostStatus)
+	}
+	return m.db.Where("id = ? and cluster_id = ?", h.ID.String(), h.ClusterID.String()).Delete(&models.Host{}).Error
 }
 
 func (m *Manager) HandleInstallationFailure(ctx context.Context, h *models.Host) error {

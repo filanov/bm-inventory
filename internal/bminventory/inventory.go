@@ -1453,3 +1453,35 @@ func setPullSecret(cluster *models.Cluster, pullSecret string) {
 		cluster.PullSecretSet = false
 	}
 }
+
+func (b *bareMetalInventory) ResetCluster(ctx context.Context, params installer.UpdateHostInstallProgressParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Infof("reset installation for cluster %s", params.ClusterID)
+
+	var c models.Cluster
+
+	if err := b.db.Preload("Hosts").First(&c, "id = ?", params.ClusterID).Error; err != nil {
+		log.WithError(err).Errorf("failed to find cluster %s", params.ClusterID)
+		if gorm.IsRecordNotFoundError(err) {
+			return installer.NewResetClusterNotFound().WithPayload(common.GenerateError(http.StatusNotFound, err))
+		}
+		return installer.NewResetClusterInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+	}
+
+	for _, h := range c.Hosts {
+		if err := b.hostApi.DeregisterFailedHost(h); err != nil {
+			if gorm.Error(err) {
+				return installer.NewResetClusterInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+			}
+			return installer.NewResetClusterConflict().WithPayload(common.GenerateError(http.StatusConflict, err))
+		}
+	}
+	if err := b.clusterApi.ResetCluster(ctx, &c, "installation was reset by user"); err != nil {
+		if gorm.Error(err) {
+			return installer.NewResetClusterInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+		}
+		return installer.NewResetClusterConflict().WithPayload(common.GenerateError(http.StatusConflict, err))
+	}
+
+	return installer.NewResetClusterAccepted()
+}

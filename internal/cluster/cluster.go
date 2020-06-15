@@ -3,6 +3,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	logutil "github.com/filanov/bm-inventory/pkg/log"
 	"time"
 
 	"github.com/pkg/errors"
@@ -53,6 +54,7 @@ type API interface {
 	UploadIngressCert(c *models.Cluster) (err error)
 	VerifyClusterUpdatability(c *models.Cluster) (err error)
 	AcceptRegistration(c *models.Cluster) (err error)
+	ResetCluster(ctx context.Context, c *models.Cluster, reason string) (err error)
 }
 
 type Manager struct {
@@ -219,5 +221,14 @@ func (m *Manager) VerifyClusterUpdatability(c *models.Cluster) (err error) {
 	if !funk.ContainsString(allowedStatuses, clusterStatus) {
 		err = errors.Errorf("Cluster %s is in %s state, cluster can be updated only in one of %s", c.ID, clusterStatus, allowedStatuses)
 	}
+	return err
+}
+
+func (m *Manager) ResetCluster(ctx context.Context, c *models.Cluster, reason string) (err error) {
+	clusterStatus := swag.StringValue(c.Status)
+	if clusterStatus != clusterStatusError {
+		return errors.Errorf("unable to reset installation of cluster in status <%s>", clusterStatus)
+	}
+	_, err = updateState(clusterStatusInsufficient, reason, c, m.db, logutil.FromContext(ctx, m.log))
 	return err
 }
