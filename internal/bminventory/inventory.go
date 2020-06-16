@@ -131,7 +131,7 @@ func NewBareMetalInventory(
 		debugCmdMap:   make(map[strfmt.UUID]debugCmd),
 		hostApi:       hostApi,
 		clusterApi:    clusterApi,
-		job:           jobApi,
+		//job:           jobApi,
 		eventsHandler: eventsHandler,
 		s3Client:      s3Client,
 	}
@@ -139,7 +139,7 @@ func NewBareMetalInventory(
 		b.imageBuildCmd = strings.Split(cfg.ImageBuilderCmd, " ")
 	}
 	//	Run first ISO dummy for image pull, this is done so that the image will be pulled and the api will take less time.
-	generateDummyISOImage(jobApi, b, log)
+	//generateDummyISOImage(jobApi, b, log)
 	return b
 }
 
