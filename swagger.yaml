@@ -1550,7 +1550,7 @@ definitions:
     items:
       $ref: '#/definitions/free_network_addresses'
 
-  free_networks_request:
+  free_addresses_request:
     type: array
     items:
       type: string
