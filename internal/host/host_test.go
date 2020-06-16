@@ -270,9 +270,10 @@ func getTestHost(hostID, clusterID strfmt.UUID, state string) models.Host {
 	}
 }
 
-func mockConnectivityAndHwValidators(mockHWValidator *hardware.MockValidator, mockConnectivityValidator *connectivity.MockValidator, hwError, sufficientHw, sufficientConnectivity bool) string {
+func mockConnectivityAndHwValidators(h *models.Host, mockHWValidator *hardware.MockValidator, mockConnectivityValidator *connectivity.MockValidator, hwError, sufficientHw, sufficientConnectivity bool) string {
 	var statusInfoDetails = make(map[string]string)
-	statusInfoDetails["role"] = ""
+	roleReply := isSufficientRole(h)
+	statusInfoDetails[roleReply.Type] = roleReply.Reason
 	if hwError {
 		mockHWValidator.EXPECT().IsSufficient(gomock.Any(), gomock.Any()).
 			Return(nil, errors.New("error")).AnyTimes()
@@ -298,7 +299,7 @@ func mockConnectivityAndHwValidators(mockHWValidator *hardware.MockValidator, mo
 		statusInfoDetails["connectivity"] = "failed reason"
 	}
 
-	if !hwError && sufficientHw && sufficientConnectivity {
+	if !hwError && sufficientHw && sufficientConnectivity && roleReply.IsSufficient {
 		return ""
 	}
 

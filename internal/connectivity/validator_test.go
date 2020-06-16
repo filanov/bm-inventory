@@ -54,6 +54,17 @@ var _ = Describe("connectivity_validator", func() {
 		}}
 	})
 
+	It("insufficient interfaces", func() {
+		cluster.MachineNetworkCidr = "10.11.0.0/16"
+		host.Inventory = ""
+
+		roles := []string{"", "master", "worker"}
+		for _, role := range roles {
+			host.Role = role
+			insufficient(connectivityValidator.IsSufficient(host, cluster))
+		}
+	})
+
 	It("insufficient network", func() {
 		cluster.MachineNetworkCidr = "10.11.0.0/16"
 		hw, err := json.Marshal(&inventory)
@@ -95,14 +106,49 @@ var _ = Describe("connectivity_validator", func() {
 
 })
 
-//func sufficient(reply *common.IsSufficientReply, err error) {
-//	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-//	ExpectWithOffset(1, reply.IsSufficient).To(BeTrue())
-//	ExpectWithOffset(1, reply.Reason).Should(Equal(""))
-//}
-
 func insufficient(reply *common.IsSufficientReply, err error) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, reply.IsSufficient).To(BeFalse())
 	ExpectWithOffset(1, reply.Reason).ShouldNot(Equal(""))
 }
+
+var _ = Describe("get valid interfaces", func() {
+	var (
+		connectivityValidator Validator
+		host                  *models.Host
+		inventory             *models.Inventory
+	)
+	BeforeEach(func() {
+		connectivityValidator = NewValidator(logrus.New())
+		id := strfmt.UUID(uuid.New().String())
+		clusterID := strfmt.UUID(uuid.New().String())
+		host = &models.Host{ID: &id, ClusterID: clusterID}
+		inventory = &models.Inventory{
+			Interfaces: []*models.Interface{
+				{
+					IPV4Addresses: []string{
+						"1.2.3.4/24",
+					},
+				},
+			},
+		}
+	})
+
+	It("valid interfaces", func() {
+		hw, err := json.Marshal(&inventory)
+		Expect(err).NotTo(HaveOccurred())
+		host.Inventory = string(hw)
+		interfaces, err := connectivityValidator.GetHostValidInterfaces(host)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(len(interfaces)).Should(Equal(1))
+	})
+
+	It("invalid interfaces", func() {
+
+		host.Inventory = ""
+		interfaces, err := connectivityValidator.GetHostValidInterfaces(host)
+		Expect(err).To(HaveOccurred())
+		Expect(interfaces).To(BeNil())
+	})
+
+})

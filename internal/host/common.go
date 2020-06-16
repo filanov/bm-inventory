@@ -7,7 +7,6 @@ import (
 	"github.com/filanov/bm-inventory/internal/connectivity"
 
 	"github.com/filanov/bm-inventory/internal/common"
-
 	"github.com/go-openapi/strfmt"
 
 	"github.com/filanov/bm-inventory/internal/hardware"
@@ -115,6 +114,7 @@ func updateHwInfo(log logrus.FieldLogger, hwValidator hardware.Validator, h *mod
 		statusInfo = *h.StatusInfo
 	}
 	return updateStateWithParams(log, status, statusInfo, h, db, "hardware_info", h.HardwareInfo)
+
 }
 
 func getCluster(clusterID strfmt.UUID, db *gorm.DB) (*common.Cluster, error) {

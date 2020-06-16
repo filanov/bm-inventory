@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/filanov/bm-inventory/internal/connectivity"
+
 	"github.com/jinzhu/gorm"
 
 	"github.com/filanov/bm-inventory/internal/hardware"
@@ -36,8 +38,8 @@ type InstructionConfig struct {
 	HardwareInfoImage      string `envconfig:"HARDWARE_INFO_IMAGE" default:"quay.io/ocpmetal/hardware_info:latest"`
 }
 
-func NewInstructionManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator, instructionConfig InstructionConfig) *InstructionManager {
-	connectivityCmd := NewConnectivityCheckCmd(log, db, hwValidator, instructionConfig.ConnectivityCheckImage)
+func NewInstructionManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator, instructionConfig InstructionConfig, connectivityValidator connectivity.Validator) *InstructionManager {
+	connectivityCmd := NewConnectivityCheckCmd(log, db, connectivityValidator, instructionConfig.ConnectivityCheckImage)
 	installCmd := NewInstallCmd(log, db, hwValidator, instructionConfig)
 	hwCmd := NewHwInfoCmd(log, instructionConfig.HardwareInfoImage)
 	inventoryCmd := NewInventoryCmd(log, instructionConfig.InventoryImage)

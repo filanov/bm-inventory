@@ -644,6 +644,8 @@ var _ = Describe("cluster install", func() {
 			}},
 			ClusterID: clusterID,
 		})
+		waitForHostState(ctx, clusterID, *mh3.ID, "known", 60*time.Second)
+
 		Expect(err).NotTo(HaveOccurred())
 		waitForClusterState(ctx, clusterID, models.ClusterStatusReady, 60*time.Second, clusterReadyStateInfo)
 
@@ -659,15 +661,16 @@ var _ = Describe("cluster install", func() {
 		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterInsufficientStateInfo))
 
 		By("Three master hosts -> state must be ready")
-		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
+		_, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 				{ID: *mh3.ID, Role: "master"},
 			}},
 			ClusterID: clusterID,
 		})
+		waitForHostState(ctx, clusterID, *mh3.ID, "known", 60*time.Second)
+
 		Expect(err).NotTo(HaveOccurred())
-		Expect(swag.StringValue(cluster.GetPayload().Status)).Should(Equal("ready"))
-		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterReadyStateInfo))
+		waitForClusterState(ctx, clusterID, "ready", 60*time.Second, clusterReadyStateInfo)
 
 		By("Back to two master hosts -> state must be insufficient")
 		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{

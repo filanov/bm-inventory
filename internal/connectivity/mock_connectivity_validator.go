@@ -48,3 +48,18 @@ func (mr *MockValidatorMockRecorder) IsSufficient(host, cluster interface{}) *go
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSufficient", reflect.TypeOf((*MockValidator)(nil).IsSufficient), host, cluster)
 }
+
+// GetHostValidInterfaces mocks base method
+func (m *MockValidator) GetHostValidInterfaces(host *models.Host) ([]*models.Interface, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHostValidInterfaces", host)
+	ret0, _ := ret[0].([]*models.Interface)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHostValidInterfaces indicates an expected call of GetHostValidInterfaces
+func (mr *MockValidatorMockRecorder) GetHostValidInterfaces(host interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHostValidInterfaces", reflect.TypeOf((*MockValidator)(nil).GetHostValidInterfaces), host)
+}
