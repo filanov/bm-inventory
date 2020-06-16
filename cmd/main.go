@@ -42,7 +42,7 @@ var Options struct {
 	JobConfig                   job.Config
 	InstructionConfig           host.InstructionConfig
 	ClusterStateMonitorInterval time.Duration `envconfig:"CLUSTER_MONITOR_INTERVAL" default:"10s"`
-	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"30s"`
+	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"5s"`
 }
 
 func main() {

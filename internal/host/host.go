@@ -268,7 +268,7 @@ func (m *Manager) HostMonitoring() {
 		return
 	}
 	for _, host := range hosts {
-		m.log.Infof("examining host: %s", host.ID)
+		m.log.Infof("examining host: %s current status %s current statusInfo %s", host.ID, swag.StringValue(host.Status), swag.StringValue(host.StatusInfo))
 		state, err := m.getCurrentState(swag.StringValue(host.Status))
 		if err != nil {
 			m.log.WithError(err).Errorf("failed to get host %s current state", host.ID)

@@ -6,20 +6,17 @@ import (
 	"regexp"
 	"sort"
 
+	"github.com/filanov/bm-inventory/internal/common"
+
 	"github.com/alecthomas/units"
 	"github.com/filanov/bm-inventory/models"
 )
-
-type IsSufficientReply struct {
-	IsSufficient bool
-	Reason       string
-}
 
 const diskNameFilterRegex = "nvme"
 
 //go:generate mockgen -source=validator.go -package=hardware -destination=mock_validator.go
 type Validator interface {
-	IsSufficient(host *models.Host) (*IsSufficientReply, error)
+	IsSufficient(host *models.Host) (*common.IsSufficientReply, error)
 	GetHostValidDisks(host *models.Host) ([]*models.Disk, error)
 	GetHostValidInterfaces(host *models.Host) ([]*models.Interface, error)
 }
@@ -42,7 +39,7 @@ type validator struct {
 	ValidatorCfg
 }
 
-func (v *validator) IsSufficient(host *models.Host) (*IsSufficientReply, error) {
+func (v *validator) IsSufficient(host *models.Host) (*common.IsSufficientReply, error) {
 	var err error
 	var reason string
 	var isSufficient bool
@@ -88,7 +85,8 @@ func (v *validator) IsSufficient(host *models.Host) (*IsSufficientReply, error) 
 		}
 	}
 
-	return &IsSufficientReply{
+	return &common.IsSufficientReply{
+		Type:         "hardware",
 		IsSufficient: isSufficient,
 		Reason:       reason,
 	}, nil

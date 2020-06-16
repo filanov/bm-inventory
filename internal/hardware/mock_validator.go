@@ -5,10 +5,10 @@
 package hardware
 
 import (
-	reflect "reflect"
-
+	common "github.com/filanov/bm-inventory/internal/common"
 	models "github.com/filanov/bm-inventory/models"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockValidator is a mock of Validator interface.
@@ -35,10 +35,10 @@ func (m *MockValidator) EXPECT() *MockValidatorMockRecorder {
 }
 
 // IsSufficient mocks base method.
-func (m *MockValidator) IsSufficient(host *models.Host) (*IsSufficientReply, error) {
+func (m *MockValidator) IsSufficient(host *models.Host) (*common.IsSufficientReply, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSufficient", host)
-	ret0, _ := ret[0].(*IsSufficientReply)
+	ret0, _ := ret[0].(*common.IsSufficientReply)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

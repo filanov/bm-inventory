@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/models"
@@ -38,15 +39,47 @@ func (d *discoveringState) UpdateInventory(ctx context.Context, h *models.Host, 
 }
 
 func (d *discoveringState) UpdateRole(ctx context.Context, h *models.Host, role string, db *gorm.DB) (*UpdateReply, error) {
+	h.Role = role
 	cdb := d.db
 	if db != nil {
 		cdb = db
 	}
-	return updateStateWithParams(logutil.FromContext(ctx, d.log), HostStatusDiscovering, statusInfoDiscovering, h, cdb, "role", role)
+	return updateRole(logutil.FromContext(ctx, d.log), h, cdb)
 }
 
 func (d *discoveringState) RefreshStatus(ctx context.Context, h *models.Host) (*UpdateReply, error) {
-	return updateByKeepAlive(logutil.FromContext(ctx, d.log), h, d.db)
+	//checking if need to change state to disconnect
+	stateReply, err := updateByKeepAlive(logutil.FromContext(ctx, d.log), h, d.db)
+	if err != nil || stateReply.IsChanged {
+		return stateReply, err
+	}
+	var statusInfoDetails = make(map[string]string)
+	//checking inventory isInsufficient
+	inventoryReply, _ := d.hwValidator.IsSufficient(h)
+	if inventoryReply != nil {
+		statusInfoDetails[inventoryReply.Type] = inventoryReply.Reason
+	} else {
+		statusInfoDetails["hardware"] = "parsing error"
+	}
+
+	//TODO: checking connectivity isInsufficient
+
+	//checking role
+	roleReply := isSufficientRole(h)
+	statusInfoDetails[roleReply.Type] = roleReply.Reason
+
+	d.log.Infof("refresh status host: %s role reply %+v inventory reply %+v", h.ID, roleReply, inventoryReply)
+
+	if inventoryReply != nil && inventoryReply.IsSufficient && roleReply.IsSufficient {
+		return updateState(d.log, HostStatusKnown, "", h, d.db)
+	} else {
+		statusInfo, err := json.Marshal(statusInfoDetails)
+		if err != nil {
+			return nil, err
+		}
+		return updateState(d.log, HostStatusInsufficient, string(statusInfo), h, d.db)
+	}
+
 }
 
 func (d *discoveringState) Install(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {

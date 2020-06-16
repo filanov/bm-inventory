@@ -3,6 +3,8 @@ package host
 import (
 	"time"
 
+	"github.com/filanov/bm-inventory/internal/common"
+
 	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/swag"
@@ -33,7 +35,7 @@ func updateState(log logrus.FieldLogger, state, stateInfo string, h *models.Host
 }
 
 func updateByKeepAlive(log logrus.FieldLogger, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
-	if time.Since(time.Time(h.CheckedInAt)) > 3*time.Minute {
+	if h.CheckedInAt.String() != "" && time.Since(time.Time(h.CheckedInAt)) > 3*time.Minute {
 		return updateState(log, HostStatusDisconnected, statusInfoDisconnected, h, db)
 	}
 	return &UpdateReply{
@@ -96,21 +98,54 @@ func updateHostStateWithParams(log logrus.FieldLogger, srcStatus, statusInfo str
 }
 
 func updateHwInfo(log logrus.FieldLogger, hwValidator hardware.Validator, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
-	status := ""
+	status, statusInfo := "", ""
 	if h.Status != nil {
 		status = *h.Status
 	}
-	return updateStateWithParams(log, status, "", h, db, "hardware_info", h.HardwareInfo)
+	if h.StatusInfo != nil {
+		statusInfo = *h.StatusInfo
+	}
+	return updateStateWithParams(log, status, statusInfo, h, db, "hardware_info", h.HardwareInfo)
 }
 
 func updateInventory(log logrus.FieldLogger, hwValidator hardware.Validator, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
-	reply, err := hwValidator.IsSufficient(h)
+	_, err := hwValidator.IsSufficient(h)
 	if err != nil {
 		return nil, err
 	}
-	if !reply.IsSufficient {
-		return updateStateWithParams(log, HostStatusInsufficient, reply.Reason, h, db,
-			"inventory", h.Inventory)
+	status, statusInfo := "", ""
+	if h.Status != nil {
+		status = *h.Status
 	}
-	return updateStateWithParams(log, HostStatusKnown, "", h, db, "inventory", h.Inventory)
+	if h.StatusInfo != nil {
+		statusInfo = *h.StatusInfo
+	}
+	return updateStateWithParams(log, status, statusInfo, h, db, "inventory", h.Inventory)
+}
+
+func updateRole(log logrus.FieldLogger, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
+	status, statusInfo := "", ""
+	if h.Status != nil {
+		status = *h.Status
+	}
+	if h.StatusInfo != nil {
+		statusInfo = *h.StatusInfo
+	}
+	return updateStateWithParams(log, status, statusInfo, h, db, "role", h.Role)
+}
+
+func isSufficientRole(h *models.Host) *common.IsSufficientReply {
+	var reason string
+	isSufficient := true
+
+	if h.Role == "undefined" || h.Role == "" {
+		isSufficient = false
+		reason = "No role selected"
+	}
+
+	return &common.IsSufficientReply{
+		Type:         "role",
+		IsSufficient: isSufficient,
+		Reason:       reason,
+	}
 }

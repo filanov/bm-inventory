@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/models"
@@ -192,5 +193,7 @@ func getTestHost(hostID, clusterID strfmt.UUID, state string) models.Host {
 		ClusterID:    clusterID,
 		Status:       swag.String(state),
 		HardwareInfo: defaultHwInfo,
+		Role:         "worker",
+		CheckedInAt:  strfmt.DateTime(time.Now()),
 	}
 }

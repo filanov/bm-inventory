@@ -176,7 +176,7 @@ var _ = Describe("system-test cluster install", func() {
 			generateHWPostStepReply(h3, hwInfo)
 			h4 := registerHost(clusterID)
 			generateHWPostStepReply(h4, hwInfo)
-			c, err := bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
+			_, err := bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 				ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 					{ID: *h1.ID, Role: "master"},
 					{ID: *h2.ID, Role: "master"},
@@ -185,9 +185,12 @@ var _ = Describe("system-test cluster install", func() {
 				}},
 				ClusterID: clusterID,
 			})
+			waitForHostState(ctx, clusterID, *h1.ID, "known")
+			waitForHostState(ctx, clusterID, *h2.ID, "known")
+			waitForHostState(ctx, clusterID, *h3.ID, "known")
+			waitForHostState(ctx, clusterID, *h4.ID, "known")
 			Expect(err).NotTo(HaveOccurred())
-			Expect(swag.StringValue(c.GetPayload().Status)).Should(Equal("ready"))
-			Expect(swag.StringValue(c.GetPayload().StatusInfo)).Should(Equal(clusterReadyStateInfo))
+			waitAndVerifyClusterStateAndStateInfo(ctx, clusterID, "ready", clusterReadyStateInfo)
 		})
 
 		updateProgress := func(hostID strfmt.UUID, progress string) {
@@ -221,11 +224,8 @@ var _ = Describe("system-test cluster install", func() {
 					updateProgress(*host.ID, "Done")
 				}
 
-				waitForClusterState(ctx, clusterID, "installed")
-				rep, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
-				Expect(err).NotTo(HaveOccurred())
-				c = rep.GetPayload()
-				Expect(swag.StringValue(c.StatusInfo)).Should(Equal("installed"))
+				waitAndVerifyClusterStateAndStateInfo(ctx, clusterID, "installed", "installed")
+
 			})
 		})
 		It("report_progress", func() {
@@ -353,15 +353,14 @@ var _ = Describe("system-test cluster install", func() {
 		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterInsufficientStateInfo))
 
 		// Adding one known host and setting as master -> state must be ready
-		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
+		_, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 				{ID: *h3.ID, Role: "master"},
 			}},
 			ClusterID: clusterID,
 		})
 		Expect(err).NotTo(HaveOccurred())
-		Expect(swag.StringValue(cluster.GetPayload().Status)).Should(Equal("ready"))
-		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterReadyStateInfo))
+		waitAndVerifyClusterStateAndStateInfo(ctx, clusterID, "ready", clusterReadyStateInfo)
 
 	})
 
@@ -418,15 +417,16 @@ var _ = Describe("system-test cluster install", func() {
 		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterInsufficientStateInfo))
 
 		// Three master hosts -> state must be ready
-		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
+		_, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 				{ID: *mh3.ID, Role: "master"},
 			}},
 			ClusterID: clusterID,
 		})
+		waitForHostState(ctx, clusterID, *mh3.ID, "known")
+
 		Expect(err).NotTo(HaveOccurred())
-		Expect(swag.StringValue(cluster.GetPayload().Status)).Should(Equal("ready"))
-		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterReadyStateInfo))
+		waitAndVerifyClusterStateAndStateInfo(ctx, clusterID, "ready", clusterReadyStateInfo)
 
 		// Back to two master hosts -> state must be insufficient
 		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
@@ -440,15 +440,16 @@ var _ = Describe("system-test cluster install", func() {
 		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterInsufficientStateInfo))
 
 		// Three master hosts -> state must be ready
-		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
+		_, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 				{ID: *mh3.ID, Role: "master"},
 			}},
 			ClusterID: clusterID,
 		})
+		waitForHostState(ctx, clusterID, *mh3.ID, "known")
+
 		Expect(err).NotTo(HaveOccurred())
-		Expect(swag.StringValue(cluster.GetPayload().Status)).Should(Equal("ready"))
-		Expect(swag.StringValue(cluster.GetPayload().StatusInfo)).Should(Equal(clusterReadyStateInfo))
+		waitAndVerifyClusterStateAndStateInfo(ctx, clusterID, "ready", clusterReadyStateInfo)
 
 		// Back to two master hosts -> state must be insufficient
 		cluster, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
@@ -479,7 +480,8 @@ var _ = Describe("system-test cluster install", func() {
 		}
 		h1 := registerHost(clusterID)
 		generateHWPostStepReply(h1, hwInfo)
-		Expect(*getHost(clusterID, *h1.ID).Status).Should(Equal("known"))
+		waitForHostState(ctx, clusterID, *h1.ID, "insufficient")
+		Expect(*getHost(clusterID, *h1.ID).Status).Should(Equal("insufficient"))
 
 		hwInfo = &models.Inventory{
 			CPU:    &models.CPU{Count: 16},
@@ -507,8 +509,8 @@ var _ = Describe("system-test cluster install", func() {
 	})
 })
 
-func waitForClusterState(ctx context.Context, clusterID strfmt.UUID, state string) {
-	for start := time.Now(); time.Since(start) < 10*time.Second; {
+func waitAndVerifyClusterStateAndStateInfo(ctx context.Context, clusterID strfmt.UUID, state string, stateInfo string) {
+	for start := time.Now(); time.Since(start) < 15*time.Second; {
 		rep, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
 		Expect(err).NotTo(HaveOccurred())
 		c := rep.GetPayload()
@@ -521,4 +523,21 @@ func waitForClusterState(ctx context.Context, clusterID strfmt.UUID, state strin
 	Expect(err).NotTo(HaveOccurred())
 	c := rep.GetPayload()
 	Expect(swag.StringValue(c.Status)).Should(Equal(state))
+	Expect(swag.StringValue(c.StatusInfo)).Should(Equal(stateInfo))
+}
+
+func waitForHostState(ctx context.Context, clusterID, hostId strfmt.UUID, state string) {
+	for start := time.Now(); time.Since(start) < 5*time.Second; {
+		rep, err := bmclient.Installer.GetHost(ctx, &installer.GetHostParams{ClusterID: clusterID, HostID: hostId})
+		Expect(err).NotTo(HaveOccurred())
+		h := rep.GetPayload()
+		if swag.StringValue(h.Status) == state {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	rep, err := bmclient.Installer.GetHost(ctx, &installer.GetHostParams{ClusterID: clusterID, HostID: hostId})
+	Expect(err).NotTo(HaveOccurred())
+	h := rep.GetPayload()
+	Expect(swag.StringValue(h.Status)).Should(Equal(state))
 }

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/filanov/bm-inventory/internal/common"
+
 	"github.com/alecthomas/units"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
@@ -135,13 +137,13 @@ var _ = Describe("hardware_validator", func() {
 
 })
 
-func sufficient(reply *IsSufficientReply, err error) {
+func sufficient(reply *common.IsSufficientReply, err error) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, reply.IsSufficient).To(BeTrue())
 	ExpectWithOffset(1, reply.Reason).Should(Equal(""))
 }
 
-func insufficient(reply *IsSufficientReply, err error) {
+func insufficient(reply *common.IsSufficientReply, err error) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, reply.IsSufficient).To(BeFalse())
 	ExpectWithOffset(1, reply.Reason).ShouldNot(Equal(""))

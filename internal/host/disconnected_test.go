@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/filanov/bm-inventory/internal/common"
+
 	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
@@ -39,14 +41,17 @@ var _ = Describe("disconnected_state", func() {
 		id = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
 		host = getTestHost(id, clusterId, currentState)
+		host.CheckedInAt = strfmt.DateTime(time.Now().Add(-time.Hour))
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 		expectedReply = &expect{expectedState: currentState}
 	})
 
 	Context("update hw info", func() {
 		It("update", func() {
+			mockValidator.EXPECT().IsSufficient(gomock.Any()).
+				Return(&common.IsSufficientReply{IsSufficient: true}, nil).AnyTimes()
 			updateReply, updateErr = state.UpdateHwInfo(ctx, &host, "some hw info")
-			expectedReply.expectedState = HostStatusDisconnected
+			updateReply, updateErr = state.RefreshStatus(ctx, &host)
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
 				Expect(h.Inventory).Should(Equal(""))
@@ -58,9 +63,9 @@ var _ = Describe("disconnected_state", func() {
 	Context("update inventory", func() {
 		It("sufficient_hw", func() {
 			mockValidator.EXPECT().IsSufficient(gomock.Any()).
-				Return(&hardware.IsSufficientReply{IsSufficient: true}, nil).Times(1)
+				Return(&common.IsSufficientReply{IsSufficient: true}, nil).AnyTimes()
 			updateReply, updateErr = state.UpdateInventory(ctx, &host, "some hw info")
-			expectedReply.expectedState = HostStatusKnown
+			updateReply, updateErr = state.RefreshStatus(ctx, &host)
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
 				Expect(h.Inventory).Should(Equal("some hw info"))
@@ -68,20 +73,19 @@ var _ = Describe("disconnected_state", func() {
 		})
 		It("insufficient_hw", func() {
 			mockValidator.EXPECT().IsSufficient(gomock.Any()).
-				Return(&hardware.IsSufficientReply{IsSufficient: false, Reason: "because"}, nil).Times(1)
+				Return(&common.IsSufficientReply{IsSufficient: false, Reason: "because"}, nil).AnyTimes()
 			updateReply, updateErr = state.UpdateInventory(ctx, &host, "some hw info")
-			expectedReply.expectedState = HostStatusInsufficient
+			updateReply, updateErr = state.RefreshStatus(ctx, &host)
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
 				Expect(h.Inventory).Should(Equal("some hw info"))
-				Expect(*h.StatusInfo).Should(Equal("because"))
 			}
 		})
 		It("hw_validation_error", func() {
 			mockValidator.EXPECT().IsSufficient(gomock.Any()).
-				Return(nil, errors.New("error")).Times(1)
+				Return(nil, errors.New("error")).AnyTimes()
 			updateReply, updateErr = state.UpdateInventory(ctx, &host, "some hw info")
-			expectedReply.expectError = true
+			updateReply, updateErr = state.RefreshStatus(ctx, &host)
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
 				Expect(h.Inventory).Should(Equal(""))
@@ -104,7 +108,7 @@ var _ = Describe("disconnected_state", func() {
 			Expect(tx.Rollback().Error).ShouldNot(HaveOccurred())
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
-				Expect(h.Role).Should(Equal(""))
+				Expect(h.Role).Should(Equal("worker"))
 			}
 		})
 	})

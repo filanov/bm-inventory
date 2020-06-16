@@ -2,7 +2,10 @@ package host
 
 import (
 	"context"
+	"strings"
 	"time"
+
+	"github.com/filanov/bm-inventory/internal/common"
 
 	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/models"
@@ -46,8 +49,9 @@ var _ = Describe("discovering_state", func() {
 	Context("update inventory", func() {
 		It("sufficient_hw", func() {
 			mockValidator.EXPECT().IsSufficient(gomock.Any()).
-				Return(&hardware.IsSufficientReply{IsSufficient: true}, nil).Times(1)
+				Return(&common.IsSufficientReply{Type: "hardware", IsSufficient: true}, nil).AnyTimes()
 			updateReply, updateErr = state.UpdateInventory(ctx, &host, "some hw info")
+			updateReply, updateErr = state.RefreshStatus(ctx, &host)
 			expectedReply.expectedState = HostStatusKnown
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
@@ -56,20 +60,22 @@ var _ = Describe("discovering_state", func() {
 		})
 		It("insufficient_hw", func() {
 			mockValidator.EXPECT().IsSufficient(gomock.Any()).
-				Return(&hardware.IsSufficientReply{IsSufficient: false, Reason: "because"}, nil).Times(1)
+				Return(&common.IsSufficientReply{Type: "hardware", IsSufficient: false, Reason: "because"}, nil).AnyTimes()
 			updateReply, updateErr = state.UpdateInventory(ctx, &host, "some hw info")
+			updateReply, updateErr = state.RefreshStatus(ctx, &host)
 			expectedReply.expectedState = HostStatusInsufficient
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
 				Expect(h.Inventory).Should(Equal("some hw info"))
-				Expect(*h.StatusInfo).Should(Equal("because"))
+				Expect(strings.Contains(*h.StatusInfo, "because")).To(Equal(true))
 			}
 		})
 		It("hw_validation_error", func() {
 			mockValidator.EXPECT().IsSufficient(gomock.Any()).
-				Return(nil, errors.New("error")).Times(1)
+				Return(nil, errors.New("error")).AnyTimes()
 			updateReply, updateErr = state.UpdateInventory(ctx, &host, "some hw info")
-			expectedReply.expectError = true
+			updateReply, updateErr = state.RefreshStatus(ctx, &host)
+			expectedReply.expectedState = HostStatusInsufficient
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
 				Expect(h.Inventory).Should(Equal(""))
@@ -92,7 +98,7 @@ var _ = Describe("discovering_state", func() {
 			Expect(tx.Rollback().Error).ShouldNot(HaveOccurred())
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
-				Expect(h.Role).Should(Equal(""))
+				Expect(h.Role).Should(Equal("worker"))
 			}
 		})
 	})
@@ -100,11 +106,15 @@ var _ = Describe("discovering_state", func() {
 	Context("refresh_status", func() {
 		It("keep_alive", func() {
 			host.CheckedInAt = strfmt.DateTime(time.Now().Add(-time.Minute))
+			mockValidator.EXPECT().IsSufficient(gomock.Any()).
+				Return(&common.IsSufficientReply{Type: "hardware", IsSufficient: true}, nil).AnyTimes()
 			updateReply, updateErr = state.RefreshStatus(ctx, &host)
-			expectedReply.expectedState = HostStatusDiscovering
+			expectedReply.expectedState = HostStatusKnown
 		})
 		It("keep_alive_timeout", func() {
 			host.CheckedInAt = strfmt.DateTime(time.Now().Add(-time.Hour))
+			mockValidator.EXPECT().IsSufficient(gomock.Any()).
+				Return(&common.IsSufficientReply{Type: "hardware", IsSufficient: true}, nil).AnyTimes()
 			updateReply, updateErr = state.RefreshStatus(ctx, &host)
 			expectedReply.expectedState = HostStatusDisconnected
 		})

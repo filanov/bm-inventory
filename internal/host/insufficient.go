@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/models"
@@ -38,24 +39,44 @@ func (d *insufficientState) UpdateInventory(ctx context.Context, h *models.Host,
 }
 
 func (i *insufficientState) UpdateRole(ctx context.Context, h *models.Host, role string, db *gorm.DB) (*UpdateReply, error) {
-	log := logutil.FromContext(ctx, i.log)
+	h.Role = role
 	cdb := i.db
 	if db != nil {
 		cdb = db
 	}
-	reply, err := i.hwValidator.IsSufficient(h)
-	if err != nil {
-		return nil, err
-	}
-	if !reply.IsSufficient {
-		return updateStateWithParams(log, HostStatusInsufficient, reply.Reason, h, cdb,
-			"role", role)
-	}
-	return updateStateWithParams(log, HostStatusKnown, "", h, cdb, "role", role)
+	return updateRole(logutil.FromContext(ctx, i.log), h, cdb)
 }
 
 func (i *insufficientState) RefreshStatus(ctx context.Context, h *models.Host) (*UpdateReply, error) {
-	return updateByKeepAlive(logutil.FromContext(ctx, i.log), h, i.db)
+	//checking if need to change state to disconnect
+	stateReply, err := updateByKeepAlive(logutil.FromContext(ctx, i.log), h, i.db)
+	if err != nil || stateReply.IsChanged {
+		return stateReply, err
+	}
+	var statusInfoDetails = make(map[string]string)
+	//checking inventory isInsufficient
+	inventoryReply, _ := i.hwValidator.IsSufficient(h)
+	if inventoryReply != nil {
+		statusInfoDetails[inventoryReply.Type] = inventoryReply.Reason
+	} else {
+		statusInfoDetails["hardware"] = "parsing error"
+	}
+	//TODO: checking connectivity isInsufficient
+
+	//checking role
+	roleReply := isSufficientRole(h)
+	statusInfoDetails[roleReply.Type] = roleReply.Reason
+
+	if inventoryReply != nil && inventoryReply.IsSufficient && roleReply.IsSufficient {
+		i.log.Infof("refresh status host: %s role reply %+v inventory reply %+v", h.ID, roleReply, inventoryReply)
+		return updateState(i.log, HostStatusKnown, "", h, i.db)
+	} else {
+		statusInfo, err := json.Marshal(statusInfoDetails)
+		if err != nil {
+			return nil, err
+		}
+		return updateState(i.log, HostStatusInsufficient, string(statusInfo), h, i.db)
+	}
 }
 
 func (i *insufficientState) Install(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {

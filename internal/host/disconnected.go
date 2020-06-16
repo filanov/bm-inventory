@@ -39,12 +39,12 @@ func (d *disconnectedState) UpdateInventory(ctx context.Context, h *models.Host,
 }
 
 func (d *disconnectedState) UpdateRole(ctx context.Context, h *models.Host, role string, db *gorm.DB) (*UpdateReply, error) {
+	h.Role = role
 	cdb := d.db
 	if db != nil {
 		cdb = db
 	}
-	return updateStateWithParams(logutil.FromContext(ctx, d.log), HostStatusDisconnected,
-		swag.StringValue(h.StatusInfo), h, cdb, "role", role)
+	return updateRole(logutil.FromContext(ctx, d.log), h, cdb)
 }
 
 func (d *disconnectedState) RefreshStatus(ctx context.Context, h *models.Host) (*UpdateReply, error) {

@@ -58,7 +58,7 @@ var _ = Describe("disabled_state", func() {
 			Expect(tx.Rollback().Error).ShouldNot(HaveOccurred())
 			expectedReply.postCheck = func() {
 				h := getHost(id, clusterId, db)
-				Expect(h.Role).Should(Equal(""))
+				Expect(h.Role).Should(Equal("worker"))
 			}
 		})
 	})
