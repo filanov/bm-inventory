@@ -277,7 +277,7 @@ var _ = Describe("cluster install", func() {
 			clusterID = *cluster.ID
 			registerHostsAndSetRoles(clusterID, 4)
 		})
-		Context("register hosts", func() {
+		Context("register hosts drone_disable drone_disable", func() {
 			It("register host while installing", func() {
 				_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 				Expect(err).NotTo(HaveOccurred())
@@ -308,7 +308,7 @@ var _ = Describe("cluster install", func() {
 			})
 		})
 
-		It("install cluster", func() {
+		It("install cluster drone_disable", func() {
 			_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -347,7 +347,7 @@ var _ = Describe("cluster install", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("report_progress", func() {
+		It("report_progress drone_disable", func() {
 			c, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 			Expect(err).NotTo(HaveOccurred())
 
@@ -385,7 +385,7 @@ var _ = Describe("cluster install", func() {
 			})
 		})
 
-		It("install download_config_files", func() {
+		It("install download_config_files drone_disable", func() {
 
 			//Test downloading kubeconfig files in worng state
 			file, err := ioutil.TempFile("", "tmp")
@@ -412,7 +412,7 @@ var _ = Describe("cluster install", func() {
 			Expect(s.Size()).ShouldNot(Equal(0))
 		})
 
-		It("download_config_files in error state", func() {
+		It("download_config_files in error state drone_disable", func() {
 			file, err := ioutil.TempFile("", "tmp")
 			Expect(err).NotTo(HaveOccurred())
 			defer os.Remove(file.Name())
@@ -428,7 +428,7 @@ var _ = Describe("cluster install", func() {
 			Expect(s.Size()).ShouldNot(Equal(0))
 		})
 
-		It("Get credentials", func() {
+		It("Get credentials drone_disable", func() {
 			By("Test getting kubeadmin password for not found cluster")
 			{
 				missingClusterId := strfmt.UUID(uuid.New().String())
@@ -453,7 +453,7 @@ var _ = Describe("cluster install", func() {
 			}
 		})
 
-		It("Upload ingress ca and kubeconfig download", func() {
+		It("Upload ingress ca and kubeconfig download drone_disable", func() {
 			ingressCa := "-----BEGIN CERTIFICATE-----\nMIIDozCCAougAwIBAgIULCOqWTF" +
 				"aEA8gNEmV+rb7h1v0r3EwDQYJKoZIhvcNAQELBQAwYTELMAkGA1UEBhMCaXMxCzAJBgNVBAgMAmRk" +
 				"MQswCQYDVQQHDAJkZDELMAkGA1UECgwCZGQxCzAJBgNVBAsMAmRkMQswCQYDVQQDDAJkZDERMA8GCSqGSIb3DQEJARYCZGQwHhcNMjAwNTI1MTYwNTAwWhcNMzA" +
@@ -812,7 +812,7 @@ var _ = Describe("cluster install, with default network params", func() {
 		cluster = registerClusterReply.GetPayload()
 	})
 
-	It("install cluster", func() {
+	It("install cluster drone_disable", func() {
 		clusterID := *cluster.ID
 		registerHostsAndSetRoles(clusterID, 3)
 		rep, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})

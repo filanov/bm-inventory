@@ -40,7 +40,7 @@ var _ = Describe("system-test image tests", func() {
 		clusterID = *cluster.GetPayload().ID
 	})
 
-	It("create_and_get_image", func() {
+	It("create_and_get_image drone_disable", func() {
 		file, err := ioutil.TempFile("", "tmp")
 		if err != nil {
 			log.Fatal(err)
@@ -97,7 +97,7 @@ var _ = Describe("image tests", func() {
 		Expect(err).Should(HaveOccurred())
 	})
 
-	It("download_non_existing_image", func() {
+	It("download_non_existing_image drone_disable", func() {
 		cluster, err := bmclient.Installer.RegisterCluster(ctx, &installer.RegisterClusterParams{
 			NewClusterParams: &models.ClusterCreateParams{
 				Name:             swag.String("test cluster"),
