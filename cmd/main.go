@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+
 	"github.com/filanov/bm-inventory/internal/bminventory"
 	"github.com/filanov/bm-inventory/internal/cluster"
 	"github.com/filanov/bm-inventory/internal/events"
@@ -45,6 +49,7 @@ var Options struct {
 	ClusterStateMonitorInterval time.Duration `envconfig:"CLUSTER_MONITOR_INTERVAL" default:"10s"`
 	S3Config                    s3wrapper.Config
 	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"30s"`
+	TestMode                    bool `envconfig:"TEST_MODE" default:"false"` // TODO remove when jobs running deprecated
 }
 
 func main() {
@@ -61,9 +66,13 @@ func main() {
 
 	log.Println("Starting bm service")
 
-	//if err = s3wrapper.CreateBucket(&Options.S3Config); err != nil {
-	//	log.Fatal(err)
-	//}
+	if Options.TestMode {
+		log.Println("running drone test, skipping S3")
+	}else {
+		if err = s3wrapper.CreateBucket(&Options.S3Config); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	db, err := gorm.Open("mysql",
 		fmt.Sprintf("admin:admin@tcp(%s:%s)/installer?charset=utf8&parseTime=True&loc=Local",
@@ -83,13 +92,21 @@ func main() {
 		log.Fatal("Failed to add K8S scheme", err)
 	}
 
-	//kclient, err := client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
-	//if err != nil {
-	//	log.Fatal("failed to create client:", err)
-	//}
+	var sConfig *rest.Config
+	if Options.TestMode{
+		sConfig = nil
+	}else{
+		sConfig = config.GetConfigOrDie()
+	}
+	kclient, err := client.New(sConfig, client.Options{Scheme: scheme})
+	if err != nil && !Options.TestMode {
+		log.Fatal("failed to create client:", err)
+	}
+
 	if err = db.AutoMigrate(&models.Host{}, &models.Cluster{}, &events.Event{}).Error; err != nil {
 		log.Fatal("failed to auto migrate, ", err)
 	}
+
 	eventsHandler := events.New(db, log.WithField("pkg", "events"))
 	hwValidator := hardware.NewValidator(log.WithField("pkg", "validators"), Options.HWValidatorConfig)
 	instructionApi := host.NewInstructionManager(log, db, hwValidator, Options.InstructionConfig)
@@ -111,8 +128,11 @@ func main() {
 		log.Fatal("Failed to setup S3 client", err)
 	}
 
-	//jobApi := job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
-	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, nil, eventsHandler, s3Client)
+	jobApi := job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
+	if Options.TestMode{
+		jobApi = nil
+	}
+	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobApi, eventsHandler, s3Client)
 
 	events := events.NewApi(eventsHandler, logrus.WithField("pkg", "eventsApi"))
 

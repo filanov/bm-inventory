@@ -21,6 +21,7 @@ steps:
       INVENTORY: build:8090
       DB_HOST: database
       DB_PORT: 3306
+      TEST_MODE: true
     volumes:
       - name: mounted
         path: /var/run/docker.sock
