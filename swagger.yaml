@@ -85,7 +85,7 @@ paths:
           schema:
             $ref: '#/definitions/error'
 
-    patch:
+    put:
       tags:
         - installer
       summary: Updates an OpenShift bare metal cluster definition.
