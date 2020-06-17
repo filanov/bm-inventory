@@ -174,46 +174,7 @@ func init() {
           }
         }
       },
-      "delete": {
-        "tags": [
-          "installer"
-        ],
-        "summary": "Deletes an OpenShift bare metal cluster definition.",
-        "operationId": "DeregisterCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Success."
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "409": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "patch": {
+      "put": {
         "tags": [
           "installer"
         ],
@@ -248,6 +209,45 @@ func init() {
             "schema": {
               "$ref": "#/definitions/error"
             }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "installer"
+        ],
+        "summary": "Deletes an OpenShift bare metal cluster definition.",
+        "operationId": "DeregisterCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
           },
           "404": {
             "description": "Error.",
@@ -2282,46 +2282,7 @@ func init() {
           }
         }
       },
-      "delete": {
-        "tags": [
-          "installer"
-        ],
-        "summary": "Deletes an OpenShift bare metal cluster definition.",
-        "operationId": "DeregisterCluster",
-        "parameters": [
-          {
-            "type": "string",
-            "format": "uuid",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Success."
-          },
-          "404": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "409": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          },
-          "500": {
-            "description": "Error.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "patch": {
+      "put": {
         "tags": [
           "installer"
         ],
@@ -2356,6 +2317,45 @@ func init() {
             "schema": {
               "$ref": "#/definitions/error"
             }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "409": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "installer"
+        ],
+        "summary": "Deletes an OpenShift bare metal cluster definition.",
+        "operationId": "DeregisterCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
           },
           "404": {
             "description": "Error.",

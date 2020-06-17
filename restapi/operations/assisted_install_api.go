@@ -504,10 +504,10 @@ func (o *AssistedInstallAPI) initHandlerCache() {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/clusters/{cluster_id}/hosts/{host_id}/actions/debug"] = installer.NewSetDebugStep(o.context, o.InstallerSetDebugStepHandler)
-	if o.handlers["PATCH"] == nil {
-		o.handlers["PATCH"] = make(map[string]http.Handler)
+	if o.handlers["PUT"] == nil {
+		o.handlers["PUT"] = make(map[string]http.Handler)
 	}
-	o.handlers["PATCH"]["/clusters/{cluster_id}"] = installer.NewUpdateCluster(o.context, o.InstallerUpdateClusterHandler)
+	o.handlers["PUT"]["/clusters/{cluster_id}"] = installer.NewUpdateCluster(o.context, o.InstallerUpdateClusterHandler)
 	if o.handlers["PUT"] == nil {
 		o.handlers["PUT"] = make(map[string]http.Handler)
 	}

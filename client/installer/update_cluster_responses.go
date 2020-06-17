@@ -73,7 +73,7 @@ type UpdateClusterCreated struct {
 }
 
 func (o *UpdateClusterCreated) Error() string {
-	return fmt.Sprintf("[PATCH /clusters/{cluster_id}][%d] updateClusterCreated  %+v", 201, o.Payload)
+	return fmt.Sprintf("[PUT /clusters/{cluster_id}][%d] updateClusterCreated  %+v", 201, o.Payload)
 }
 
 func (o *UpdateClusterCreated) GetPayload() *models.Cluster {
@@ -106,7 +106,7 @@ type UpdateClusterBadRequest struct {
 }
 
 func (o *UpdateClusterBadRequest) Error() string {
-	return fmt.Sprintf("[PATCH /clusters/{cluster_id}][%d] updateClusterBadRequest  %+v", 400, o.Payload)
+	return fmt.Sprintf("[PUT /clusters/{cluster_id}][%d] updateClusterBadRequest  %+v", 400, o.Payload)
 }
 
 func (o *UpdateClusterBadRequest) GetPayload() *models.Error {
@@ -139,7 +139,7 @@ type UpdateClusterNotFound struct {
 }
 
 func (o *UpdateClusterNotFound) Error() string {
-	return fmt.Sprintf("[PATCH /clusters/{cluster_id}][%d] updateClusterNotFound  %+v", 404, o.Payload)
+	return fmt.Sprintf("[PUT /clusters/{cluster_id}][%d] updateClusterNotFound  %+v", 404, o.Payload)
 }
 
 func (o *UpdateClusterNotFound) GetPayload() *models.Error {
@@ -172,7 +172,7 @@ type UpdateClusterConflict struct {
 }
 
 func (o *UpdateClusterConflict) Error() string {
-	return fmt.Sprintf("[PATCH /clusters/{cluster_id}][%d] updateClusterConflict  %+v", 409, o.Payload)
+	return fmt.Sprintf("[PUT /clusters/{cluster_id}][%d] updateClusterConflict  %+v", 409, o.Payload)
 }
 
 func (o *UpdateClusterConflict) GetPayload() *models.Error {
@@ -205,7 +205,7 @@ type UpdateClusterInternalServerError struct {
 }
 
 func (o *UpdateClusterInternalServerError) Error() string {
-	return fmt.Sprintf("[PATCH /clusters/{cluster_id}][%d] updateClusterInternalServerError  %+v", 500, o.Payload)
+	return fmt.Sprintf("[PUT /clusters/{cluster_id}][%d] updateClusterInternalServerError  %+v", 500, o.Payload)
 }
 
 func (o *UpdateClusterInternalServerError) GetPayload() *models.Error {

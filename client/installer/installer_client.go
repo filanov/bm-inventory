@@ -567,7 +567,7 @@ func (a *Client) UpdateCluster(ctx context.Context, params *UpdateClusterParams)
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "UpdateCluster",
-		Method:             "PATCH",
+		Method:             "PUT",
 		PathPattern:        "/clusters/{cluster_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
