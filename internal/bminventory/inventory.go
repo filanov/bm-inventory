@@ -57,9 +57,14 @@ const DefaultUser = "kubeadmin"
 const ConsoleUrlPrefix = "https://console-openshift-console.apps"
 
 var (
+	DefaultAPIVip                   = ""
+	DefaultIngressVip               = ""
+	DefaultName                     = ""
+	DefaultBaseDNSDomain            = ""
 	DefaultClusterNetworkCidr       = "10.128.0.0/14"
 	DefaultClusterNetworkHostPrefix = int64(23)
 	DefaultServiceNetworkCidr       = "172.30.0.0/16"
+	DefaultSSHPublicKey             = ""
 )
 
 type Config struct {
@@ -390,12 +395,14 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 		return installer.NewGenerateClusterISOConflict()
 	}
 
-	cluster.ImageInfo.ProxyURL = params.ImageCreateParams.ProxyURL
-	cluster.ImageInfo.SSHPublicKey = params.ImageCreateParams.SSHPublicKey
-	cluster.ImageInfo.CreatedAt = strfmt.DateTime(now)
-
-	if err := tx.Model(&cluster).Update(cluster).Error; err != nil {
-		log.WithError(err).Errorf("failed to update cluster: %s", params.ClusterID)
+	updates := map[string]interface{}{
+		"image_info.proxy_url":      params.ImageCreateParams.ProxyURL,
+		"image_info.ssh_public_key": params.ImageCreateParams.SSHPublicKey,
+		"image_info.created_at":     strfmt.DateTime(now),
+	}
+	dbReply := tx.Model(&common.Cluster{}).Where("id = ?", cluster.ID.String()).Updates(updates)
+	if dbReply.Error != nil {
+		log.WithError(dbReply.Error).Errorf("failed to update cluster: %s", params.ClusterID)
 		return installer.NewGenerateClusterISOInternalServerError()
 	}
 
@@ -698,26 +705,26 @@ func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params installer
 		return installer.NewUpdateClusterConflict().WithPayload(common.GenerateError(http.StatusConflict, err))
 	}
 
-	updateString := func(target *string, source *string) {
+	updateString := func(target *string, source *string, def string) {
 		if source != nil {
 			*target = *source
+		} else {
+			*target = def
 		}
 	}
 
-	updateString(&cluster.Name, params.ClusterUpdateParams.Name)
-	updateString(&cluster.APIVip, params.ClusterUpdateParams.APIVip)
-	updateString(&cluster.BaseDNSDomain, params.ClusterUpdateParams.BaseDNSDomain)
-	if params.ClusterUpdateParams.ClusterNetworkCidr != nil {
-		cluster.ClusterNetworkCidr = *params.ClusterUpdateParams.ClusterNetworkCidr
-	}
+	updateString(&cluster.Name, params.ClusterUpdateParams.Name, DefaultName)
+	updateString(&cluster.APIVip, params.ClusterUpdateParams.APIVip, DefaultAPIVip)
+	updateString(&cluster.BaseDNSDomain, params.ClusterUpdateParams.BaseDNSDomain, DefaultBaseDNSDomain)
+	updateString(&cluster.ClusterNetworkCidr, params.ClusterUpdateParams.ClusterNetworkCidr, DefaultClusterNetworkCidr)
 	if params.ClusterUpdateParams.ClusterNetworkHostPrefix != nil {
 		cluster.ClusterNetworkHostPrefix = *params.ClusterUpdateParams.ClusterNetworkHostPrefix
+	} else {
+		cluster.ClusterNetworkHostPrefix = DefaultClusterNetworkHostPrefix
 	}
-	if params.ClusterUpdateParams.ServiceNetworkCidr != nil {
-		cluster.ServiceNetworkCidr = *params.ClusterUpdateParams.ServiceNetworkCidr
-	}
-	updateString(&cluster.IngressVip, params.ClusterUpdateParams.IngressVip)
-	updateString(&cluster.SSHPublicKey, params.ClusterUpdateParams.SSHPublicKey)
+	updateString(&cluster.ServiceNetworkCidr, params.ClusterUpdateParams.ServiceNetworkCidr, DefaultServiceNetworkCidr)
+	updateString(&cluster.IngressVip, params.ClusterUpdateParams.IngressVip, DefaultIngressVip)
+	updateString(&cluster.SSHPublicKey, params.ClusterUpdateParams.SSHPublicKey, DefaultSSHPublicKey)
 	var machineCidr string
 	if machineCidr, err = common.CalculateMachineNetworkCIDR(&cluster); err != nil {
 		log.WithError(err).Errorf("failed to calculate machine network cidr for cluster: %s", params.ClusterID)
@@ -732,10 +739,23 @@ func (b *bareMetalInventory) UpdateCluster(ctx context.Context, params installer
 	}
 	setPullSecret(&cluster, swag.StringValue(params.ClusterUpdateParams.PullSecret))
 
-	if err = tx.Model(&cluster).Update(cluster).Error; err != nil {
-		log.WithError(err).Errorf("failed to update cluster: %s", params.ClusterID)
+	updates := map[string]interface{}{
+		"name":                        cluster.Name,
+		"api_vip":                     cluster.APIVip,
+		"base_dns_domain":             cluster.BaseDNSDomain,
+		"cluster_network_cidr":        cluster.ClusterNetworkCidr,
+		"cluster_network_host_prefix": cluster.ClusterNetworkHostPrefix,
+		"service_network_cidr":        cluster.ServiceNetworkCidr,
+		"ingress_vip":                 cluster.IngressVip,
+		"ssh_public_key":              cluster.SSHPublicKey,
+		"machine_network_cidr":        cluster.MachineNetworkCidr,
+		"pull_secret_set":             cluster.PullSecretSet,
+	}
+	dbReply := tx.Model(&common.Cluster{}).Where("id = ?", cluster.ID.String()).Updates(updates)
+	if dbReply.Error != nil {
+		log.WithError(dbReply.Error).Errorf("failed to update cluster: %s", params.ClusterID)
 		return installer.NewUpdateClusterInternalServerError().
-			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+			WithPayload(common.GenerateError(http.StatusInternalServerError, dbReply.Error))
 	}
 
 	for i := range params.ClusterUpdateParams.HostsRoles {

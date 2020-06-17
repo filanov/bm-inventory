@@ -591,6 +591,55 @@ var _ = Describe("cluster", func() {
 				actualNetworks[2].HostIds = sortedHosts(actualNetworks[2].HostIds)
 				Expect(actualNetworks).To(Equal(expectedNetworks))
 			})
+			It("Partial update success", func() {
+				name := "new name"
+				baseDnsDomain := "example.com"
+				clusterNetworkCidr := "1.2.3.0/14"
+				clusterNetworkHostPrefix := int64(20)
+				serviceNetworkCidr := "1.2.4.0/14"
+				apiVip := "10.11.12.15"
+				ingressVip := "10.11.12.16"
+				mockHostApi.EXPECT().RefreshStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(3)
+				mockClusterApi.EXPECT().RefreshStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+				reply := bm.UpdateCluster(ctx, installer.UpdateClusterParams{
+					ClusterID: clusterID,
+					ClusterUpdateParams: &models.ClusterUpdateParams{
+						APIVip:                   &apiVip,
+						BaseDNSDomain:            &baseDnsDomain,
+						ClusterNetworkCidr:       &clusterNetworkCidr,
+						ClusterNetworkHostPrefix: &clusterNetworkHostPrefix,
+						IngressVip:               &ingressVip,
+						Name:                     &name,
+						ServiceNetworkCidr:       &serviceNetworkCidr,
+					},
+				})
+				Expect(reply).To(BeAssignableToTypeOf(installer.NewUpdateClusterCreated()))
+				actual := reply.(*installer.UpdateClusterCreated)
+				Expect(actual.Payload.APIVip).To(Equal(apiVip))
+				Expect(actual.Payload.BaseDNSDomain).To(Equal(baseDnsDomain))
+				Expect(actual.Payload.ClusterNetworkCidr).To(Equal(clusterNetworkCidr))
+				Expect(actual.Payload.ClusterNetworkHostPrefix).To(Equal(clusterNetworkHostPrefix))
+				Expect(actual.Payload.IngressVip).To(Equal(ingressVip))
+				Expect(actual.Payload.Name).To(Equal(name))
+				Expect(actual.Payload.ServiceNetworkCidr).To(Equal(serviceNetworkCidr))
+				Expect(actual.Payload.MachineNetworkCidr).To(Equal("10.11.0.0/16"))
+
+				mockClusterApi.EXPECT().VerifyClusterUpdatability(gomock.Any()).Return(nil).Times(1)
+				mockHostApi.EXPECT().RefreshStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(3)
+				mockClusterApi.EXPECT().RefreshStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+				reply = bm.UpdateCluster(ctx, installer.UpdateClusterParams{
+					ClusterID:           clusterID,
+					ClusterUpdateParams: &models.ClusterUpdateParams{}})
+				Expect(reply).To(BeAssignableToTypeOf(installer.NewUpdateClusterCreated()))
+				actual = reply.(*installer.UpdateClusterCreated)
+				Expect(actual.Payload.APIVip).To(Equal(""))
+				Expect(actual.Payload.BaseDNSDomain).To(Equal(""))
+				Expect(actual.Payload.ClusterNetworkCidr).To(Equal("10.128.0.0/14"))
+				Expect(actual.Payload.ClusterNetworkHostPrefix).To(Equal(int64(23)))
+				Expect(actual.Payload.IngressVip).To(Equal(""))
+				Expect(actual.Payload.Name).To(Equal(""))
+				Expect(actual.Payload.ServiceNetworkCidr).To(Equal("172.30.0.0/16"))
+			})
 		})
 	})
 
