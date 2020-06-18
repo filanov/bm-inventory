@@ -6,11 +6,138 @@ package job
 
 import (
 	context "context"
+	common "github.com/filanov/bm-inventory/internal/common"
+	events "github.com/filanov/bm-inventory/internal/events"
 	gomock "github.com/golang/mock/gomock"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	reflect "reflect"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// MockISOGenerator is a mock of ISOGenerator interface
+type MockISOGenerator struct {
+	ctrl     *gomock.Controller
+	recorder *MockISOGeneratorMockRecorder
+}
+
+// MockISOGeneratorMockRecorder is the mock recorder for MockISOGenerator
+type MockISOGeneratorMockRecorder struct {
+	mock *MockISOGenerator
+}
+
+// NewMockISOGenerator creates a new mock instance
+func NewMockISOGenerator(ctrl *gomock.Controller) *MockISOGenerator {
+	mock := &MockISOGenerator{ctrl: ctrl}
+	mock.recorder = &MockISOGeneratorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockISOGenerator) EXPECT() *MockISOGeneratorMockRecorder {
+	return m.recorder
+}
+
+// GenerateISO mocks base method
+func (m *MockISOGenerator) GenerateISO(ctx context.Context, cluster common.Cluster, jobName, imageName, ignitionConfig string, eventsHandler events.Handler) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateISO", ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GenerateISO indicates an expected call of GenerateISO
+func (mr *MockISOGeneratorMockRecorder) GenerateISO(ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateISO", reflect.TypeOf((*MockISOGenerator)(nil).GenerateISO), ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler)
+}
+
+// MockInstallConfigGenerator is a mock of InstallConfigGenerator interface
+type MockInstallConfigGenerator struct {
+	ctrl     *gomock.Controller
+	recorder *MockInstallConfigGeneratorMockRecorder
+}
+
+// MockInstallConfigGeneratorMockRecorder is the mock recorder for MockInstallConfigGenerator
+type MockInstallConfigGeneratorMockRecorder struct {
+	mock *MockInstallConfigGenerator
+}
+
+// NewMockInstallConfigGenerator creates a new mock instance
+func NewMockInstallConfigGenerator(ctrl *gomock.Controller) *MockInstallConfigGenerator {
+	mock := &MockInstallConfigGenerator{ctrl: ctrl}
+	mock.recorder = &MockInstallConfigGeneratorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockInstallConfigGenerator) EXPECT() *MockInstallConfigGeneratorMockRecorder {
+	return m.recorder
+}
+
+// GenerateInstallConfig mocks base method
+func (m *MockInstallConfigGenerator) GenerateInstallConfig(ctx context.Context, cluster common.Cluster, cfg []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateInstallConfig", ctx, cluster, cfg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GenerateInstallConfig indicates an expected call of GenerateInstallConfig
+func (mr *MockInstallConfigGeneratorMockRecorder) GenerateInstallConfig(ctx, cluster, cfg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateInstallConfig", reflect.TypeOf((*MockInstallConfigGenerator)(nil).GenerateInstallConfig), ctx, cluster, cfg)
+}
+
+// MockISOInstallConfigGenerator is a mock of ISOInstallConfigGenerator interface
+type MockISOInstallConfigGenerator struct {
+	ctrl     *gomock.Controller
+	recorder *MockISOInstallConfigGeneratorMockRecorder
+}
+
+// MockISOInstallConfigGeneratorMockRecorder is the mock recorder for MockISOInstallConfigGenerator
+type MockISOInstallConfigGeneratorMockRecorder struct {
+	mock *MockISOInstallConfigGenerator
+}
+
+// NewMockISOInstallConfigGenerator creates a new mock instance
+func NewMockISOInstallConfigGenerator(ctrl *gomock.Controller) *MockISOInstallConfigGenerator {
+	mock := &MockISOInstallConfigGenerator{ctrl: ctrl}
+	mock.recorder = &MockISOInstallConfigGeneratorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockISOInstallConfigGenerator) EXPECT() *MockISOInstallConfigGeneratorMockRecorder {
+	return m.recorder
+}
+
+// GenerateISO mocks base method
+func (m *MockISOInstallConfigGenerator) GenerateISO(ctx context.Context, cluster common.Cluster, jobName, imageName, ignitionConfig string, eventsHandler events.Handler) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateISO", ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GenerateISO indicates an expected call of GenerateISO
+func (mr *MockISOInstallConfigGeneratorMockRecorder) GenerateISO(ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateISO", reflect.TypeOf((*MockISOInstallConfigGenerator)(nil).GenerateISO), ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler)
+}
+
+// GenerateInstallConfig mocks base method
+func (m *MockISOInstallConfigGenerator) GenerateInstallConfig(ctx context.Context, cluster common.Cluster, cfg []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateInstallConfig", ctx, cluster, cfg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GenerateInstallConfig indicates an expected call of GenerateInstallConfig
+func (mr *MockISOInstallConfigGeneratorMockRecorder) GenerateInstallConfig(ctx, cluster, cfg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateInstallConfig", reflect.TypeOf((*MockISOInstallConfigGenerator)(nil).GenerateInstallConfig), ctx, cluster, cfg)
+}
 
 // MockAPI is a mock of API interface
 type MockAPI struct {
@@ -80,4 +207,32 @@ func (m *MockAPI) Delete(ctx context.Context, name, namespace string) error {
 func (mr *MockAPIMockRecorder) Delete(ctx, name, namespace interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockAPI)(nil).Delete), ctx, name, namespace)
+}
+
+// GenerateISO mocks base method
+func (m *MockAPI) GenerateISO(ctx context.Context, cluster common.Cluster, jobName, imageName, ignitionConfig string, eventsHandler events.Handler) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateISO", ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GenerateISO indicates an expected call of GenerateISO
+func (mr *MockAPIMockRecorder) GenerateISO(ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateISO", reflect.TypeOf((*MockAPI)(nil).GenerateISO), ctx, cluster, jobName, imageName, ignitionConfig, eventsHandler)
+}
+
+// GenerateInstallConfig mocks base method
+func (m *MockAPI) GenerateInstallConfig(ctx context.Context, cluster common.Cluster, cfg []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateInstallConfig", ctx, cluster, cfg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GenerateInstallConfig indicates an expected call of GenerateInstallConfig
+func (mr *MockAPIMockRecorder) GenerateInstallConfig(ctx, cluster, cfg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateInstallConfig", reflect.TypeOf((*MockAPI)(nil).GenerateInstallConfig), ctx, cluster, cfg)
 }

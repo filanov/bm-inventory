@@ -20,6 +20,22 @@ pipeline {
         sh '''export PATH=$PATH:/usr/local/go/bin;make subsystem-run'''
       }
     }
+
+    stage('clear deployment after subsystem test') {
+      steps {
+        sh 'make clear-deployment'
+      }
+    }
+
+    stage('test subsystem with podman') {
+      steps {
+        sh '''export CONTAINER_COMMAND=podman; export SERVICE=quay.io/ocpmetal/bm-inventory:test-onprem; make build-onprem'''
+        sh '''export CONTAINER_COMMAND=podman; export SERVICE=quay.io/ocpmetal/bm-inventory:test-onprem; make deploy-onprem'''
+        sleep 10
+        sh 'make test-onprem'
+        sh 'export CONTAINER_COMMAND=podman; make clean-onprem'
+      }
+    }
   }
   post {
           failure {
