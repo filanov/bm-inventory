@@ -1,0 +1,21 @@
+# [TODO] - remove this line, once we are ready to use openshift-installer from the release
+FROM quay.io/yshnaidm/openshift-installer AS openshift-installer
+FROM quay.io/ocpmetal/ignition-manifests-and-kubeconfig-generate:stable as config-gen
+
+FROM fedora:31
+RUN dnf install -y python pip libvirt-devel
+ARG GIT_REVISION
+LABEL "git_revision"=${GIT_REVISION}
+RUN pip install boto3
+RUN pip install botocore
+
+ARG WORK_DIR=/data
+
+RUN mkdir $WORK_DIR
+RUN chmod 777 $WORK_DIR
+# [TODO] - change this line to use openshift-installer from the release, once we are ready
+COPY --from=openshift-installer /root/installer/openshift-install $WORK_DIR
+COPY --from=config-gen $WORK_DIR/process-ignition-manifests-and-kubeconfig.py $WORK_DIR
+
+ADD build/bm-inventory /bm-inventory
+CMD ["/bm-inventory"]

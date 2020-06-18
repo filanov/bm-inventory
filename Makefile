@@ -108,3 +108,22 @@ subsystem-clean:
 
 clear-deployment:
 	python3 ./tools/clear_deployment.py --delete-namespace $(APPLY_NAMESPACE)
+
+deploy-disconnected:
+	podman pod create --name assisted-installer -p 3306,8000,8090,8080
+	podman volume create s3-volume
+	podman run -dt --pod assisted-installer --env-file disconnected-environment -v s3-volume:/mnt/data:rw --name s3 scality/s3server:latest
+	podman run -dt --pod assisted-installer --env-file disconnected-environment --name mariadb mariadb:latest
+	sleep 15
+	podman run -dt --pod assisted-installer --env-file disconnected-environment --name installer ${SERVICE}
+	podman run -dt --pod assisted-installer --env-file disconnected-environment --name ui quay.io/ocpmetal/ocp-metal-ui:latest
+
+clean-disconnected:
+	podman pod rm -f assisted-installer
+	podman volume rm s3-volume
+
+test-disconnected:
+	INVENTORY=127.0.0.1:8090 \
+	DB_HOST=127.0.0.1 \
+	DB_PORT=3306 \
+	go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v

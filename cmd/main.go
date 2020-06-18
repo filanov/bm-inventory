@@ -54,7 +54,8 @@ var Options struct {
 	S3Config                    s3wrapper.Config
 	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"30s"`
 	Versions                    versions.Versions
-	UseK8s                      bool `envconfig:"USE_K8S" default:"true"` // TODO remove when jobs running deprecated
+	UseK8s                      bool   `envconfig:"USE_K8S" default:"true"` // TODO remove when jobs running deprecated
+	Target                      string `envconfig:"TARGET" default:""`
 }
 
 func main() {
@@ -70,27 +71,6 @@ func main() {
 	flag.Parse()
 
 	log.Println("Starting bm service")
-
-	var kclient client.Client
-	if Options.UseK8s {
-		if err = s3wrapper.CreateBucket(&Options.S3Config); err != nil {
-			log.Fatal(err)
-		}
-
-		scheme := runtime.NewScheme()
-		if err = clientgoscheme.AddToScheme(scheme); err != nil {
-			log.Fatal("Failed to add K8S scheme", err)
-		}
-
-		kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
-		if err != nil && Options.UseK8s {
-			log.Fatal("failed to create client:", err)
-		}
-
-	} else {
-		log.Println("running drone test, skipping S3")
-		kclient = nil
-	}
 
 	db, err := gorm.Open("mysql",
 		fmt.Sprintf("admin:admin@tcp(%s:%s)/installer?charset=utf8&parseTime=True&loc=Local",
@@ -130,8 +110,38 @@ func main() {
 		log.Fatal("Failed to setup S3 client", err)
 	}
 
-	jobApi := job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
-	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobApi, eventsHandler, s3Client)
+	log.Println("Target: " + Options.Target)
+
+	var jobAPI job.API
+
+	if Options.Target == "disconnected" || Options.UseK8s {
+		if err = s3wrapper.CreateBucket(&Options.S3Config); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if Options.Target != "disconnected" {
+
+		var kclient client.Client
+		if Options.UseK8s {
+			scheme := runtime.NewScheme()
+			if err = clientgoscheme.AddToScheme(scheme); err != nil {
+				log.Fatal("Failed to add K8S scheme", err)
+			}
+
+			kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
+			if err != nil && Options.UseK8s {
+				log.Fatal("failed to create client:", err)
+			}
+
+		} else {
+			log.Println("running drone test, skipping S3")
+			kclient = nil
+		}
+
+		jobAPI = job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
+	}
+	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobAPI, eventsHandler, s3Client)
 
 	events := events.NewApi(eventsHandler, logrus.WithField("pkg", "eventsApi"))
 
