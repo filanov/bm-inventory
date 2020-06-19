@@ -6,12 +6,13 @@ package host
 
 import (
 	context "context"
+	reflect "reflect"
+
 	common "github.com/filanov/bm-inventory/internal/common"
 	hardware "github.com/filanov/bm-inventory/internal/hardware"
 	models "github.com/filanov/bm-inventory/models"
 	gomock "github.com/golang/mock/gomock"
 	gorm "github.com/jinzhu/gorm"
-	reflect "reflect"
 )
 
 // MockStateAPI is a mock of StateAPI interface
@@ -448,4 +449,18 @@ func (m *MockAPI) HostMonitoring() {
 func (mr *MockAPIMockRecorder) HostMonitoring() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostMonitoring", reflect.TypeOf((*MockAPI)(nil).HostMonitoring))
+}
+
+// CancelInstallation mocks base method
+func (m *MockAPI) CancelInstallation(ctx context.Context, h *models.Host, reason string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelInstallation", ctx, h, reason)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelInstallation indicates an expected call of CancelInstallation
+func (mr *MockAPIMockRecorder) CancelInstallation(ctx, h interface{}, reason string) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelInstallation", reflect.TypeOf((*MockAPI)(nil).CancelInstallation), ctx, h, reason)
 }

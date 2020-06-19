@@ -75,6 +75,7 @@ type API interface {
 	SetBootstrap(ctx context.Context, h *models.Host, isbootstrap bool, db *gorm.DB) error
 	UpdateConnectivityReport(ctx context.Context, h *models.Host, connectivityReport string) error
 	HostMonitoring()
+	CancelInstallation(ctx context.Context, h *models.Host, reason string) error
 }
 
 type Manager struct {
@@ -273,4 +274,15 @@ func (m *Manager) UpdateConnectivityReport(ctx context.Context, h *models.Host, 
 		}
 	}
 	return nil
+}
+
+func (m *Manager) CancelInstallation(ctx context.Context, h *models.Host, reason string) error {
+	hostStatus := swag.StringValue(h.Status)
+	if hostStatus == HostStatusError {
+		return nil
+	} else if hostStatus != HostStatusInstalling && hostStatus != HostStatusInstallingInProgress {
+		return fmt.Errorf("unable to cancel installation of host %s in status <%s>", h.ID.String(), hostStatus)
+	}
+	_, err := updateStateWithParams(logutil.FromContext(ctx, m.log), HostStatusError, reason, h, m.db)
+	return err
 }

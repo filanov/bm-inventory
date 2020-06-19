@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	logutil "github.com/filanov/bm-inventory/pkg/log"
+
 	"github.com/pkg/errors"
 
 	"github.com/filanov/bm-inventory/internal/common"
@@ -53,6 +55,7 @@ type API interface {
 	VerifyClusterUpdatability(c *common.Cluster) (err error)
 	AcceptRegistration(c *common.Cluster) (err error)
 	SetGeneratorVersion(c *common.Cluster, version string, db *gorm.DB) error
+	CancelInstallation(ctx context.Context, c *common.Cluster, reason string) (err error)
 }
 
 type Manager struct {
@@ -225,4 +228,15 @@ func (m *Manager) VerifyClusterUpdatability(c *common.Cluster) (err error) {
 func (m *Manager) SetGeneratorVersion(c *common.Cluster, version string, db *gorm.DB) error {
 	return db.Model(&common.Cluster{}).Where("id = ?", c.ID.String()).
 		Update("ignition_generator_version", version).Error
+}
+
+func (m *Manager) CancelInstallation(ctx context.Context, c *common.Cluster, reason string) (err error) {
+	clusterStatus := swag.StringValue(c.Status)
+	if clusterStatus == clusterStatusError {
+		return nil
+	} else if clusterStatus != clusterStatusInstalling {
+		return fmt.Errorf("unable to cancel installation of cluster %s in status <%s>", c.ID.String(), clusterStatus)
+	}
+	_, err = updateState(clusterStatusError, reason, c, m.db, logutil.FromContext(ctx, m.log))
+	return err
 }
