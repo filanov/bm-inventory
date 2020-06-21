@@ -1798,6 +1798,10 @@ func init() {
         "discovery_agent_version": {
           "type": "string"
         },
+        "free_addresses": {
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
+        },
         "hardware_info": {
           "type": "string",
           "x-go-custom-tag": "gorm:\"type:text\""
@@ -4026,6 +4030,10 @@ func init() {
         },
         "discovery_agent_version": {
           "type": "string"
+        },
+        "free_addresses": {
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:text\""
         },
         "hardware_info": {
           "type": "string",
