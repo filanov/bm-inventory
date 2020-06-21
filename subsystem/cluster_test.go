@@ -543,9 +543,8 @@ var _ = Describe("cluster install", func() {
 			Expect(err).NotTo(HaveOccurred())
 			c := rep.GetPayload()
 			Expect(swag.StringValue(c.Status)).Should(Equal("installing"))
-			Expect(bmclient.Installer.CancelInstallation(ctx, &installer.CancelInstallationParams{
-				ClusterID: clusterID,
-			})).NotTo(HaveOccurred())
+			_, err = bmclient.Installer.CancelInstallation(ctx, &installer.CancelInstallationParams{ClusterID: clusterID})
+			Expect(err).NotTo(HaveOccurred())
 			waitForClusterState(ctx, clusterID, models.ClusterStatusError, 20*time.Second)
 			rep, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
 			Expect(err).NotTo(HaveOccurred())

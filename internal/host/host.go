@@ -160,7 +160,8 @@ func (m *Manager) RegisterHost(ctx context.Context, h *models.Host) error {
 func (m *Manager) HandleInstallationFailure(ctx context.Context, h *models.Host) error {
 
 	return m.sm.Run(TransitionTypeHostInstallaionFailed, newStateHost(h), &TransitionArgsHostInstallationFailed{
-		ctx: ctx,
+		ctx:    ctx,
+		reason: "installation command failed",
 	})
 }
 
@@ -277,12 +278,11 @@ func (m *Manager) UpdateConnectivityReport(ctx context.Context, h *models.Host, 
 }
 
 func (m *Manager) CancelInstallation(ctx context.Context, h *models.Host, reason string) error {
-	hostStatus := swag.StringValue(h.Status)
-	if hostStatus == HostStatusError {
+	if swag.StringValue(h.Status) == HostStatusError {
 		return nil
-	} else if hostStatus != HostStatusInstalling && hostStatus != HostStatusInstallingInProgress {
-		return fmt.Errorf("unable to cancel installation of host %s in status <%s>", h.ID.String(), hostStatus)
 	}
-	_, err := updateStateWithParams(logutil.FromContext(ctx, m.log), HostStatusError, reason, h, m.db)
-	return err
+	return m.sm.Run(TransitionTypeHostInstallaionFailed, newStateHost(h), &TransitionArgsHostInstallationFailed{
+		ctx:    ctx,
+		reason: reason,
+	})
 }

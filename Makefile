@@ -15,7 +15,7 @@ kubectl get service $(1) -n assisted-installer | grep $(1) | awk '{print $$4 ":"
 endef
 endif
 
-SERVICE := $(or ${SERVICE},quay.io/ocpmetal/bm-inventory:latest)
+SERVICE := $(or ${SERVICE},quay.io/rregev/bm-inventory:latest)
 OBJEXP := $(or ${OBJEXP},quay.io/ocpmetal/s3-object-expirer:latest)
 GIT_REVISION := $(shell git rev-parse HEAD)
 APPLY_NAMESPACE := $(or ${APPLY_NAMESPACE},True)
