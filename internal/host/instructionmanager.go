@@ -20,7 +20,17 @@ type InstructionApi interface {
 	GetNextSteps(ctx context.Context, host *models.Host) (models.Steps, error)
 }
 
-type stateToStepsMap map[string][]CommandGetter
+const (
+	defaultNextStepInSec          = 60
+	defaultBackedOffNextStepInSec = 120
+)
+
+type StepsStruct struct {
+	Commands      []CommandGetter
+	NextStepInSec int
+}
+
+type stateToStepsMap map[string]StepsStruct
 
 type InstructionManager struct {
 	log          logrus.FieldLogger
@@ -46,11 +56,12 @@ func NewInstructionManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hard
 		log: log,
 		db:  db,
 		stateToSteps: stateToStepsMap{
-			HostStatusKnown:        {connectivityCmd},
-			HostStatusInsufficient: {hwCmd, inventoryCmd, connectivityCmd},
-			HostStatusDisconnected: {hwCmd, inventoryCmd, connectivityCmd},
-			HostStatusDiscovering:  {hwCmd, inventoryCmd, connectivityCmd},
-			HostStatusInstalling:   {installCmd},
+			HostStatusKnown:        {[]CommandGetter{connectivityCmd}, defaultNextStepInSec},
+			HostStatusInsufficient: {[]CommandGetter{hwCmd, inventoryCmd, connectivityCmd}, defaultNextStepInSec},
+			HostStatusDisconnected: {[]CommandGetter{hwCmd, inventoryCmd, connectivityCmd}, defaultBackedOffNextStepInSec},
+			HostStatusDiscovering:  {[]CommandGetter{hwCmd, inventoryCmd, connectivityCmd}, defaultNextStepInSec},
+			HostStatusInstalling:   {[]CommandGetter{installCmd}, defaultBackedOffNextStepInSec},
+			HostStatusDisabled:     {[]CommandGetter{}, defaultBackedOffNextStepInSec},
 		},
 	}
 }
@@ -68,7 +79,7 @@ func (i *InstructionManager) GetNextSteps(ctx context.Context, host *models.Host
 
 	if cmdsMap, ok := i.stateToSteps[HostStatus]; ok {
 		//need to add the step id
-		for _, cmd := range cmdsMap {
+		for _, cmd := range cmdsMap.Commands {
 			step, err := cmd.GetStep(ctx, host)
 			if err != nil {
 				return returnSteps, err
@@ -76,7 +87,7 @@ func (i *InstructionManager) GetNextSteps(ctx context.Context, host *models.Host
 			if step.StepID == "" {
 				step.StepID = createStepID(step.StepType)
 			}
-			returnSteps = append(returnSteps, step)
+			returnSteps.Steps = append(returnSteps.Steps, step)
 		}
 	}
 	logSteps(returnSteps, ClusterID, HostID, log)
@@ -88,10 +99,10 @@ func createStepID(stepType models.StepType) string {
 }
 
 func logSteps(steps models.Steps, clusterId strfmt.UUID, hostId *strfmt.UUID, log logrus.FieldLogger) {
-	if len(steps) == 0 {
+	if len(steps.Steps) == 0 {
 		log.Infof("No steps required for cluster <%s> host <%s>", clusterId, hostId)
 	}
-	for _, step := range steps {
+	for _, step := range steps.Steps {
 		log.Infof("Submitting step <%s> id <%s> to cluster <%s> host <%s> Command: <%s> Arguments: <%+v>", step.StepType, step.StepID, clusterId, hostId,
 			step.Command, step.Args)
 	}
