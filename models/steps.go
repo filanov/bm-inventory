@@ -16,21 +16,44 @@ import (
 // Steps steps
 //
 // swagger:model steps
-type Steps []*Step
+type Steps struct {
+
+	// next step in
+	NextStepIn *int64 `json:"next_step_in,omitempty"`
+
+	// steps
+	Steps []*Step `json:"steps"`
+}
 
 // Validate validates this steps
-func (m Steps) Validate(formats strfmt.Registry) error {
+func (m *Steps) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	for i := 0; i < len(m); i++ {
-		if swag.IsZero(m[i]) { // not required
+	if err := m.validateSteps(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *Steps) validateSteps(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Steps) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Steps); i++ {
+		if swag.IsZero(m.Steps[i]) { // not required
 			continue
 		}
 
-		if m[i] != nil {
-			if err := m[i].Validate(formats); err != nil {
+		if m.Steps[i] != nil {
+			if err := m.Steps[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName(strconv.Itoa(i))
+					return ve.ValidateName("steps" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
@@ -38,8 +61,23 @@ func (m Steps) Validate(formats strfmt.Registry) error {
 
 	}
 
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
+	return nil
+}
+
+// MarshalBinary interface implementation
+func (m *Steps) MarshalBinary() ([]byte, error) {
+	if m == nil {
+		return nil, nil
 	}
+	return swag.WriteJSON(m)
+}
+
+// UnmarshalBinary interface implementation
+func (m *Steps) UnmarshalBinary(b []byte) error {
+	var res Steps
+	if err := swag.ReadJSON(b, &res); err != nil {
+		return err
+	}
+	*m = res
 	return nil
 }
