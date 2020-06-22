@@ -112,35 +112,36 @@ func main() {
 
 	log.Println("Target: " + Options.Target)
 
-	var jobAPI job.API
-
-	if Options.Target == "disconnected" || Options.UseK8s {
+	if Options.UseK8s || Options.Target == "disconnected" {
 		if err = s3wrapper.CreateBucket(&Options.S3Config); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	if Options.Target != "disconnected" {
-
-		var kclient client.Client
-		if Options.UseK8s {
-			scheme := runtime.NewScheme()
-			if err = clientgoscheme.AddToScheme(scheme); err != nil {
-				log.Fatal("Failed to add K8S scheme", err)
-			}
-
-			kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
-			if err != nil && Options.UseK8s {
-				log.Fatal("failed to create client:", err)
-			}
-
-		} else {
-			log.Println("running drone test, skipping S3")
-			kclient = nil
+	var kclient client.Client
+	if Options.UseK8s {
+		scheme := runtime.NewScheme()
+		if err = clientgoscheme.AddToScheme(scheme); err != nil {
+			log.Fatal("Failed to add K8S scheme", err)
 		}
 
+		kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
+		if err != nil && Options.UseK8s {
+			log.Fatal("failed to create client:", err)
+		}
+
+	} else {
+		log.Println("running drone test, skipping S3")
+		kclient = nil
+	}
+
+	var jobAPI job.API
+	if Options.Target == "disconnected" {
+		jobAPI = job.NewLocalJob(log.WithField("pkg", "local-job-wrapper"), Options.JobConfig)
+	} else {
 		jobAPI = job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
 	}
+
 	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobAPI, eventsHandler, s3Client)
 
 	events := events.NewApi(eventsHandler, logrus.WithField("pkg", "eventsApi"))

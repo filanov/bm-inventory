@@ -7,3 +7,4 @@ MYSQL_ROOT_PASSWORD=root
 MYSQL_USER=admin
 DB_HOST=127.0.0.1
 TARGET=disconnected
+USE_K8S=false
