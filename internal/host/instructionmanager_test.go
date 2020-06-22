@@ -47,7 +47,7 @@ var _ = Describe("instructionmanager", func() {
 	Context("get_next_steps", func() {
 		It("invalid_host_state", func() {
 			stepsReply, stepsErr = instMng.GetNextSteps(ctx, &host)
-			Expect(stepsReply).To(HaveLen(0))
+			Expect(stepsReply.Steps).To(HaveLen(0))
 			Expect(stepsErr).Should(BeNil())
 		})
 		It("discovering", func() {
@@ -81,7 +81,7 @@ var _ = Describe("instructionmanager", func() {
 		// cleanup
 		db.Close()
 		ctrl.Finish()
-		stepsReply = nil
+		stepsReply = models.Steps{}
 		stepsErr = nil
 	})
 
@@ -102,8 +102,8 @@ func checkStepsByState(state string, host *models.Host, db *gorm.DB, instMng *In
 	}
 	mockValidator.EXPECT().GetHostValidDisks(gomock.Any()).Return(disks, nil).AnyTimes()
 	stepsReply, stepsErr := instMng.GetNextSteps(ctx, h)
-	ExpectWithOffset(1, stepsReply).To(HaveLen(len(expectedStepTypes)))
-	for i, step := range stepsReply {
+	ExpectWithOffset(1, stepsReply.Steps).To(HaveLen(len(expectedStepTypes)))
+	for i, step := range stepsReply.Steps {
 		ExpectWithOffset(1, step.StepType).Should(Equal(expectedStepTypes[i]))
 	}
 	ExpectWithOffset(1, stepsErr).ShouldNot(HaveOccurred())
