@@ -876,7 +876,6 @@ definitions:
     properties:
       next_instruction_seconds:
         type: integer
-        default: 60
       instructions:
         type: array
         items:

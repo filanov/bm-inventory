@@ -78,7 +78,7 @@ func (i *InstructionManager) GetNextSteps(ctx context.Context, host *models.Host
 
 	if cmdsMap, ok := i.stateToSteps[HostStatus]; ok {
 		//need to add the step id
-		returnSteps.NextInstructionSeconds = &cmdsMap.NextStepInSec
+		returnSteps.NextInstructionSeconds = cmdsMap.NextStepInSec
 		for _, cmd := range cmdsMap.Commands {
 			step, err := cmd.GetStep(ctx, host)
 			if err != nil {
@@ -89,6 +89,8 @@ func (i *InstructionManager) GetNextSteps(ctx context.Context, host *models.Host
 			}
 			returnSteps.Instructions = append(returnSteps.Instructions, step)
 		}
+	} else {
+		returnSteps.NextInstructionSeconds = defaultNextInstructionInSec
 	}
 	logSteps(returnSteps, ClusterID, HostID, log)
 	return returnSteps, nil
