@@ -1,6 +1,10 @@
 kind: pipeline
 name: default
 
+trigger:
+  event:
+  - pull_request
+
 steps:
   - name: mariadb
     image: mariadb
