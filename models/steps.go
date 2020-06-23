@@ -22,7 +22,7 @@ type Steps struct {
 	Instructions []*Step `json:"instructions"`
 
 	// next instruction seconds
-	NextInstructionSeconds *int64 `json:"next_instruction_seconds,omitempty"`
+	NextInstructionSeconds int64 `json:"next_instruction_seconds,omitempty"`
 }
 
 // Validate validates this steps

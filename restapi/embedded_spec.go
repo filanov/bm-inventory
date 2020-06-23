@@ -2145,8 +2145,7 @@ func init() {
           }
         },
         "next_instruction_seconds": {
-          "type": "integer",
-          "default": 60
+          "type": "integer"
         }
       }
     },
@@ -4309,8 +4308,7 @@ func init() {
           }
         },
         "next_instruction_seconds": {
-          "type": "integer",
-          "default": 60
+          "type": "integer"
         }
       }
     },
