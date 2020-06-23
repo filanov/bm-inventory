@@ -2,7 +2,6 @@ package host
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/filanov/bm-inventory/internal/common"
@@ -105,9 +104,9 @@ func checkStepsByState(state string, host *models.Host, db *gorm.DB, instMng *In
 	stepsReply, stepsErr := instMng.GetNextSteps(ctx, h)
 	ExpectWithOffset(1, stepsReply.Instructions).To(HaveLen(len(expectedStepTypes)))
 	if stateValues, ok := instMng.stateToSteps[state]; ok {
-		Expect(*stepsReply.NextInstructionSeconds).Should(Equal(stateValues.NextStepInSec))
+		Expect(stepsReply.NextInstructionSeconds).Should(Equal(stateValues.NextStepInSec))
 	} else {
-		fmt.Printf("1111111111111111111111111111111111111111111111111  STATE %s", state)
+		Expect(stepsReply.NextInstructionSeconds).Should(Equal(defaultNextInstructionInSec))
 	}
 
 	for i, step := range stepsReply.Instructions {

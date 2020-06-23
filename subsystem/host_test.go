@@ -78,7 +78,7 @@ var _ = Describe("Host tests", func() {
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "disabled").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		Expect(*steps.NextInstructionSeconds).Should(Equal(int64(120)))
+		Expect(steps.NextInstructionSeconds).Should(Equal(int64(120)))
 		Expect(len(steps.Instructions)).Should(Equal(0))
 		Expect(db.Model(host).Update("status", "insufficient").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
@@ -90,7 +90,7 @@ var _ = Describe("Host tests", func() {
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "error").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		Expect(*steps.NextInstructionSeconds).Should(Equal(int64(60)))
+		Expect(steps.NextInstructionSeconds).Should(Equal(int64(60)))
 		Expect(len(steps.Instructions)).Should(Equal(0))
 	})
 

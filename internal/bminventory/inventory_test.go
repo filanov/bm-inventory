@@ -205,7 +205,7 @@ var _ = Describe("GetNextSteps", func() {
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 
 		var err error
-		expectedStepsReply := models.Steps{NextInstructionSeconds: &defaultNextStepIn, Instructions: []*models.Step{{StepType: models.StepTypeHardwareInfo},
+		expectedStepsReply := models.Steps{NextInstructionSeconds: defaultNextStepIn, Instructions: []*models.Step{{StepType: models.StepTypeHardwareInfo},
 			{StepType: models.StepTypeConnectivityCheck}}}
 		mockHostApi.EXPECT().GetNextSteps(gomock.Any(), gomock.Any()).Return(expectedStepsReply, err)
 		reply := bm.GetNextSteps(ctx, installer.GetNextStepsParams{
