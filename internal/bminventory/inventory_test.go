@@ -205,7 +205,7 @@ var _ = Describe("GetNextSteps", func() {
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 
 		var err error
-		expectedStepsReply := models.Steps{NextStepIn: &defaultNextStepIn, Steps: []*models.Step{{StepType: models.StepTypeHardwareInfo},
+		expectedStepsReply := models.Steps{NextInstructionSeconds: &defaultNextStepIn, Instructions: []*models.Step{{StepType: models.StepTypeHardwareInfo},
 			{StepType: models.StepTypeConnectivityCheck}}}
 		mockHostApi.EXPECT().GetNextSteps(gomock.Any(), gomock.Any()).Return(expectedStepsReply, err)
 		reply := bm.GetNextSteps(ctx, installer.GetNextStepsParams{
@@ -215,8 +215,8 @@ var _ = Describe("GetNextSteps", func() {
 		Expect(reply).Should(BeAssignableToTypeOf(installer.NewGetNextStepsOK()))
 		stepsReply := reply.(*installer.GetNextStepsOK).Payload
 		expectedStepsType := []models.StepType{models.StepTypeHardwareInfo, models.StepTypeConnectivityCheck}
-		Expect(stepsReply.Steps).To(HaveLen(len(expectedStepsType)))
-		for i, step := range stepsReply.Steps {
+		Expect(stepsReply.Instructions).To(HaveLen(len(expectedStepsType)))
+		for i, step := range stepsReply.Instructions {
 			Expect(step.StepType).Should(Equal(expectedStepsType[i]))
 		}
 	})

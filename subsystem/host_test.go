@@ -78,7 +78,8 @@ var _ = Describe("Host tests", func() {
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", "disabled").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
-		Expect(len(steps.Steps)).Should(Equal(0))
+		Expect(*steps.NextInstructionSeconds).Should(Equal(int64(120)))
+		Expect(len(steps.Instructions)).Should(Equal(0))
 		Expect(db.Model(host).Update("status", "insufficient").Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
 		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
@@ -87,6 +88,10 @@ var _ = Describe("Host tests", func() {
 		steps = getNextSteps(clusterID, *host.ID)
 		_, ok = getStepInList(steps, models.StepTypeConnectivityCheck)
 		Expect(ok).Should(Equal(true))
+		Expect(db.Model(host).Update("status", "error").Error).NotTo(HaveOccurred())
+		steps = getNextSteps(clusterID, *host.ID)
+		Expect(*steps.NextInstructionSeconds).Should(Equal(int64(60)))
+		Expect(len(steps.Instructions)).Should(Equal(0))
 	})
 
 	It("installation_error_reply", func() {
@@ -219,7 +224,7 @@ var _ = Describe("Host tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		host = getHost(clusterID, *host.ID)
 		Expect(*host.Status).Should(Equal("disabled"))
-		Expect(len(getNextSteps(clusterID, *host.ID).Steps)).Should(Equal(0))
+		Expect(len(getNextSteps(clusterID, *host.ID).Instructions)).Should(Equal(0))
 
 		_, err = bmclient.Installer.EnableHost(ctx, &installer.EnableHostParams{
 			ClusterID: clusterID,
@@ -228,7 +233,7 @@ var _ = Describe("Host tests", func() {
 		Expect(err).NotTo(HaveOccurred())
 		host = getHost(clusterID, *host.ID)
 		Expect(*host.Status).Should(Equal("discovering"))
-		Expect(len(getNextSteps(clusterID, *host.ID).Steps)).ShouldNot(Equal(0))
+		Expect(len(getNextSteps(clusterID, *host.ID).Instructions)).ShouldNot(Equal(0))
 	})
 
 	It("debug", func() {
@@ -325,7 +330,7 @@ var _ = Describe("Host tests", func() {
 })
 
 func getStepInList(steps models.Steps, sType models.StepType) (*models.Step, bool) {
-	for _, step := range steps.Steps {
+	for _, step := range steps.Instructions {
 		if step.StepType == sType {
 			return step, true
 		}

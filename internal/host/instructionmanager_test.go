@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/filanov/bm-inventory/internal/common"
@@ -47,7 +48,7 @@ var _ = Describe("instructionmanager", func() {
 	Context("get_next_steps", func() {
 		It("invalid_host_state", func() {
 			stepsReply, stepsErr = instMng.GetNextSteps(ctx, &host)
-			Expect(stepsReply.Steps).To(HaveLen(0))
+			Expect(stepsReply.Instructions).To(HaveLen(0))
 			Expect(stepsErr).Should(BeNil())
 		})
 		It("discovering", func() {
@@ -102,8 +103,14 @@ func checkStepsByState(state string, host *models.Host, db *gorm.DB, instMng *In
 	}
 	mockValidator.EXPECT().GetHostValidDisks(gomock.Any()).Return(disks, nil).AnyTimes()
 	stepsReply, stepsErr := instMng.GetNextSteps(ctx, h)
-	ExpectWithOffset(1, stepsReply.Steps).To(HaveLen(len(expectedStepTypes)))
-	for i, step := range stepsReply.Steps {
+	ExpectWithOffset(1, stepsReply.Instructions).To(HaveLen(len(expectedStepTypes)))
+	if stateValues, ok := instMng.stateToSteps[state]; ok {
+		Expect(*stepsReply.NextInstructionSeconds).Should(Equal(stateValues.NextStepInSec))
+	} else {
+		fmt.Printf("1111111111111111111111111111111111111111111111111  STATE %s", state)
+	}
+
+	for i, step := range stepsReply.Instructions {
 		ExpectWithOffset(1, step.StepType).Should(Equal(expectedStepTypes[i]))
 	}
 	ExpectWithOffset(1, stepsErr).ShouldNot(HaveOccurred())
