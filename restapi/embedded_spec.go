@@ -2138,15 +2138,15 @@ func init() {
     "steps": {
       "type": "object",
       "properties": {
-        "next_step_in": {
-          "type": "integer",
-          "default": 60
-        },
-        "steps": {
+        "instructions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/step"
           }
+        },
+        "next_instruction_seconds": {
+          "type": "integer",
+          "default": 60
         }
       }
     },
@@ -4302,15 +4302,15 @@ func init() {
     "steps": {
       "type": "object",
       "properties": {
-        "next_step_in": {
-          "type": "integer",
-          "default": 60
-        },
-        "steps": {
+        "instructions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/step"
           }
+        },
+        "next_instruction_seconds": {
+          "type": "integer",
+          "default": 60
         }
       }
     },

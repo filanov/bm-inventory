@@ -18,18 +18,18 @@ import (
 // swagger:model steps
 type Steps struct {
 
-	// next step in
-	NextStepIn *int64 `json:"next_step_in,omitempty"`
+	// instructions
+	Instructions []*Step `json:"instructions"`
 
-	// steps
-	Steps []*Step `json:"steps"`
+	// next instruction seconds
+	NextInstructionSeconds *int64 `json:"next_instruction_seconds,omitempty"`
 }
 
 // Validate validates this steps
 func (m *Steps) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateSteps(formats); err != nil {
+	if err := m.validateInstructions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -39,21 +39,21 @@ func (m *Steps) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Steps) validateSteps(formats strfmt.Registry) error {
+func (m *Steps) validateInstructions(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Steps) { // not required
+	if swag.IsZero(m.Instructions) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.Steps); i++ {
-		if swag.IsZero(m.Steps[i]) { // not required
+	for i := 0; i < len(m.Instructions); i++ {
+		if swag.IsZero(m.Instructions[i]) { // not required
 			continue
 		}
 
-		if m.Steps[i] != nil {
-			if err := m.Steps[i].Validate(formats); err != nil {
+		if m.Instructions[i] != nil {
+			if err := m.Instructions[i].Validate(formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("steps" + "." + strconv.Itoa(i))
+					return ve.ValidateName("instructions" + "." + strconv.Itoa(i))
 				}
 				return err
 			}
