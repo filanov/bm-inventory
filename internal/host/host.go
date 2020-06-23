@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/filanov/bm-inventory/internal/common"
@@ -75,6 +76,7 @@ type API interface {
 	SetBootstrap(ctx context.Context, h *models.Host, isbootstrap bool, db *gorm.DB) error
 	UpdateConnectivityReport(ctx context.Context, h *models.Host, connectivityReport string) error
 	HostMonitoring()
+	CancelInstallation(ctx context.Context, h *models.Host, reason string, db *gorm.DB) *common.ApiErrorResponse
 }
 
 type Manager struct {
@@ -271,6 +273,20 @@ func (m *Manager) UpdateConnectivityReport(ctx context.Context, h *models.Host, 
 		if err != nil {
 			return errors.Wrapf(err, "failed to set connectivity to host %s", h.ID.String())
 		}
+	}
+	return nil
+}
+
+func (m *Manager) CancelInstallation(ctx context.Context, h *models.Host, reason string, db *gorm.DB) *common.ApiErrorResponse {
+	if swag.StringValue(h.Status) == HostStatusError {
+		return nil
+	}
+	err := m.sm.Run(TransitionTypeHostInstallationFailed, newStateHost(h, db), &TransitionArgsHostInstallationFailed{
+		ctx:    ctx,
+		reason: reason,
+	})
+	if err != nil {
+		return common.NewApiError(http.StatusConflict, err)
 	}
 	return nil
 }
