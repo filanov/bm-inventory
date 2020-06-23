@@ -536,6 +536,27 @@ var _ = Describe("cluster install", func() {
 				Expect(reflect.TypeOf(res)).To(Equal(reflect.TypeOf(installer.NewUploadClusterIngressCertCreated())))
 			}
 		})
+
+		It("[only_k8s]cancel installation", func() {
+			_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
+			Expect(err).NotTo(HaveOccurred())
+			waitForClusterState(ctx, clusterID, models.ClusterStatusInstalling, 20*time.Second)
+			rep, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+			Expect(err).NotTo(HaveOccurred())
+			c := rep.GetPayload()
+			for _, host := range c.Hosts {
+				waitForHostState(ctx, clusterID, *host.ID, models.HostStatusInstalling, 20*time.Second)
+			}
+			_, err = bmclient.Installer.CancelInstallation(ctx, &installer.CancelInstallationParams{ClusterID: clusterID})
+			Expect(err).NotTo(HaveOccurred())
+			rep, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+			Expect(err).NotTo(HaveOccurred())
+			c = rep.GetPayload()
+			Expect(swag.StringValue(c.Status)).Should(Equal(models.ClusterStatusError))
+			for _, host := range c.Hosts {
+				Expect(swag.StringValue(host.Status)).Should(Equal(models.HostStatusError))
+			}
+		})
 	})
 
 	It("install cluster requirement", func() {
