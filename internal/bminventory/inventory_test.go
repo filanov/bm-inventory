@@ -368,6 +368,10 @@ var _ = Describe("cluster", func() {
 	setIgnitionGeneratorVersionSuccess := func(mockClusterApi *cluster.MockAPI) {
 		mockClusterApi.EXPECT().SetGeneratorVersion(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	}
+	setCancelInstallationSuccess := func() {
+		mockClusterApi.EXPECT().CancelInstallation(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		mockHostApi.EXPECT().CancelInstallation(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	}
 
 	getInventoryStr := func(ipv4Addresses ...string) string {
 		inventory := models.Inventory{Interfaces: []*models.Interface{
@@ -712,6 +716,15 @@ var _ = Describe("cluster", func() {
 			})
 
 			verifyApiError(reply, http.StatusInternalServerError)
+		})
+
+		It("cancel installation success", func() {
+			setCancelInstallationSuccess()
+
+			cancelReply := bm.CancelInstallation(ctx, installer.CancelInstallationParams{
+				ClusterID: clusterID,
+			})
+			Expect(cancelReply).Should(BeAssignableToTypeOf(installer.NewCancelInstallationAccepted()))
 		})
 	})
 	AfterEach(func() {
