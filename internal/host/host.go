@@ -95,7 +95,6 @@ type Manager struct {
 
 func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator, instructionApi InstructionApi) *Manager {
 	th := &transitionHandler{
-		db:  db,
 		log: log,
 	}
 	return &Manager{
@@ -150,7 +149,7 @@ func (m *Manager) RegisterHost(ctx context.Context, h *models.Host) error {
 		pHost = h
 	}
 
-	return m.sm.Run(TransitionTypeRegisterHost, newStateHost(pHost), &TransitionArgsRegisterHost{
+	return m.sm.Run(TransitionTypeRegisterHost, newStateHost(pHost, m.db), &TransitionArgsRegisterHost{
 		ctx:                   ctx,
 		discoveryAgentVersion: h.DiscoveryAgentVersion,
 	})
@@ -158,7 +157,7 @@ func (m *Manager) RegisterHost(ctx context.Context, h *models.Host) error {
 
 func (m *Manager) HandleInstallationFailure(ctx context.Context, h *models.Host) error {
 
-	return m.sm.Run(TransitionTypeHostInstallationFailed, newStateHost(h), &TransitionArgsHostInstallationFailed{
+	return m.sm.Run(TransitionTypeHostInstallationFailed, newStateHost(h, m.db), &TransitionArgsHostInstallationFailed{
 		ctx:    ctx,
 		reason: "installation command failed",
 	})
