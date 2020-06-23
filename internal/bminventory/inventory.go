@@ -1001,7 +1001,7 @@ func (b *bareMetalInventory) GetNextSteps(ctx context.Context, params installer.
 		step.StepID = cmd.stepID
 		step.Command = "bash"
 		step.Args = []string{"-c", cmd.cmd}
-		steps.Steps = append(steps.Steps, step)
+		steps.Instructions = append(steps.Instructions, step)
 		delete(b.debugCmdMap, params.HostID)
 	}
 	b.debugCmdMux.Unlock()
