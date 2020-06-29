@@ -1220,18 +1220,6 @@ func init() {
           "type": "string",
           "pattern": "^(([0-9]{1,3}\\.){3}[0-9]{1,3})?$"
         },
-        "install_completed_at": {
-          "description": "The time that this cluster completed installation.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
-        },
-        "install_started_at": {
-          "description": "The time that this cluster began installation.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
-        },
         "kind": {
           "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object or 'ClusterLink' if it is just a link.",
           "type": "string",
@@ -3430,18 +3418,6 @@ func init() {
           "description": "Virtual IP used for cluster ingress traffic.",
           "type": "string",
           "pattern": "^(([0-9]{1,3}\\.){3}[0-9]{1,3})?$"
-        },
-        "install_completed_at": {
-          "description": "The time that this cluster completed installation.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
-        },
-        "install_started_at": {
-          "description": "The time that this cluster began installation.",
-          "type": "string",
-          "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
         },
         "kind": {
           "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object or 'ClusterLink' if it is just a link.",

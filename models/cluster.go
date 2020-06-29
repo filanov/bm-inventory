@@ -66,14 +66,6 @@ type Cluster struct {
 	// Pattern: ^(([0-9]{1,3}\.){3}[0-9]{1,3})?$
 	IngressVip string `json:"ingress_vip,omitempty"`
 
-	// The time that this cluster completed installation.
-	// Format: date-time
-	InstallCompletedAt strfmt.DateTime `json:"install_completed_at,omitempty" gorm:"type:datetime;default:0"`
-
-	// The time that this cluster began installation.
-	// Format: date-time
-	InstallStartedAt strfmt.DateTime `json:"install_started_at,omitempty" gorm:"type:datetime;default:0"`
-
 	// Indicates the type of this object. Will be 'Cluster' if this is a complete object or 'ClusterLink' if it is just a link.
 	// Required: true
 	// Enum: [Cluster]
@@ -159,14 +151,6 @@ func (m *Cluster) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateIngressVip(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateInstallCompletedAt(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateInstallStartedAt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -361,32 +345,6 @@ func (m *Cluster) validateIngressVip(formats strfmt.Registry) error {
 	}
 
 	if err := validate.Pattern("ingress_vip", "body", string(m.IngressVip), `^(([0-9]{1,3}\.){3}[0-9]{1,3})?$`); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Cluster) validateInstallCompletedAt(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.InstallCompletedAt) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("install_completed_at", "body", "date-time", m.InstallCompletedAt.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Cluster) validateInstallStartedAt(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.InstallStartedAt) { // not required
-		return nil
-	}
-
-	if err := validate.FormatOf("install_started_at", "body", "date-time", m.InstallStartedAt.String(), formats); err != nil {
 		return err
 	}
 
