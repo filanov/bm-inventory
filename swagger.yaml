@@ -1164,16 +1164,6 @@ definitions:
         format: date-time
         x-go-custom-tag: gorm:"type:datetime"
         description: The time that this cluster was created.
-      install_started_at:
-        type: string
-        format: date-time
-        x-go-custom-tag: gorm:"type:datetime;default:0"
-        description: The time that this cluster began installation.
-      install_completed_at:
-        type: string
-        format: date-time
-        x-go-custom-tag: gorm:"type:datetime;default:0"
-        description: The time that this cluster completed installation.
       host_networks:
         type: array
         items:
