@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -80,6 +81,7 @@ type API interface {
 	UpdateConnectivityReport(ctx context.Context, h *models.Host, connectivityReport string) error
 	HostMonitoring()
 	CancelInstallation(ctx context.Context, h *models.Host, reason string, db *gorm.DB) *common.ApiErrorResponse
+	GetHostname(h *models.Host) string
 }
 
 type Manager struct {
@@ -291,4 +293,12 @@ func (m *Manager) CancelInstallation(ctx context.Context, h *models.Host, reason
 		return common.NewApiError(http.StatusConflict, err)
 	}
 	return nil
+}
+
+func (m *Manager) GetHostname(host *models.Host) string {
+	var inventory models.Inventory
+	if err := json.Unmarshal([]byte(host.Inventory), &inventory); err != nil {
+		return host.ID.String()
+	}
+	return inventory.Hostname
 }
