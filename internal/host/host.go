@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/filanov/bm-inventory/internal/events"
 	"github.com/filanov/bm-inventory/internal/validators"
 
 	"github.com/filanov/bm-inventory/internal/common"
@@ -97,10 +99,11 @@ type Manager struct {
 	error          StateAPI
 	instructionApi InstructionApi
 	hwValidator    hardware.Validator
+	eventsHandler  events.Handler
 	sm             stateswitch.StateMachine
 }
 
-func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Validator, instructionApi InstructionApi, connectivityValidator connectivity.Validator) *Manager {
+func NewManager(log logrus.FieldLogger, db *gorm.DB, eventsHandler events.Handler, hwValidator hardware.Validator, instructionApi InstructionApi, connectivityValidator connectivity.Validator) *Manager {
 	th := &transitionHandler{
 		db:  db,
 		log: log,
@@ -118,6 +121,7 @@ func NewManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hardware.Valida
 		error:          NewErrorState(log, db),
 		instructionApi: instructionApi,
 		hwValidator:    hwValidator,
+		eventsHandler:  eventsHandler,
 		sm:             NewHostStateMachine(th),
 	}
 }
@@ -200,7 +204,12 @@ func (m *Manager) RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB
 	if err != nil {
 		return nil, err
 	}
-	return state.RefreshStatus(ctx, h, db)
+	ret, err := state.RefreshStatus(ctx, h, db)
+	if err == nil && ret.IsChanged {
+		msg := fmt.Sprintf("Updated status of host %s to %s", m.GetHostname(h), ret.State)
+		m.eventsHandler.AddEvent(ctx, h.ID.String(), msg, time.Now(), h.ClusterID.String())
+	}
+	return ret, err
 }
 
 func (m *Manager) Install(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
