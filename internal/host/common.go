@@ -152,6 +152,11 @@ func updateRole(log logrus.FieldLogger, h *models.Host, db *gorm.DB) (*UpdateRep
 	return updateStateWithParams(log, status, statusInfo, h, db, "role", h.Role)
 }
 
+func updateHostname(log logrus.FieldLogger, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
+	status, statusInfo := getDefaultStatusAndStatusInfo(h)
+	return updateStateWithParams(log, status, statusInfo, h, db, "requested_hostname", h.RequestedHostname)
+}
+
 func isSufficientRole(h *models.Host) *validators.IsSufficientReply {
 	var reason string
 	isSufficient := true

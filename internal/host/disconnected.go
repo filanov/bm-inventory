@@ -47,6 +47,15 @@ func (d *disconnectedState) UpdateRole(ctx context.Context, h *models.Host, role
 	return updateRole(logutil.FromContext(ctx, d.log), h, cdb)
 }
 
+func (d *disconnectedState) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) (*UpdateReply, error) {
+	h.RequestedHostname = hostname
+	cdb := d.db
+	if db != nil {
+		cdb = db
+	}
+	return updateHostname(logutil.FromContext(ctx, d.log), h, cdb)
+}
+
 func (d *disconnectedState) RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
 	log := logutil.FromContext(ctx, d.log)
 	if time.Since(time.Time(h.CheckedInAt)) < 3*time.Minute {

@@ -50,6 +50,15 @@ func (k *knownState) UpdateRole(ctx context.Context, h *models.Host, role string
 	return updateRole(logutil.FromContext(ctx, k.log), h, cdb)
 }
 
+func (k *knownState) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) (*UpdateReply, error) {
+	h.RequestedHostname = hostname
+	cdb := k.db
+	if db != nil {
+		cdb = db
+	}
+	return updateHostname(logutil.FromContext(ctx, k.log), h, cdb)
+}
+
 func (k *knownState) RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
 	return checkAndUpdateSufficientHost(logutil.FromContext(ctx, k.log), h, db, k.hwValidator, k.connectivityValidator)
 }

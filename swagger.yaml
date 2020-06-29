@@ -904,6 +904,8 @@ definitions:
         description: The last time the host's agent communicated with the service.
       discovery_agent_version:
         type: string
+      requested_hostname:
+        type: string
 
   steps:
     type: object
@@ -1094,6 +1096,18 @@ definitions:
             role:
               type: string
               enum: ['master', 'worker']
+      hosts_names:
+        type: array
+        description: The desired hostname for hosts associated with the cluster.
+        x-nullable: true
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            hostname:
+              type: string
 
   cluster:
     type: object

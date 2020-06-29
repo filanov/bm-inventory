@@ -34,6 +34,11 @@ func (i *installedState) UpdateRole(ctx context.Context, h *models.Host, role st
 		h.ID, swag.StringValue(h.Status))
 }
 
+func (i *installedState) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) (*UpdateReply, error) {
+	return nil, errors.Errorf("unable to set host's hostname <%s> in <%s> status",
+		h.ID, swag.StringValue(h.Status))
+}
+
 func (i *installedState) RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
 	// State in the same state
 	return &UpdateReply{

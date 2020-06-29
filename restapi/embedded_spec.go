@@ -1432,6 +1432,23 @@ func init() {
           "minimum": 1,
           "x-nullable": true
         },
+        "hosts_names": {
+          "description": "The desired hostname for hosts associated with the cluster.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "hostname": {
+                "type": "string"
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          "x-nullable": true
+        },
         "hosts_roles": {
           "description": "The desired role for hosts associated with the cluster.",
           "type": "array",
@@ -1831,6 +1848,9 @@ func init() {
           "enum": [
             "Host"
           ]
+        },
+        "requested_hostname": {
+          "type": "string"
         },
         "role": {
           "type": "string",
@@ -3373,6 +3393,18 @@ func init() {
     }
   },
   "definitions": {
+    "ClusterUpdateParamsHostsNamesItems0": {
+      "type": "object",
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
     "ClusterUpdateParamsHostsRolesItems0": {
       "type": "object",
       "properties": {
@@ -3685,6 +3717,14 @@ func init() {
           "type": "integer",
           "maximum": 32,
           "minimum": 1,
+          "x-nullable": true
+        },
+        "hosts_names": {
+          "description": "The desired hostname for hosts associated with the cluster.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClusterUpdateParamsHostsNamesItems0"
+          },
           "x-nullable": true
         },
         "hosts_roles": {
@@ -4073,6 +4113,9 @@ func init() {
           "enum": [
             "Host"
           ]
+        },
+        "requested_hostname": {
+          "type": "string"
         },
         "role": {
           "type": "string",

@@ -35,6 +35,11 @@ func (d *disabledState) UpdateRole(ctx context.Context, h *models.Host, role str
 		h.ID, swag.StringValue(h.Status))
 }
 
+func (d *disabledState) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) (*UpdateReply, error) {
+	return nil, errors.Errorf("unable to update hostname to host <%s> in <%s> status",
+		h.ID, swag.StringValue(h.Status))
+}
+
 func (d *disabledState) RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
 	return defaultReply(h)
 }

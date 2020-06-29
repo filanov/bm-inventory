@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	common "github.com/filanov/bm-inventory/internal/common"
-	"github.com/filanov/bm-inventory/internal/validators"
+	validators "github.com/filanov/bm-inventory/internal/validators"
 	models "github.com/filanov/bm-inventory/models"
 	gomock "github.com/golang/mock/gomock"
 )

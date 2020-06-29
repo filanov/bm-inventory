@@ -30,6 +30,8 @@ type StateAPI interface {
 	UpdateInventory(ctx context.Context, h *models.Host, inventory string) (*UpdateReply, error)
 	// Set host role
 	UpdateRole(ctx context.Context, h *models.Host, role string, db *gorm.DB) (*UpdateReply, error)
+	// set the host hostname
+	UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) (*UpdateReply, error)
 	// check keep alive
 	RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error)
 	// Install host - db is optional, for transactions
@@ -191,6 +193,14 @@ func (m *Manager) UpdateRole(ctx context.Context, h *models.Host, role string, d
 		return nil, err
 	}
 	return state.UpdateRole(ctx, h, role, db)
+}
+
+func (m *Manager) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) (*UpdateReply, error) {
+	state, err := m.getCurrentState(swag.StringValue(h.Status))
+	if err != nil {
+		return nil, err
+	}
+	return state.UpdateHostname(ctx, h, hostname, db)
 }
 
 func (m *Manager) RefreshStatus(ctx context.Context, h *models.Host, db *gorm.DB) (*UpdateReply, error) {
