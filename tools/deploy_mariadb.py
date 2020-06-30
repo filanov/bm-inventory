@@ -1,5 +1,6 @@
 import os
 import utils
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--namespace", help='namespace to use', type=str, default='assisted-installer')
