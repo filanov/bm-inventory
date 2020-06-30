@@ -72,7 +72,7 @@ deploy-ui: deploy-namespace
 	python3 ./tools/deploy_ui.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --deploy-tag "$(DEPLOY_TAG)"
 
 deploy-namespace: create-build-dir
-	python3 ./tools/deploy_namespace.py --deploy-namespace $(APPLY_NAMESPACE) -n $(NAMESPACE)
+	python3 ./tools/deploy_namespace.py --deploy-namespace $(APPLY_NAMESPACE)
 
 deploy-s3-configmap:
 	python3 ./tools/deploy_scality_configmap.py
