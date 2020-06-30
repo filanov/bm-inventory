@@ -4,7 +4,6 @@ metadata:
   name: assisted-installer-prometheus
   labels:
     prometheus: assisted-installer-prometheus
-  namespace: assisted-installer
 spec:
   replicas: 1
   version: v2.8.0

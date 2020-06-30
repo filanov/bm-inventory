@@ -4,7 +4,6 @@ metadata:
   labels:
     app: assisted-installer-monitor
   name: assisted-installer
-  namespace: assisted-installer
 spec:
   endpoints:
   - interval: 30s

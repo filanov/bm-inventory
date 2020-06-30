@@ -4,7 +4,6 @@ metadata:
   labels:
     app: bm-inventory
   name: bm-inventory
-  namespace: assisted-installer
 spec:
   ports:
     - name: bm-inventory

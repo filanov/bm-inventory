@@ -2,7 +2,6 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: s3-list
-  namespace: assisted-installer
 spec:
   schedule: "*/15 * * * *"
   jobTemplate:

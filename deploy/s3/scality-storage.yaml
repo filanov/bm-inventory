@@ -2,7 +2,6 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: scality-pv-claim
-  namespace: assisted-installer
   labels:
     app: scality
 spec:
