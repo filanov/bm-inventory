@@ -9,6 +9,7 @@ from waiting import wait, TimeoutExpired
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--target")
+parser.add_argument("-n", "--namespace", help='namespace to use', type=str, default='assisted-installer')
 args = parser.parse_args()
 
 
@@ -26,15 +27,14 @@ def deploy_oauth_reqs():
     session_secret = secrets.token_hex(43)
     secret_name = 'prometheus-k8s-proxy'
     if not utils.check_if_exists('secret', secret_name):
-        cmd = "{} -n assisted-installer create secret generic {} --from-literal=session_secret={}".format(CMD_BIN, secret_name, session_secret)
+        cmd = f"{CMD_BIN} -n {args.namespace} create secret generic {secret_name} --from-literal=session_secret={session_secret}"
         utils.check_output(cmd)
 
     ## Annotate Serviceaccount
     json_manifest = '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"prometheus-assisted"}}'
     sa_name = 'prometheus-k8s'
     annotation_name = 'serviceaccounts.openshift.io/oauth-redirectreference.assisted-installer-prometheus'
-    cmd = "{} -n assisted-installer annotate serviceaccount {} --overwrite {}='{}'".format(
-            CMD_BIN, sa_name, annotation_name, json_manifest)
+    cmd = f"{CMD_BIN} -n {args.namespace} annotate serviceaccount {sa_name} --overwrite {annotation_name}='{json_manifest}'"
     utils.check_output(cmd)
 
     # Get OCP Certificate

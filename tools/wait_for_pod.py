@@ -10,6 +10,7 @@ TIMEOUT = 60 * 5
 parser = argparse.ArgumentParser()
 parser.add_argument("--app", help='App to wait for app state', type=str)
 parser.add_argument("--state", help='state to wait for', type=str)
+parser.add_argument("-n", "--namespace", help='namespace to use', type=str, default='assisted-installer')
 args = parser.parse_args()
 
 
@@ -39,7 +40,7 @@ def is_pod_in_state():
 
 def get_pod_state():
     ret = subprocess.check_output(
-        "kubectl get pods -l app={app} -o json --namespace=assisted-installer".format(app=args.app), shell=True)
+        f"kubectl get pods -l app={args.app} -o json --namespace={args.namespace}", shell=True)
     pod_json = json.loads(ret)
     if not pod_json["items"]:
         print("ERROR: pods app name {} not found".format(args.app))

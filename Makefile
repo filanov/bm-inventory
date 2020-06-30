@@ -15,6 +15,7 @@ kubectl get service $(1) -n assisted-installer | grep $(1) | awk '{print $$4 ":"
 endef # get_service
 endif # TARGET
 
+NAMESPACE := assisted-installer
 SERVICE := $(or ${SERVICE},quay.io/ocpmetal/bm-inventory:latest)
 OBJEXP := $(or ${OBJEXP},quay.io/ocpmetal/s3-object-expirer:latest)
 GIT_REVISION := $(shell git rev-parse HEAD)
@@ -71,7 +72,7 @@ deploy-ui: deploy-namespace
 	python3 ./tools/deploy_ui.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --deploy-tag "$(DEPLOY_TAG)"
 
 deploy-namespace: create-build-dir
-	python3 ./tools/deploy_namespace.py --deploy-namespace $(APPLY_NAMESPACE)
+	python3 ./tools/deploy_namespace.py --deploy-namespace $(APPLY_NAMESPACE) -n $(NAMESPACE)
 
 deploy-s3-configmap:
 	python3 ./tools/deploy_scality_configmap.py
@@ -99,7 +100,7 @@ deploy-role: deploy-namespace
 	python3 ./tools/deploy_role.py
 
 deploy-mariadb: deploy-namespace
-	python3 ./tools/deploy_mariadb.py
+	python3 ./tools/deploy_mariadb.py -n $(NAMESPACE)
 
 deploy-test:
 	export SERVICE=quay.io/ocpmetal/bm-inventory:test && export TEST_FLAGS=--subsystem-test && \
@@ -121,10 +122,10 @@ deploy-olm: deploy-namespace
 	python3 ./tools/deploy_olm.py --target $(TARGET)
 
 deploy-prometheus: create-build-dir deploy-namespace 
-	python3 ./tools/deploy_prometheus.py --target $(TARGET)
+	python3 ./tools/deploy_prometheus.py --target $(TARGET) -n $(NAMESPACE)
 
 deploy-grafana: create-build-dir
-	python3 ./tools/deploy_grafana.py --target $(TARGET)
+	python3 ./tools/deploy_grafana.py --target $(TARGET) -n $(NAMESPACE)
 
 deploy-monitoring: deploy-olm deploy-prometheus deploy-grafana
 

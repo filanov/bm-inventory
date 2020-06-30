@@ -1,6 +1,10 @@
 import os
 import utils
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-n", "--namespace", help='namespace to use', type=str, default='assisted-installer')
+args = parser.parse_args()
+
 
 def main():
     src_file = os.path.join(os.getcwd(), "deploy/mariadb/mariadb-configmap.yaml")
@@ -29,7 +33,7 @@ def main():
             data = src.read()
             try:
                 size = utils.check_output(
-                    "kubectl -n assisted-installer get persistentvolumeclaims mariadb-pv-claim " +
+                    f"kubectl -n {args.namespace} get persistentvolumeclaims mariadb-pv-claim " +
                     "-o=jsonpath='{.status.capacity.storage}'")
                 print("Using existing disk size", size)
             except:
