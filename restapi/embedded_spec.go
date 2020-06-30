@@ -38,6 +38,11 @@ func init() {
   "paths": {
     "/clusters": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -59,6 +64,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -98,6 +108,11 @@ func init() {
     },
     "/clusters/{clusterId}/hosts/{hostId}/progress": {
       "put": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -139,6 +154,11 @@ func init() {
     },
     "/clusters/{cluster_id}": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -175,6 +195,11 @@ func init() {
         }
       },
       "delete": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -214,6 +239,11 @@ func init() {
         }
       },
       "patch": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -272,6 +302,11 @@ func init() {
     },
     "/clusters/{cluster_id}/actions/cancel": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -316,6 +351,11 @@ func init() {
     },
     "/clusters/{cluster_id}/actions/install": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -366,6 +406,11 @@ func init() {
     },
     "/clusters/{cluster_id}/actions/reset": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -410,6 +455,11 @@ func init() {
     },
     "/clusters/{cluster_id}/credentials": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -454,6 +504,11 @@ func init() {
     },
     "/clusters/{cluster_id}/downloads/files": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "produces": [
           "application/octet-stream"
         ],
@@ -516,6 +571,11 @@ func init() {
     },
     "/clusters/{cluster_id}/downloads/image": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "produces": [
           "application/octet-stream"
         ],
@@ -562,6 +622,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -617,6 +682,11 @@ func init() {
     },
     "/clusters/{cluster_id}/downloads/kubeconfig": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "produces": [
           "application/octet-stream"
         ],
@@ -665,6 +735,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -695,6 +770,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -747,6 +827,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -790,6 +875,11 @@ func init() {
         }
       },
       "delete": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -838,6 +928,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}/actions/debug": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -888,6 +983,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}/actions/enable": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -934,6 +1034,11 @@ func init() {
         }
       },
       "delete": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -982,6 +1087,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}/instructions": {
       "get": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -1025,6 +1135,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -1080,6 +1195,11 @@ func init() {
     },
     "/clusters/{cluster_id}/uploads/ingress-cert": {
       "post": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -1129,6 +1249,11 @@ func init() {
     },
     "/component_versions": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "versions"
         ],
@@ -1146,6 +1271,11 @@ func init() {
     },
     "/events/{entity_id}": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "events"
         ],
@@ -2294,6 +2424,18 @@ func init() {
       }
     }
   },
+  "securityDefinitions": {
+    "agent": {
+      "type": "apiKey",
+      "name": "X-Auth-Secret",
+      "in": "header"
+    },
+    "user": {
+      "type": "apiKey",
+      "name": "X-Auth-Token",
+      "in": "header"
+    }
+  },
   "tags": [
     {
       "description": "Assisted bare metal installation",
@@ -2322,6 +2464,11 @@ func init() {
   "paths": {
     "/clusters": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2343,6 +2490,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2382,6 +2534,11 @@ func init() {
     },
     "/clusters/{clusterId}/hosts/{hostId}/progress": {
       "put": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2423,6 +2580,11 @@ func init() {
     },
     "/clusters/{cluster_id}": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2459,6 +2621,11 @@ func init() {
         }
       },
       "delete": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2498,6 +2665,11 @@ func init() {
         }
       },
       "patch": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2556,6 +2728,11 @@ func init() {
     },
     "/clusters/{cluster_id}/actions/cancel": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2600,6 +2777,11 @@ func init() {
     },
     "/clusters/{cluster_id}/actions/install": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2650,6 +2832,11 @@ func init() {
     },
     "/clusters/{cluster_id}/actions/reset": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2694,6 +2881,11 @@ func init() {
     },
     "/clusters/{cluster_id}/credentials": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2738,6 +2930,11 @@ func init() {
     },
     "/clusters/{cluster_id}/downloads/files": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "produces": [
           "application/octet-stream"
         ],
@@ -2800,6 +2997,11 @@ func init() {
     },
     "/clusters/{cluster_id}/downloads/image": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "produces": [
           "application/octet-stream"
         ],
@@ -2846,6 +3048,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2901,6 +3108,11 @@ func init() {
     },
     "/clusters/{cluster_id}/downloads/kubeconfig": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "produces": [
           "application/octet-stream"
         ],
@@ -2949,6 +3161,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2979,6 +3196,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3031,6 +3253,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3074,6 +3301,11 @@ func init() {
         }
       },
       "delete": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3122,6 +3354,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}/actions/debug": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3172,6 +3409,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}/actions/enable": {
       "post": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3218,6 +3460,11 @@ func init() {
         }
       },
       "delete": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3266,6 +3513,11 @@ func init() {
     },
     "/clusters/{cluster_id}/hosts/{host_id}/instructions": {
       "get": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3309,6 +3561,11 @@ func init() {
         }
       },
       "post": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3364,6 +3621,11 @@ func init() {
     },
     "/clusters/{cluster_id}/uploads/ingress-cert": {
       "post": {
+        "security": [
+          {
+            "agent": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -3413,6 +3675,11 @@ func init() {
     },
     "/component_versions": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "versions"
         ],
@@ -3430,6 +3697,11 @@ func init() {
     },
     "/events/{entity_id}": {
       "get": {
+        "security": [
+          {
+            "user": []
+          }
+        ],
         "tags": [
           "events"
         ],
@@ -4579,6 +4851,18 @@ func init() {
           "type": "string"
         }
       }
+    }
+  },
+  "securityDefinitions": {
+    "agent": {
+      "type": "apiKey",
+      "name": "X-Auth-Secret",
+      "in": "header"
+    },
+    "user": {
+      "type": "apiKey",
+      "name": "X-Auth-Token",
+      "in": "header"
     }
   },
   "tags": [

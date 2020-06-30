@@ -46,84 +46,95 @@ func NewAssistedInstallAPI(spec *loads.Document) *AssistedInstallAPI {
 		BinProducer:  runtime.ByteStreamProducer(),
 		JSONProducer: runtime.JSONProducer(),
 
-		InstallerCancelInstallationHandler: installer.CancelInstallationHandlerFunc(func(params installer.CancelInstallationParams) middleware.Responder {
+		InstallerCancelInstallationHandler: installer.CancelInstallationHandlerFunc(func(params installer.CancelInstallationParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.CancelInstallation has not yet been implemented")
 		}),
-		InstallerDeregisterClusterHandler: installer.DeregisterClusterHandlerFunc(func(params installer.DeregisterClusterParams) middleware.Responder {
+		InstallerDeregisterClusterHandler: installer.DeregisterClusterHandlerFunc(func(params installer.DeregisterClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DeregisterCluster has not yet been implemented")
 		}),
-		InstallerDeregisterHostHandler: installer.DeregisterHostHandlerFunc(func(params installer.DeregisterHostParams) middleware.Responder {
+		InstallerDeregisterHostHandler: installer.DeregisterHostHandlerFunc(func(params installer.DeregisterHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DeregisterHost has not yet been implemented")
 		}),
-		InstallerDisableHostHandler: installer.DisableHostHandlerFunc(func(params installer.DisableHostParams) middleware.Responder {
+		InstallerDisableHostHandler: installer.DisableHostHandlerFunc(func(params installer.DisableHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DisableHost has not yet been implemented")
 		}),
-		InstallerDownloadClusterFilesHandler: installer.DownloadClusterFilesHandlerFunc(func(params installer.DownloadClusterFilesParams) middleware.Responder {
+		InstallerDownloadClusterFilesHandler: installer.DownloadClusterFilesHandlerFunc(func(params installer.DownloadClusterFilesParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DownloadClusterFiles has not yet been implemented")
 		}),
-		InstallerDownloadClusterISOHandler: installer.DownloadClusterISOHandlerFunc(func(params installer.DownloadClusterISOParams) middleware.Responder {
+		InstallerDownloadClusterISOHandler: installer.DownloadClusterISOHandlerFunc(func(params installer.DownloadClusterISOParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DownloadClusterISO has not yet been implemented")
 		}),
-		InstallerDownloadClusterKubeconfigHandler: installer.DownloadClusterKubeconfigHandlerFunc(func(params installer.DownloadClusterKubeconfigParams) middleware.Responder {
+		InstallerDownloadClusterKubeconfigHandler: installer.DownloadClusterKubeconfigHandlerFunc(func(params installer.DownloadClusterKubeconfigParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.DownloadClusterKubeconfig has not yet been implemented")
 		}),
-		InstallerEnableHostHandler: installer.EnableHostHandlerFunc(func(params installer.EnableHostParams) middleware.Responder {
+		InstallerEnableHostHandler: installer.EnableHostHandlerFunc(func(params installer.EnableHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.EnableHost has not yet been implemented")
 		}),
-		InstallerGenerateClusterISOHandler: installer.GenerateClusterISOHandlerFunc(func(params installer.GenerateClusterISOParams) middleware.Responder {
+		InstallerGenerateClusterISOHandler: installer.GenerateClusterISOHandlerFunc(func(params installer.GenerateClusterISOParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GenerateClusterISO has not yet been implemented")
 		}),
-		InstallerGetClusterHandler: installer.GetClusterHandlerFunc(func(params installer.GetClusterParams) middleware.Responder {
+		InstallerGetClusterHandler: installer.GetClusterHandlerFunc(func(params installer.GetClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GetCluster has not yet been implemented")
 		}),
-		InstallerGetCredentialsHandler: installer.GetCredentialsHandlerFunc(func(params installer.GetCredentialsParams) middleware.Responder {
+		InstallerGetCredentialsHandler: installer.GetCredentialsHandlerFunc(func(params installer.GetCredentialsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GetCredentials has not yet been implemented")
 		}),
-		InstallerGetHostHandler: installer.GetHostHandlerFunc(func(params installer.GetHostParams) middleware.Responder {
+		InstallerGetHostHandler: installer.GetHostHandlerFunc(func(params installer.GetHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GetHost has not yet been implemented")
 		}),
-		InstallerGetNextStepsHandler: installer.GetNextStepsHandlerFunc(func(params installer.GetNextStepsParams) middleware.Responder {
+		InstallerGetNextStepsHandler: installer.GetNextStepsHandlerFunc(func(params installer.GetNextStepsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.GetNextSteps has not yet been implemented")
 		}),
-		InstallerInstallClusterHandler: installer.InstallClusterHandlerFunc(func(params installer.InstallClusterParams) middleware.Responder {
+		InstallerInstallClusterHandler: installer.InstallClusterHandlerFunc(func(params installer.InstallClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.InstallCluster has not yet been implemented")
 		}),
-		InstallerListClustersHandler: installer.ListClustersHandlerFunc(func(params installer.ListClustersParams) middleware.Responder {
+		InstallerListClustersHandler: installer.ListClustersHandlerFunc(func(params installer.ListClustersParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.ListClusters has not yet been implemented")
 		}),
-		VersionsListComponentVersionsHandler: versions.ListComponentVersionsHandlerFunc(func(params versions.ListComponentVersionsParams) middleware.Responder {
+		VersionsListComponentVersionsHandler: versions.ListComponentVersionsHandlerFunc(func(params versions.ListComponentVersionsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation versions.ListComponentVersions has not yet been implemented")
 		}),
-		EventsListEventsHandler: events.ListEventsHandlerFunc(func(params events.ListEventsParams) middleware.Responder {
+		EventsListEventsHandler: events.ListEventsHandlerFunc(func(params events.ListEventsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation events.ListEvents has not yet been implemented")
 		}),
-		InstallerListHostsHandler: installer.ListHostsHandlerFunc(func(params installer.ListHostsParams) middleware.Responder {
+		InstallerListHostsHandler: installer.ListHostsHandlerFunc(func(params installer.ListHostsParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.ListHosts has not yet been implemented")
 		}),
-		InstallerPostStepReplyHandler: installer.PostStepReplyHandlerFunc(func(params installer.PostStepReplyParams) middleware.Responder {
+		InstallerPostStepReplyHandler: installer.PostStepReplyHandlerFunc(func(params installer.PostStepReplyParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.PostStepReply has not yet been implemented")
 		}),
-		InstallerRegisterClusterHandler: installer.RegisterClusterHandlerFunc(func(params installer.RegisterClusterParams) middleware.Responder {
+		InstallerRegisterClusterHandler: installer.RegisterClusterHandlerFunc(func(params installer.RegisterClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.RegisterCluster has not yet been implemented")
 		}),
-		InstallerRegisterHostHandler: installer.RegisterHostHandlerFunc(func(params installer.RegisterHostParams) middleware.Responder {
+		InstallerRegisterHostHandler: installer.RegisterHostHandlerFunc(func(params installer.RegisterHostParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.RegisterHost has not yet been implemented")
 		}),
-		InstallerResetClusterHandler: installer.ResetClusterHandlerFunc(func(params installer.ResetClusterParams) middleware.Responder {
+		InstallerResetClusterHandler: installer.ResetClusterHandlerFunc(func(params installer.ResetClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.ResetCluster has not yet been implemented")
 		}),
-		InstallerSetDebugStepHandler: installer.SetDebugStepHandlerFunc(func(params installer.SetDebugStepParams) middleware.Responder {
+		InstallerSetDebugStepHandler: installer.SetDebugStepHandlerFunc(func(params installer.SetDebugStepParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.SetDebugStep has not yet been implemented")
 		}),
-		InstallerUpdateClusterHandler: installer.UpdateClusterHandlerFunc(func(params installer.UpdateClusterParams) middleware.Responder {
+		InstallerUpdateClusterHandler: installer.UpdateClusterHandlerFunc(func(params installer.UpdateClusterParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.UpdateCluster has not yet been implemented")
 		}),
-		InstallerUpdateHostInstallProgressHandler: installer.UpdateHostInstallProgressHandlerFunc(func(params installer.UpdateHostInstallProgressParams) middleware.Responder {
+		InstallerUpdateHostInstallProgressHandler: installer.UpdateHostInstallProgressHandlerFunc(func(params installer.UpdateHostInstallProgressParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.UpdateHostInstallProgress has not yet been implemented")
 		}),
-		InstallerUploadClusterIngressCertHandler: installer.UploadClusterIngressCertHandlerFunc(func(params installer.UploadClusterIngressCertParams) middleware.Responder {
+		InstallerUploadClusterIngressCertHandler: installer.UploadClusterIngressCertHandlerFunc(func(params installer.UploadClusterIngressCertParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation installer.UploadClusterIngressCert has not yet been implemented")
 		}),
+
+		// Applies when the "X-Auth-Secret" header is set
+		AgentAuth: func(token string) (interface{}, error) {
+			return nil, errors.NotImplemented("api key auth (agent) X-Auth-Secret from header param [X-Auth-Secret] has not yet been implemented")
+		},
+		// Applies when the "X-Auth-Token" header is set
+		UserAuth: func(token string) (interface{}, error) {
+			return nil, errors.NotImplemented("api key auth (user) X-Auth-Token from header param [X-Auth-Token] has not yet been implemented")
+		},
+		// default authorizer is authorized meaning no requests are blocked
+		APIAuthorizer: security.Authorized(),
 	}
 }
 
@@ -159,6 +170,17 @@ type AssistedInstallAPI struct {
 	// JSONProducer registers a producer for the following mime types:
 	//   - application/json
 	JSONProducer runtime.Producer
+
+	// AgentAuth registers a function that takes a token and returns a principal
+	// it performs authentication based on an api key X-Auth-Secret provided in the header
+	AgentAuth func(string) (interface{}, error)
+
+	// UserAuth registers a function that takes a token and returns a principal
+	// it performs authentication based on an api key X-Auth-Token provided in the header
+	UserAuth func(string) (interface{}, error)
+
+	// APIAuthorizer provides access control (ACL/RBAC/ABAC) by providing access to the request and authenticated principal
+	APIAuthorizer runtime.Authorizer
 
 	// InstallerCancelInstallationHandler sets the operation handler for the cancel installation operation
 	InstallerCancelInstallationHandler installer.CancelInstallationHandler
@@ -281,6 +303,13 @@ func (o *AssistedInstallAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
+	if o.AgentAuth == nil {
+		unregistered = append(unregistered, "XAuthSecretAuth")
+	}
+	if o.UserAuth == nil {
+		unregistered = append(unregistered, "XAuthTokenAuth")
+	}
+
 	if o.InstallerCancelInstallationHandler == nil {
 		unregistered = append(unregistered, "installer.CancelInstallationHandler")
 	}
@@ -374,12 +403,25 @@ func (o *AssistedInstallAPI) ServeErrorFor(operationID string) func(http.Respons
 
 // AuthenticatorsFor gets the authenticators for the specified security schemes
 func (o *AssistedInstallAPI) AuthenticatorsFor(schemes map[string]spec.SecurityScheme) map[string]runtime.Authenticator {
-	return nil
+	result := make(map[string]runtime.Authenticator)
+	for name := range schemes {
+		switch name {
+		case "agent":
+			scheme := schemes[name]
+			result[name] = o.APIKeyAuthenticator(scheme.Name, scheme.In, o.AgentAuth)
+
+		case "user":
+			scheme := schemes[name]
+			result[name] = o.APIKeyAuthenticator(scheme.Name, scheme.In, o.UserAuth)
+
+		}
+	}
+	return result
 }
 
 // Authorizer returns the registered authorizer
 func (o *AssistedInstallAPI) Authorizer() runtime.Authorizer {
-	return nil
+	return o.APIAuthorizer
 }
 
 // ConsumersFor gets the consumers for the specified media types.
