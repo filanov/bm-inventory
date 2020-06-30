@@ -27,11 +27,8 @@ lint:
 	golangci-lint run -v
 
 .PHONY: build
-build: create-build-dir lint unit-test
+build:
 	CGO_ENABLED=0 go build -o build/bm-inventory cmd/main.go
-
-create-build-dir:
-	mkdir -p build
 
 format:
 	goimports -w -l cmd/ internal/ subsystem/
