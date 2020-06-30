@@ -2,4 +2,5 @@ FROM scratch
 ARG GIT_REVISION
 LABEL "git_revision"=${GIT_REVISION}
 ADD build/bm-inventory /bm-inventory
+ADD build/bm-inventory-client-${GIT_REVISION}.tar.gz /clients/bm-inventory-client-${GIT_REVISION}.tar.gz
 CMD ["/bm-inventory"]
