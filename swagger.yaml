@@ -16,12 +16,23 @@ consumes:
 produces:
   - application/json
 
+securityDefinitions:
+  user:
+    type: apiKey
+    in: header
+    name: X-Auth-Token
+  agent:
+    type: apiKey
+    in: header
+    name: X-Auth-Secret
 
 paths:
   /clusters:
     post:
       tags:
         - installer
+      security:
+        - user: []
       summary: Creates a new OpenShift bare metal cluster definition.
       operationId: RegisterCluster
       parameters:
@@ -47,6 +58,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Retrieves the list of OpenShift bare metal clusters.
       operationId: ListClusters
       responses:
@@ -63,6 +76,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Retrieves the details of the OpenShift bare metal cluster.
       operationId: GetCluster
       parameters:
@@ -88,6 +103,8 @@ paths:
     patch:
       tags:
         - installer
+      security:
+        - user: []
       summary: Updates an OpenShift bare metal cluster definition.
       operationId: UpdateCluster
       parameters:
@@ -126,6 +143,8 @@ paths:
     delete:
       tags:
         - installer
+      security:
+        - user: []
       summary: Deletes an OpenShift bare metal cluster definition.
       operationId: DeregisterCluster
       parameters:
@@ -154,6 +173,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - user: []
       summary: Creates a new OpenShift per-cluster discovery ISO.
       operationId: GenerateClusterISO
       parameters:
@@ -190,6 +211,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Downloads the OpenShift per-cluster discovery ISO.
       operationId: DownloadClusterISO
       produces:
@@ -224,6 +247,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Downloads files relating to the installed/installing cluster.
       operationId: DownloadClusterFiles
       produces:
@@ -256,10 +281,13 @@ paths:
           description: Error.
           schema:
             $ref: '#/definitions/error'
+
   /clusters/{cluster_id}/credentials:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Get the the cluster admin credentials.
       operationId: GetCredentials
       parameters:
@@ -290,6 +318,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Downloads the kubeconfig file for this cluster.
       operationId: DownloadClusterKubeconfig
       produces:
@@ -323,6 +353,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - agent: []
       summary: Transfer the ingress certificate for the cluster.
       operationId: UploadClusterIngressCert
       parameters:
@@ -356,6 +388,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - user: []
       summary: Installs the OpenShift bare metal cluster.
       operationId: InstallCluster
       parameters:
@@ -390,6 +424,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - user: []
       summary: Cancels an ongoing installation.
       operationId: CancelInstallation
       parameters:
@@ -420,6 +456,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - user: []
       summary: Resets a failed installation.
       operationId: ResetCluster
       parameters:
@@ -450,6 +488,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - agent: []
       summary: Registers a new OpenShift bare metal host.
       operationId: RegisterHost
       parameters:
@@ -484,6 +524,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Retrieves the list of OpenShift bare metal hosts.
       operationId: ListHosts
       parameters:
@@ -506,6 +548,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - user: []
       summary: Retrieves the details of the OpenShift bare metal host.
       operationId: GetHost
       parameters:
@@ -536,6 +580,8 @@ paths:
     delete:
       tags:
         - installer
+      security:
+        - user: []
       summary: Deregisters an OpenShift bare metal host.
       operationId: DeregisterHost
       parameters:
@@ -569,6 +615,8 @@ paths:
     put:
       tags:
         - installer
+      security:
+        - agent: []
       summary: Update installation progress
       operationId: UpdateHostInstallProgress
       parameters:
@@ -598,6 +646,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - user: []
       summary: Sets a single shot debug step that will be sent next time the host agent will ask for a command.
       operationId: SetDebugStep
       parameters:
@@ -632,6 +682,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - user: []
       summary: Enables a host for inclusion in the cluster.
       operationId: EnableHost
       parameters:
@@ -664,6 +716,8 @@ paths:
     delete:
       tags:
         - installer
+      security:
+        - user: []
       summary: Disables a host for inclusion in the cluster.
       operationId: DisableHost
       parameters:
@@ -697,6 +751,8 @@ paths:
     get:
       tags:
         - installer
+      security:
+        - agent: []
       summary: Retrieves the next operations that the host agent needs to perform.
       operationId: GetNextSteps
       parameters:
@@ -727,6 +783,8 @@ paths:
     post:
       tags:
         - installer
+      security:
+        - agent: []
       summary: Posts the result of the operations from the host agent.
       operationId: PostStepReply
       parameters:
@@ -764,6 +822,8 @@ paths:
     get:
       tags:
         - versions
+      security:
+        - user: []
       summary: List of componenets versions
       operationId: ListComponentVersions
       responses:
@@ -776,6 +836,8 @@ paths:
     get:
       tags:
         - events
+      security:
+        - user: []
       summary: Lists events for an entity_id
       operationId: ListEvents
       parameters:
