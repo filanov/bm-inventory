@@ -39,11 +39,21 @@ format:
 generate:
 	go generate $(shell go list ./...)
 
-generate-from-swagger:
+generate-from-swagger: create-python-client
 	rm -rf client models restapi
 	docker run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) quay.io/goswagger/swagger:v0.24.0 generate server	--template=stratoscale -f swagger.yaml --template-dir=/templates/contrib
 	docker run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) quay.io/goswagger/swagger:v0.24.0 generate client	--template=stratoscale -f swagger.yaml --template-dir=/templates/contrib
 	go generate $(shell go list ./client/... ./models/... ./restapi/...)
+
+create-python-client:  swagger.yaml
+	mkdir -p build
+	cp swagger.yaml build/
+	echo '{"packageName" : "bm_inventory_client", "packageVersion": "1.0.0"}' > build/code-gen-config.json
+	sed -i '/pattern:/d' $(PWD)/build/swagger.yaml
+	docker run -it --rm -u $(shell id -u $(USER)) -v $(PWD)/:/swagger-api/out \
+	-v $(PWD)/build/swagger.yaml:/swagger.yaml:ro,Z -v $(PWD)/build/code-gen-config.json:/config.json:ro,Z \
+	jimschubert/swagger-codegen-cli:2.3.1 generate --lang python --config /config.json --output ./bm-inventory-client/ --input-spec /swagger.yaml
+	rm -f $(PWD)/build/swagger.yaml
 
 ##########
 # Update #
