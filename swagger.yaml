@@ -1209,6 +1209,9 @@ definitions:
         format: date-time
         x-go-custom-tag: gorm:"type:datetime"
         description: The last time that the cluster status has been updated
+      validation_info:
+        $ref: '#/definitions/validation_info'
+        x-go-custom-tag: gorm:"embedded;embedded_prefix:validation_"
       hosts:
         x-go-custom-tag: gorm:"foreignkey:ClusterID;association_foreignkey:ID"
         type: array
@@ -1267,6 +1270,30 @@ definitions:
         type: string
         format: date-time
         x-go-custom-tag: gorm:"type:datetime"
+
+  validation_info:
+    type: array
+    items:
+      $ref: '#/definitions/validation-category'
+
+  validation-category:
+    type: object
+    properties:
+      category:
+        type: string
+        enum: ['hardware', 'networking']
+      status:
+        type: string
+        enum: ['pending', 'insufficient', 'ready']
+      validations:
+        type: array
+        items:
+          type: object
+          properties:
+            validation_id:
+              type: string
+            reason:
+              type: string
 
   cluster-list:
     type: array
