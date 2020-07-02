@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
@@ -141,7 +143,10 @@ func main() {
 	}
 
 	jobApi := job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
-	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobApi, eventsHandler, s3Client)
+	prometheusRegistry := prometheus.DefaultRegisterer
+	metricsManager := metrics.NewMetricsManager(log.WithField("pkg", "metrics"), prometheusRegistry)
+
+	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobApi, eventsHandler, s3Client, metricsManager)
 
 	events := events.NewApi(eventsHandler, logrus.WithField("pkg", "eventsApi"))
 
@@ -165,7 +170,7 @@ func main() {
 		Logger:            log.Printf,
 		VersionsAPI:       versionHandler,
 		ManagedDomainsAPI: domainHandler,
-		InnerMiddleware:   metrics.WithMatchedRoute(log.WithField("pkg", "matched-h")),
+		InnerMiddleware:   metrics.WithMatchedRoute(log.WithField("pkg", "matched-h"), prometheusRegistry),
 	})
 	h = app.WithMetricsResponderMiddleware(h)
 	h = app.WithHealthMiddleware(h)
