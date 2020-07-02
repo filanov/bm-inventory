@@ -14,30 +14,18 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v1
-    # the golanci-lint step publishes annotations on failed lines
-    # It does not, however faile the build. That is why lated, during the test phase we also
-    # invoke the linter from the Makefile
-    - name: golangci-lint
+    - name: Lint
       uses: reviewdog/action-golangci-lint@v1.1.3
       with:
         github_token: ${{ secrets.github_token }}
         golangci_lint_flags: "--config=.golangci.yml"
+        fail_on_error: true
 
-  build:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
       uses: actions/checkout@v1
-    - name: Set up Python
-      uses: actions/setup-python@v1
-      with:
-        python-version: 3.x
-    - name: Install dependencies
+    - name: Test
       run: |
-        sudo pip install strato-skipper
-        mkdir -p ~/.docker
-        echo "{}" > ~/.docker/config.json
-        touch ${HOME}/.gitconfig
-    - name: test
-      run: |
-        skipper make build
+        make unit-test
