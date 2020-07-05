@@ -2259,8 +2259,13 @@ func init() {
     },
     "list-versions": {
       "type": "object",
-      "additionalProperties": {
-        "type": "string"
+      "properties": {
+        "release_tag": {
+          "type": "string"
+        },
+        "versions": {
+          "$ref": "#/definitions/versions"
+        }
       }
     },
     "managed-domain": {
@@ -2421,6 +2426,12 @@ func init() {
         "serial_number": {
           "type": "string"
         }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
       }
     }
   },
@@ -4679,8 +4690,13 @@ func init() {
     },
     "list-versions": {
       "type": "object",
-      "additionalProperties": {
-        "type": "string"
+      "properties": {
+        "release_tag": {
+          "type": "string"
+        },
+        "versions": {
+          "$ref": "#/definitions/versions"
+        }
       }
     },
     "managed-domain": {
@@ -4841,6 +4857,12 @@ func init() {
         "serial_number": {
           "type": "string"
         }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
       }
     }
   },
