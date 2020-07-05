@@ -55,6 +55,7 @@ func NewInstructionManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hard
 	hwCmd := NewHwInfoCmd(log, instructionConfig.HardwareInfoImage)
 	inventoryCmd := NewInventoryCmd(log, instructionConfig.InventoryImage)
 	freeAddressesCmd := NewFreeAddressesCmd(log, instructionConfig.FreeAddressesImage)
+	ResetPodmanCmd := NewResetPodmanCmd(log)
 	resetAgentCmd := NewResetAgentCmd(log)
 
 	return &InstructionManager{
@@ -67,7 +68,7 @@ func NewInstructionManager(log logrus.FieldLogger, db *gorm.DB, hwValidator hard
 			HostStatusDiscovering:  {[]CommandGetter{hwCmd, inventoryCmd, connectivityCmd}, defaultNextInstructionInSec},
 			HostStatusInstalling:   {[]CommandGetter{installCmd}, defaultBackedOffInstructionInSec},
 			HostStatusDisabled:     {[]CommandGetter{}, defaultBackedOffInstructionInSec},
-			HostStatusResetting:    {[]CommandGetter{resetAgentCmd}, defaultBackedOffInstructionInSec},
+			HostStatusResetting:    {[]CommandGetter{ResetPodmanCmd, resetAgentCmd}, defaultBackedOffInstructionInSec},
 		},
 	}
 }
