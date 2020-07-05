@@ -1026,6 +1026,7 @@ definitions:
       - install
       - free-network-addresses
       - reset-agent
+      - reset-podman
 
   step:
     type: object
