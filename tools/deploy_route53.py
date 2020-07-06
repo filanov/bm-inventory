@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import utils
 import argparse
@@ -9,13 +10,13 @@ args = parser.parse_args()
 
 
 def deploy_secret():
-    if args.secret is "":
+    if args.secret == "":
         return
 
     # Renderized secret with specified secret
     src_file = os.path.join(os.getcwd(), "deploy/route53/route53-secret.yaml")
     dst_file = os.path.join(os.getcwd(), "build/route53-secret.yaml")
-    topic = 'Route53 Secret'
+    topic = "Route53 Secret"
     with open(src_file, "r") as src:
         with open(dst_file, "w+") as dst:
             data = src.read()

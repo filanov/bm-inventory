@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import utils
 
@@ -29,8 +30,9 @@ def main():
             data = src.read()
             try:
                 size = utils.check_output(
-                    "kubectl -n assisted-installer get persistentvolumeclaims mariadb-pv-claim " +
-                    "-o=jsonpath='{.status.capacity.storage}'")
+                    "kubectl -n assisted-installer get persistentvolumeclaims mariadb-pv-claim "
+                    + "-o=jsonpath='{.status.capacity.storage}'"
+                )
                 print("Using existing disk size", size)
             except:
                 size = "10Gi"

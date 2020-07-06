@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import utils
 
@@ -9,7 +10,7 @@ def main():
     with open(src_file, "r") as src:
         with open(dst_file, "w+") as dst:
             data = src.read()
-            data = data.replace('REPLACE_URL', scality_url)
+            data = data.replace("REPLACE_URL", scality_url)
             print("Deploying {}".format(dst_file))
             dst.write(data)
 
