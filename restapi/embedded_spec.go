@@ -2365,7 +2365,8 @@ func init() {
         "inventory",
         "install",
         "free-network-addresses",
-        "reset-agent"
+        "reset-agent",
+        "stop-podman"
       ]
     },
     "steps": {
@@ -4761,7 +4762,8 @@ func init() {
         "inventory",
         "install",
         "free-network-addresses",
-        "reset-agent"
+        "reset-agent",
+        "stop-podman"
       ]
     },
     "steps": {
