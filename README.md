@@ -1,7 +1,7 @@
 [![Actions Status](https://github.com/filanov/bm-inventory/workflows/unit-test/badge.svg)](https://github.com/filanov/bm-inventory/actions)
 
-
 [![Actions Status](https://raw.githubusercontent.com/swagger-api/swagger-ui/master/src/img/logo_small.png)](https://filanov.github.io/bm-inventory/)
+
 # bm-inventory
 
 ## Prerequisites
@@ -11,10 +11,10 @@
 1. minikube (for tests)
 1. kubectl
 
-
 ## First Setup
 
 To push your build target to a Docker registry you first need to change the default target.
+
 1. Create a quay.io or Docker Hub account if you don't already have one. These instructions refer to quay.io, Docker Hub is similar.
 1. Create a repository called bm-inventory.
 1. Make sure you have your `~/.docker/config.json` file set up to point to your account. For quay.io, you can go to quay.io -> User Settings, and click "Generate Encrypted Password" under "Docker CLI Password".
@@ -26,6 +26,7 @@ export SERVICE=quay.io/<username>/bm-inventory:<tag>
 ```
 
 Do the same for s3-object-expirer:
+
 ```shell script
 export OBJEXP=quay.io/<username>/s3-object-expirer:<tag>
 ```
@@ -46,8 +47,9 @@ After every change in the API (`swagger.yaml`) the code should be generated and 
 ## Test
 
 #### Pre-configuration
-  - Run minikube on your system.
-  - Deploy services `skipper make deploy-test`
+
+- Run minikube on your system.
+- Deploy services `skipper make deploy-test`
 
 ### Run system tests
 
@@ -97,6 +99,7 @@ Besides default minikube deployment, the service support deployment to OpenShift
 `skipper make deploy-all TARGET=oc-ingress`
 
 This deployment option have multiple optional parameters that should be used in case you are not the Admin of the cluster:
+
 1. `APPLY_NAMESPACE` - True by default. Will try to deploy "assisted-installer" namespace, if you are not the Admin of the cluster or maybe you don't have permissions for this operation you may skip namespace deployment.
 1. `INGRESS_DOMAIN` - By default deployment script will try to get the domain prefix from OpenShift ingress controller. If you don't have access to it then you may specify the domain yourself. For example: `apps.ocp.prod.psi.redhat.com`
 
@@ -111,8 +114,7 @@ This service support optional UI deployment.
 
 `skipper make deploy-ui`
 
-* In case you are using podman run the above command without skipper.
-
+- In case you are using podman run the above command without skipper.
 
 For OpenShift users, look at the service deployment options on OpenShift platform.
 
@@ -122,26 +124,26 @@ This will allow you to deploy Prometheus and Grafana already integrated with Ass
 
 - On Minikube
 
-    ~~~sh
-    ## Step by step
-    make deploy-olm
-    make deploy-prometheus
-    make deploy-grafana
+  ```sh
+  ## Step by step
+  make deploy-olm
+  make deploy-prometheus
+  make deploy-grafana
 
-    ## Or just all-in
-    make deploy-monitoring
-    ~~~
+  ## Or just all-in
+  make deploy-monitoring
+  ```
 
 - On Openshift
 
-    ~~~sh
-    ## Step by step
-    make deploy-prometheus TARGET=oc-ingress
-    make deploy-grafana TARGET=oc-ingress
+  ```sh
+  ## Step by step
+  make deploy-prometheus TARGET=oc-ingress
+  make deploy-grafana TARGET=oc-ingress
 
-    ## Or just all-in
-    make deploy-monitoring TARGET=oc-ingress
-    ~~~
+  ## Or just all-in
+  make deploy-monitoring TARGET=oc-ingress
+  ```
 
 NOTE: To expose the monitoring UI's on your local environment you could follow these steps
 
@@ -175,28 +177,27 @@ The tag is not validated, so you need to make sure it actually exists.
 
 Default tag is latest
 
-
 ## Troubleshooting
 
 A document that can assist troubleshooting: [link](https://docs.google.com/document/d/1WDc5LQjNnqpznM9YFTGb9Bg1kqPVckgGepS4KBxGSqw)
 
-##  Linked repositories 
-* #### coreos_installation_iso:
-    https://github.com/oshercc/coreos_installation_iso 
+## Linked repositories
 
-    Image in charge of generating the Fedora-coreOs image used to install the host with the relevant ignition file.
-    
-    Image is uploaded to deployed S3 under the name template "installer-image-<cluster-id>".
-* #### ignition manifests and kubeconfig generate:
-    
-    https://github.com/oshercc/ignition-manifests-and-kubeconfig-generate
-    
-    Image in charge of generating the following installation files:
-    * kubeconfig
-    * bootstrap.ign
-    * master.ign
-    * worker.ign
-    * metadata.json
-    * kubeadmin-password
-    
-   Files are uploaded to deployed S3 under the name template "<cluster-id>/<filename>".
+- #### coreos_installation_iso:
+
+  https://github.com/oshercc/coreos_installation_iso
+
+  Image in charge of generating the Fedora-coreOs image used to install the host with the relevant ignition file.
+
+  Image is uploaded to deployed S3 under the name template "installer-image-<cluster-id>".
+
+- #### ignition manifests and kubeconfig generate:
+  https://github.com/oshercc/ignition-manifests-and-kubeconfig-generate
+  Image in charge of generating the following installation files:
+  - kubeconfig
+  - bootstrap.ign
+  - master.ign
+  - worker.ign
+  - metadata.json
+  - kubeadmin-password
+    Files are uploaded to deployed S3 under the name template "<cluster-id>/<filename>".

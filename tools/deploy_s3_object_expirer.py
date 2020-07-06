@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import utils
 import argparse
@@ -12,7 +13,9 @@ def main():
     with open(src_file, "r") as src:
         with open(dst_file, "w+") as dst:
             data = src.read()
-            image_fqdn = deployment_options.get_image_override(deploy_options, "s3-object-expirer", "OBJEXP")
+            image_fqdn = deployment_options.get_image_override(
+                deploy_options, "s3-object-expirer", "OBJEXP"
+            )
             data = data.replace("REPLACE_IMAGE", image_fqdn)
             print("Deploying {}".format(dst_file))
             dst.write(data)

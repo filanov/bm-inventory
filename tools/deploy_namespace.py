@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
 import os
 import utils
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--deploy-namespace", type=lambda x: (str(x).lower() == 'true'), default=True)
+parser.add_argument(
+    "--deploy-namespace", type=lambda x: (str(x).lower() == "true"), default=True
+)
 args = parser.parse_args()
 
 

@@ -148,7 +148,7 @@ test:
 deploy-olm: deploy-namespace
 	python3 ./tools/deploy_olm.py --target $(TARGET)
 
-deploy-prometheus: create-build-dir deploy-namespace 
+deploy-prometheus: create-build-dir deploy-namespace
 	python3 ./tools/deploy_prometheus.py --target $(TARGET)
 
 deploy-grafana: create-build-dir
