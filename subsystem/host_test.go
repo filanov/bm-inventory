@@ -140,6 +140,8 @@ var _ = Describe("Host tests", func() {
 		Expect(ok).Should(Equal(true))
 		Expect(db.Model(host).Update("status", models.HostStatusResetting).Error).NotTo(HaveOccurred())
 		steps = getNextSteps(clusterID, *host.ID)
+		_, ok = getStepInList(steps, models.StepTypeRemovePodman)
+		Expect(ok).Should(Equal(true))
 		_, ok = getStepInList(steps, models.StepTypeResetAgent)
 		Expect(ok).Should(Equal(true))
 	})
