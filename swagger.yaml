@@ -1027,6 +1027,7 @@ definitions:
       - free-network-addresses
       - reset-agent
       - stop-podman
+      - remove-podman
 
   step:
     type: object

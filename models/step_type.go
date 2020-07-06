@@ -43,6 +43,9 @@ const (
 
 	// StepTypeStopPodman captures enum value "stop-podman"
 	StepTypeStopPodman StepType = "stop-podman"
+
+	// StepTypeRemovePodman captures enum value "remove-podman"
+	StepTypeRemovePodman StepType = "remove-podman"
 )
 
 // for schema
@@ -50,7 +53,7 @@ var stepTypeEnum []interface{}
 
 func init() {
 	var res []StepType
-	if err := json.Unmarshal([]byte(`["hardware-info","connectivity-check","execute","inventory","install","free-network-addresses","reset-agent","stop-podman"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["hardware-info","connectivity-check","execute","inventory","install","free-network-addresses","reset-agent","stop-podman","remove-podman"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
