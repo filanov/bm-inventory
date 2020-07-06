@@ -1,9 +1,8 @@
 package app
 
 import (
-	"net/http"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
 )
 
 // WithMetricsResponderMiddleware Returns middleware which responds to /metrics endpoint with the prometheus metrics

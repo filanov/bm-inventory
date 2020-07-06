@@ -50,6 +50,7 @@ func init() {
 }
 
 var Options struct {
+	Auth                        auth.Config
 	BMConfig                    bminventory.Config
 	DBHost                      string `envconfig:"DB_HOST" default:"postgres"`
 	DBPort                      string `envconfig:"DB_PORT" default:"5432"`
@@ -165,14 +166,18 @@ func main() {
 	} else {
 		log.Info("Disabled image expiration monitor")
 	}
+	auth.InitAuthHandler(Options.Auth.JwkCertURL, Options.Auth.JwkCertCA)
 
 	h, err := restapi.Handler(restapi.Config{
-		InstallerAPI:      bm,
-		EventsAPI:         events,
-		Logger:            log.Printf,
-		VersionsAPI:       versionHandler,
-		ManagedDomainsAPI: domainHandler,
-		InnerMiddleware:   metrics.WithMatchedRoute(log.WithField("pkg", "matched-h"), prometheusRegistry),
+		AuthAgentAuth:       auth.AuthAgentAuth,
+		AuthUserAuth:        auth.AuthUserAuth,
+		APIKeyAuthenticator: auth.CreateAuthenticator(Options.Auth.EnableAuth),
+		InstallerAPI:        bm,
+		EventsAPI:           events,
+		Logger:              log.Printf,
+		VersionsAPI:         versionHandler,
+		ManagedDomainsAPI:   domainHandler,
+		InnerMiddleware:     metrics.WithMatchedRoute(log.WithField("pkg", "matched-h"), prometheusRegistry),
 	})
 	h = app.WithMetricsResponderMiddleware(h)
 	h = app.WithHealthMiddleware(h)
