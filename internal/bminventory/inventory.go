@@ -161,6 +161,10 @@ func generateDummyISOImage(jobApi job.API, b *bareMetalInventory, log logrus.Fie
 	if err := jobApi.Create(context.Background(), b.createImageJob(jobName, imgName, "Dummy")); err != nil {
 		log.WithError(err).Errorf("failed to generate dummy ISO image")
 	}
+	if err := b.job.Monitor(context.Background(), jobName, b.Namespace); err != nil {
+		log.WithError(err).Errorf("error while generating dummy ISO image")
+	}
+
 }
 
 func getQuantity(s string) resource.Quantity {
