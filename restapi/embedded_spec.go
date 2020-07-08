@@ -139,6 +139,11 @@ func init() {
     },
     "/clusters/{cluster_id}": {
       "get": {
+        "security": [
+          {
+            "agentAuth": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -2448,6 +2453,23 @@ func init() {
       }
     }
   },
+  "securityDefinitions": {
+    "agentAuth": {
+      "type": "apiKey",
+      "name": "X-Secret-Key",
+      "in": "header"
+    },
+    "userAuth": {
+      "type": "apiKey",
+      "name": "X-User-Key",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "userAuth": []
+    }
+  ],
   "tags": [
     {
       "description": "Assisted bare metal installation",
@@ -2577,6 +2599,11 @@ func init() {
     },
     "/clusters/{cluster_id}": {
       "get": {
+        "security": [
+          {
+            "agentAuth": []
+          }
+        ],
         "tags": [
           "installer"
         ],
@@ -4892,6 +4919,23 @@ func init() {
       }
     }
   },
+  "securityDefinitions": {
+    "agentAuth": {
+      "type": "apiKey",
+      "name": "X-Secret-Key",
+      "in": "header"
+    },
+    "userAuth": {
+      "type": "apiKey",
+      "name": "X-User-Key",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "userAuth": []
+    }
+  ],
   "tags": [
     {
       "description": "Assisted bare metal installation",
