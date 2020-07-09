@@ -372,7 +372,7 @@ var _ = Describe("cluster install", func() {
 
 		})
 
-		It("[only_k8s]install cluster", func() {
+		It("[only_k8s]install_cluster", func() {
 			_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 			Expect(err).NotTo(HaveOccurred())
 			waitForClusterInstallationToStart(clusterID)
@@ -386,6 +386,13 @@ var _ = Describe("cluster install", func() {
 			for _, host := range c.Hosts {
 				Expect(swag.StringValue(host.Status)).Should(Equal("installing"))
 			}
+
+			// Verify there's a bootstrap
+			hbootstrap := make([]interface{}, 0)
+			for _, h := range c.Hosts {
+				hbootstrap = append(hbootstrap, h.Bootstrap)
+			}
+			Expect(true).To(BeElementOf(hbootstrap...))
 
 			for _, host := range c.Hosts {
 				updateProgress(*host.ID, clusterID, models.HostStageDone)
