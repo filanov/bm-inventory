@@ -3,11 +3,17 @@ package requestid
 import (
 	"context"
 	"fmt"
+	"github.com/filanov/bm-inventory/client"
+	installer2 "github.com/filanov/bm-inventory/client/installer"
+	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/filanov/bm-inventory/restapi"
@@ -118,6 +124,8 @@ func TestAuth(t *testing.T) {
 						fmt.Printf("AuthType = %s", authType)
 						//if authentication failed, respond with error
 						// else
+						h := r.Header.Get("username")
+						fmt.Println(h)
 						inner.ServeHTTP(w, r)
 					})
 				}
@@ -132,19 +140,32 @@ func TestAuth(t *testing.T) {
 				InnerMiddleware:   innerMiddleware(),
 			})
 
-			// create a mock request to use
-			req := httptest.NewRequest("GET", tt.url, nil)
+			bmclient := client.New(client.Config{
+				URL: &url.URL{
+					Scheme: client.DefaultSchemes[0],
+					Host:   "localhost:8081",
+					Path:   client.DefaultBasePath,
+				},
+				AuthInfo: Authenticate("ronnie"),
+			})
 
-			// call the handler using a mock response recorder (we'll not use that anyway)
-			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, req)
-			fmt.Println(rec)
-			assert.Equal(t, rec.Code, 200)
+			go http.ListenAndServe("localhost:8081", h)
+
+			id := uuid.New()
+			ree, e := bmclient.Installer.GetCluster(context.TODO(), &installer2.GetClusterParams{
+				ClusterID: strfmt.UUID(id.String()),
+			})
+			fmt.Println(ree)
+			fmt.Println(e)
 		})
 	}
 }
 
-
+func Authenticate(user string) runtime.ClientAuthInfoWriter {
+	return runtime.ClientAuthInfoWriterFunc(func(r runtime.ClientRequest, _ strfmt.Registry) error {
+		return r.SetHeaderParam("username", user)
+	})
+}
 type fakeInventory struct{}
 
 func (f fakeInventory) CancelInstallation(ctx context.Context, params installer.CancelInstallationParams) middleware.Responder {
