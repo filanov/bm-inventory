@@ -2005,6 +2005,7 @@ func init() {
             "disabled",
             "installing",
             "installing-in-progress",
+            "installing-pending-user-action",
             "installed",
             "error",
             "resetting"
@@ -4496,6 +4497,7 @@ func init() {
             "disabled",
             "installing",
             "installing-in-progress",
+            "installing-pending-user-action",
             "installed",
             "error",
             "resetting"
