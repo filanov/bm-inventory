@@ -1056,7 +1056,7 @@ definitions:
       - inventory
       - install
       - free-network-addresses
-      - reset-agent
+      - reset-installation
 
   step:
     type: object
