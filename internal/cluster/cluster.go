@@ -58,6 +58,7 @@ type API interface {
 	ResetCluster(ctx context.Context, c *common.Cluster, reason string, db *gorm.DB) *common.ApiErrorResponse
 	PrepareForInstallation(ctx context.Context, c *common.Cluster) error
 	HandlePreInstallError(ctx context.Context, c *common.Cluster, err error)
+	CompleteInstallation(ctx context.Context, c *common.Cluster, successfullyFinished bool, failureReason string, db *gorm.DB) error
 }
 
 type Config struct {
@@ -71,6 +72,7 @@ type Manager struct {
 	insufficient    StateAPI
 	ready           StateAPI
 	installing      StateAPI
+	finalizing      StateAPI
 	installed       StateAPI
 	error           StateAPI
 	prepare         StateAPI
@@ -91,6 +93,7 @@ func NewManager(cfg Config, log logrus.FieldLogger, db *gorm.DB, eventsHandler e
 		insufficient:    NewInsufficientState(log, db),
 		ready:           NewReadyState(log, db),
 		installing:      NewInstallingState(log, db),
+		finalizing:      NewFinalizingState(log, db),
 		installed:       NewInstalledState(log, db),
 		error:           NewErrorState(log, db),
 		prepare:         NewPrepareForInstallation(cfg.PrepareConfig, log, db),
@@ -110,6 +113,8 @@ func (m *Manager) getCurrentState(status string) (StateAPI, error) {
 		return m.ready, nil
 	case models.ClusterStatusInstalling:
 		return m.installing, nil
+	case models.ClusterStatusFinalizing:
+		return m.finalizing, nil
 	case models.ClusterStatusInstalled:
 		return m.installed, nil
 	case models.ClusterStatusError:
@@ -188,6 +193,7 @@ func (m *Manager) ClusterMonitoring() {
 func (m *Manager) DownloadFiles(c *common.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
 	allowedStatuses := []string{clusterStatusInstalling,
+		clusterStatusFinalizing,
 		clusterStatusInstalled,
 		clusterStatusError}
 	if !funk.ContainsString(allowedStatuses, clusterStatus) {
@@ -207,7 +213,7 @@ func (m *Manager) DownloadKubeconfig(c *common.Cluster) (err error) {
 }
 func (m *Manager) GetCredentials(c *common.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
-	allowedStatuses := []string{clusterStatusInstalling, clusterStatusInstalled}
+	allowedStatuses := []string{clusterStatusInstalling, clusterStatusFinalizing, clusterStatusInstalled}
 	if !funk.ContainsString(allowedStatuses, clusterStatus) {
 		err = errors.Errorf("Cluster %s is in %s state, credentials are available only in installing or installed state", c.ID, clusterStatus)
 	}
@@ -217,10 +223,10 @@ func (m *Manager) GetCredentials(c *common.Cluster) (err error) {
 
 func (m *Manager) UploadIngressCert(c *common.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
-	if clusterStatus != clusterStatusInstalled {
-		err = errors.Errorf("Cluster %s is in %s state, upload ingress ca can be done only in installed state", c.ID, clusterStatus)
+	allowedStatuses := []string{clusterStatusFinalizing, clusterStatusInstalled}
+	if !funk.ContainsString(allowedStatuses, clusterStatus) {
+		err = errors.Errorf("Cluster %s is in %s state, upload ingress ca can be done only in %s or %s state", c.ID, clusterStatus, clusterStatusFinalizing, clusterStatusInstalled)
 	}
-
 	return err
 }
 
@@ -269,6 +275,25 @@ func (m *Manager) ResetCluster(ctx context.Context, c *common.Cluster, reason st
 		return common.NewApiError(http.StatusConflict, err)
 	}
 	return nil
+}
+
+func (m *Manager) CompleteInstallation(ctx context.Context, c *common.Cluster, successfullyFinished bool, failureReason string, db *gorm.DB) error {
+	clusterStatus := swag.StringValue(c.Status)
+	allowedStatuses := []string{clusterStatusFinalizing}
+	if !funk.ContainsString(allowedStatuses, clusterStatus) {
+		return common.NewApiError(http.StatusBadRequest,
+			errors.Errorf("Cluster is in %s state, cluster can be prepared for installation only in one of %s states",
+				clusterStatus, allowedStatuses))
+	}
+	statusToUpdateTo := clusterStatusInstalled
+	statusInfo := statusInfoInstalled
+	if !successfullyFinished {
+		statusToUpdateTo = clusterStatusError
+		statusInfo = failureReason
+	}
+	_, err := updateState(statusToUpdateTo, statusInfo, c, m.db,
+		logutil.FromContext(ctx, m.log))
+	return err
 }
 
 func (m *Manager) PrepareForInstallation(ctx context.Context, c *common.Cluster) error {

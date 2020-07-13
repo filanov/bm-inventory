@@ -17,6 +17,7 @@ const (
 	clusterStatusReady                  = "ready"
 	clusterStatusPrepareForInstallation = "preparing-for-installation"
 	clusterStatusInstalling             = "installing"
+	clusterStatusFinalizing             = "finalizing"
 	clusterStatusInstalled              = "installed"
 	clusterStatusError                  = "error"
 )
@@ -25,6 +26,7 @@ const (
 	statusInfoReady                           = "Cluster ready to be installed"
 	statusInfoInsufficient                    = "cluster is insufficient, exactly 3 known master hosts are needed for installation"
 	statusInfoInstalling                      = "Installation in progress"
+	statusFinalizing                   = "Finalizing cluster installation"
 	statusInfoInstalled                       = "installed"
 	statusInfoPreparingForInstallation        = "Preparing cluster for installation"
 	statusInfoPreparingForInstallationTimeout = "Preparing cluster for installation timeout"
@@ -45,7 +47,7 @@ func updateState(state string, statusInfo string, c *common.Cluster, db *gorm.DB
 	updates := map[string]interface{}{"status": state, "status_info": statusInfo, "status_updated_at": strfmt.DateTime(time.Now())}
 	if *c.Status == clusterStatusReady && state == clusterStatusPrepareForInstallation {
 		updates["install_started_at"] = strfmt.DateTime(time.Now())
-	} else if *c.Status == clusterStatusInstalling && state == clusterStatusInstalled {
+	} else if *c.Status == clusterStatusFinalizing && state == clusterStatusInstalled {
 		updates["install_completed_at"] = strfmt.DateTime(time.Now())
 	}
 	dbReply := db.Model(&common.Cluster{}).Where("id = ? and status = ?",

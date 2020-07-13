@@ -1884,6 +1884,47 @@ func (b *bareMetalInventory) ResetCluster(ctx context.Context, params installer.
 	return installer.NewResetClusterAccepted().WithPayload(&c.Cluster)
 }
 
+func (b *bareMetalInventory) CompleteInstallation(ctx context.Context, params installer.CompleteInstallationParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+
+	log.Infof("complete cluster %s installation", params.ClusterID)
+
+	var c common.Cluster
+
+	txSuccess := false
+	tx := b.db.Begin()
+	defer func() {
+		if !txSuccess {
+			log.Error("failed to set complete cluster installation")
+			tx.Rollback()
+		}
+		if r := recover(); r != nil {
+			log.Error("failed to set complete cluster installation")
+			tx.Rollback()
+		}
+	}()
+
+	if tx.Error != nil {
+		log.WithError(tx.Error).Errorf("failed to start db transaction")
+		return installer.NewCompleteInstallationInternalServerError().WithPayload(
+			common.GenerateError(http.StatusInternalServerError, errors.New("DB error, failed to start transaction")))
+	}
+
+	if err := tx.Preload("Hosts").First(&c, "id = ?", params.ClusterID).Error; err != nil {
+		log.WithError(err).Errorf("failed to find cluster %s", params.ClusterID)
+		if gorm.IsRecordNotFoundError(err) {
+			return installer.NewCompleteInstallationNotFound().WithPayload(common.GenerateError(http.StatusNotFound, err))
+		}
+		return installer.NewCompleteInstallationInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+	}
+
+	if err := b.clusterApi.CompleteInstallation(ctx, &c, *params.CompletionParams.IsSuccess, params.CompletionParams.ErrorInfo, tx); err != nil {
+		return common.GenerateErrorResponder(err)
+	}
+
+	return installer.NewCompleteInstallationAccepted().WithPayload(&c.Cluster)
+}
+
 func (b *bareMetalInventory) deleteS3ClusterFiles(ctx context.Context, c *common.Cluster) error {
 	for _, name := range clusterFileNames {
 		if err := b.s3Client.DeleteFileFromS3(ctx, fmt.Sprintf("%s/%s", c.ID, name), b.S3Bucket); err != nil {

@@ -34,8 +34,8 @@ func (i *installingState) RefreshStatus(ctx context.Context, c *common.Cluster, 
 	}
 
 	switch installationState {
-	case clusterStatusInstalled:
-		return updateState(clusterStatusInstalled, StateInfo, c, db, log)
+	case clusterStatusFinalizing:
+		return updateState(clusterStatusFinalizing, StateInfo, c, db, log)
 	case clusterStatusError:
 		return updateState(clusterStatusError, StateInfo, c, db, log)
 	case clusterStatusInstalling:
@@ -56,11 +56,11 @@ func (i *installingState) getClusterInstallationState(ctx context.Context, c *co
 
 	mappedMastersByRole := mapMasterHostsByStatus(c)
 
-	// Cluster is in installed
+	// Cluster is in finalizing
 	mastersInInstalled, ok := mappedMastersByRole[intenralhost.HostStatusInstalled]
 	if ok && len(mastersInInstalled) >= minHostsNeededForInstallation {
 		log.Infof("Cluster %s has at least %d installed hosts, cluster is installed.", c.ID, len(mastersInInstalled))
-		return clusterStatusInstalled, statusInfoInstalled, nil
+		return clusterStatusFinalizing, statusFinalizing, nil
 	}
 
 	// Cluster is installing

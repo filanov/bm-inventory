@@ -1187,6 +1187,29 @@ var _ = Describe("cluster", func() {
 			})
 		})
 
+		Context("complete installation", func() {
+			success := true
+			errorInfo := "dummy"
+			It("complete success", func() {
+				mockClusterApi.EXPECT().CompleteInstallation(ctx, gomock.Any(), success, errorInfo, gomock.Any()).Return(nil).Times(1)
+				reply := bm.CompleteInstallation(ctx, installer.CompleteInstallationParams{
+					ClusterID:        clusterID,
+					CompletionParams: &models.CompletionParams{ErrorInfo: errorInfo, IsSuccess: &success},
+				})
+				Expect(reply).Should(BeAssignableToTypeOf(installer.NewCompleteInstallationAccepted()))
+			})
+			It("complete bad request", func() {
+				mockClusterApi.EXPECT().CompleteInstallation(ctx, gomock.Any(), success, errorInfo, gomock.Any()).Return(common.NewApiError(http.StatusBadRequest, nil)).Times(1)
+
+				reply := bm.CompleteInstallation(ctx, installer.CompleteInstallationParams{
+					ClusterID:        clusterID,
+					CompletionParams: &models.CompletionParams{ErrorInfo: errorInfo, IsSuccess: &success},
+				})
+
+				verifyApiError(reply, http.StatusBadRequest)
+			})
+		})
+
 		AfterEach(func() {
 			close(DoneChannel)
 		})
@@ -1349,7 +1372,7 @@ var _ = Describe("UploadClusterIngressCert test", func() {
 
 	})
 	It("UploadClusterIngressCert kubeconfig already exists, return ok", func() {
-		status := ClusterStatusInstalled
+		status := models.ClusterStatusFinalizing
 		c.Status = &status
 		db.Save(&c)
 		mockS3Client.EXPECT().DoesObjectExist(ctx, kubeconfigObject, "test").Return(true, nil).Times(1)
@@ -1360,7 +1383,7 @@ var _ = Describe("UploadClusterIngressCert test", func() {
 		Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewUploadClusterIngressCertCreated()))
 	})
 	It("UploadClusterIngressCert DoesObjectExist fails ", func() {
-		status := ClusterStatusInstalled
+		status := models.ClusterStatusFinalizing
 		c.Status = &status
 		db.Save(&c)
 		mockS3Client.EXPECT().DoesObjectExist(ctx, kubeconfigObject, "test").Return(true, errors.Errorf("dummy")).Times(1)
@@ -1371,7 +1394,7 @@ var _ = Describe("UploadClusterIngressCert test", func() {
 		Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewUploadClusterIngressCertInternalServerError()))
 	})
 	It("UploadClusterIngressCert s3download failure", func() {
-		status := ClusterStatusInstalled
+		status := models.ClusterStatusFinalizing
 		c.Status = &status
 		db.Save(&c)
 		objectExists()
@@ -1383,7 +1406,7 @@ var _ = Describe("UploadClusterIngressCert test", func() {
 		Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewUploadClusterIngressCertInternalServerError()))
 	})
 	It("UploadClusterIngressCert bad kubeconfig, mergeIngressCaIntoKubeconfig failure", func() {
-		status := ClusterStatusInstalled
+		status := models.ClusterStatusFinalizing
 		c.Status = &status
 		db.Save(&c)
 		r := ioutil.NopCloser(bytes.NewReader([]byte("test")))
@@ -1396,7 +1419,7 @@ var _ = Describe("UploadClusterIngressCert test", func() {
 		Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewUploadClusterIngressCertInternalServerError()))
 	})
 	It("UploadClusterIngressCert bad ingressCa, mergeIngressCaIntoKubeconfig failure", func() {
-		status := ClusterStatusInstalled
+		status := models.ClusterStatusFinalizing
 		c.Status = &status
 		db.Save(&c)
 		objectExists()
@@ -1409,7 +1432,7 @@ var _ = Describe("UploadClusterIngressCert test", func() {
 	})
 
 	It("UploadClusterIngressCert push fails", func() {
-		status := ClusterStatusInstalled
+		status := models.ClusterStatusFinalizing
 		c.Status = &status
 		db.Save(&c)
 		data, err := os.Open("../../subsystem/test_kubeconfig")
@@ -1432,7 +1455,7 @@ var _ = Describe("UploadClusterIngressCert test", func() {
 	})
 
 	It("UploadClusterIngressCert download happy flow", func() {
-		status := ClusterStatusInstalled
+		status := models.ClusterStatusInstalled
 		c.Status = &status
 		db.Save(&c)
 		data, err := os.Open("../../subsystem/test_kubeconfig")

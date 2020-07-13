@@ -45,6 +45,8 @@ func (i *installer) Install(ctx context.Context, c *common.Cluster, db *gorm.DB)
 		return errors.Errorf("cluster %s is ready expected %s", c.ID, clusterStatusPrepareForInstallation)
 	case clusterStatusInstalling:
 		return errors.Errorf("cluster %s is already installing", c.ID)
+	case clusterStatusFinalizing:
+		return errors.Errorf("cluster %s is already %s", c.ID, clusterStatusFinalizing)
 	case clusterStatusInstalled:
 		return errors.Errorf("cluster %s is already installed", c.ID)
 	case clusterStatusError:
