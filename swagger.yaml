@@ -1284,7 +1284,7 @@ definitions:
         enum: ['hardware', 'networking']
       status:
         type: string
-        enum: ['pending', 'insufficient', 'ready']
+        enum: ['pending', 'failed', 'passed']
       validations:
         type: array
         items:
