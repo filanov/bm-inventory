@@ -412,3 +412,17 @@ func (mr *MockAPIMockRecorder) HandlePreInstallError(ctx, c, err interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandlePreInstallError", reflect.TypeOf((*MockAPI)(nil).HandlePreInstallError), ctx, c, err)
 }
+
+// CompleteInstallation mocks base method
+func (m *MockAPI) CompleteInstallation(ctx context.Context, c *common.Cluster, successfullyFinished bool, failureReason string, db *gorm.DB) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CompleteInstallation", ctx, c, successfullyFinished, failureReason, db)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CompleteInstallation indicates an expected call of CompleteInstallation
+func (mr *MockAPIMockRecorder) CompleteInstallation(ctx, c, successfullyFinished, failureReason, db interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteInstallation", reflect.TypeOf((*MockAPI)(nil).CompleteInstallation), ctx, c, successfullyFinished, failureReason, db)
+}
