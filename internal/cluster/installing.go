@@ -35,9 +35,9 @@ func (i *installingState) RefreshStatus(ctx context.Context, c *common.Cluster, 
 
 	switch installationState {
 	case clusterStatusInstalled:
-		return updateState(clusterStatusInstalled, StateInfo, c, db, log)
+		return updateClusterStatus(clusterStatusInstalled, StateInfo, c, db, log)
 	case clusterStatusError:
-		return updateState(clusterStatusError, StateInfo, c, db, log)
+		return updateClusterStatus(clusterStatusError, StateInfo, c, db, log)
 	case clusterStatusInstalling:
 		return &UpdateReply{
 			State:     clusterStatusInstalling,

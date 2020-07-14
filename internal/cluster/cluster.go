@@ -282,7 +282,7 @@ func (m *Manager) PrepareForInstallation(ctx context.Context, c *common.Cluster)
 
 func (m *Manager) HandlePreInstallError(ctx context.Context, c *common.Cluster, installErr error) {
 	log := logutil.FromContext(ctx, m.log)
-	if _, err := updateState(clusterStatusError, installErr.Error(), c, m.db, log); err != nil {
+	if _, err := updateClusterStatus(clusterStatusError, installErr.Error(), c, m.db, log); err != nil {
 		log.WithError(err).Errorf("failed to set cluster to %s", clusterStatusError)
 	}
 	log.Infof("Successfully handled pre-installation error, cluster %s changed state to %s",
