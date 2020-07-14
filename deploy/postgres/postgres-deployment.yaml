@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
+  namespace: assisted-installer
 spec:
   selector:
     matchLabels:
@@ -14,7 +15,7 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:10.4
+          image: postgres:12.3-alpine
           imagePullPolicy: "IfNotPresent"
           ports:
             - containerPort: 5432
@@ -22,8 +23,15 @@ spec:
             - configMapRef:
                 name: postgres-config
           volumeMounts:
-            - mountPath: /var/lib/postgresql/data
+            - mountPath: /var/lib/postgress
               name: postgredb
+          resources:
+            limits:
+              cpu: 200m
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 400Mi
       volumes:
         - name: postgredb
           persistentVolumeClaim:
@@ -33,11 +41,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
+  namespace: assisted-installer
   labels:
     app: postgres
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
     - port: 5432
   selector:
     app: postgres
+status:
+  loadBalancer: {}
