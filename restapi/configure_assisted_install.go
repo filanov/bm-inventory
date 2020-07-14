@@ -12,6 +12,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/runtime/security"
 
 	"github.com/filanov/bm-inventory/restapi/operations"
 	"github.com/filanov/bm-inventory/restapi/operations/events"
@@ -148,6 +149,13 @@ type Config struct {
 
 	// AuthUserAuth Applies when the "X-User-Key" header is set
 	AuthUserAuth func(token string) (interface{}, error)
+
+	// Authenticator to use for all APIKey authentication
+	APIKeyAuthenticator func(string, string, security.TokenAuthentication) runtime.Authenticator
+	// Authenticator to use for all Bearer authentication
+	BasicAuthenticator func(security.UserPassAuthentication) runtime.Authenticator
+	// Authenticator to use for all Basic authentication
+	BearerAuthenticator func(string, security.ScopedTokenAuthentication) runtime.Authenticator
 }
 
 // Handler returns an http.Handler given the handler configuration
@@ -168,6 +176,16 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 	api := operations.NewAssistedInstallAPI(spec)
 	api.ServeError = errors.ServeError
 	api.Logger = c.Logger
+
+	if c.APIKeyAuthenticator != nil {
+		api.APIKeyAuthenticator = c.APIKeyAuthenticator
+	}
+	if c.BasicAuthenticator != nil {
+		api.BasicAuthenticator = c.BasicAuthenticator
+	}
+	if c.BearerAuthenticator != nil {
+		api.BearerAuthenticator = c.BearerAuthenticator
+	}
 
 	api.JSONConsumer = runtime.JSONConsumer()
 	api.BinProducer = runtime.ByteStreamProducer()
