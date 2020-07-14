@@ -61,6 +61,48 @@ var _ = Describe("CancelInstallation", func() {
 		Expect(swag.StringValue(c.StatusInfo)).Should(Equal("original error"))
 	})
 
+	It("complete installation success", func() {
+		c := common.Cluster{
+			Cluster: models.Cluster{ID: &clusterId, Status: swag.String(clusterStatusFinalizing)},
+		}
+		Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
+		Expect(capi.CompleteInstallation(ctx, &c, true, clusterStatusInstalled, db)).ShouldNot(HaveOccurred())
+		Expect(swag.StringValue(c.Status)).Should(Equal(clusterStatusInstalled))
+	})
+
+	It("complete installation failed", func() {
+		c := common.Cluster{
+			Cluster: models.Cluster{ID: &clusterId, Status: swag.String(clusterStatusFinalizing)},
+		}
+		Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
+		Expect(capi.CompleteInstallation(ctx, &c, false, "aaaa", db)).ShouldNot(HaveOccurred())
+		Expect(swag.StringValue(c.Status)).Should(Equal(clusterStatusError))
+		Expect(swag.StringValue(c.StatusInfo)).Should(Equal("aaaa"))
+
+	})
+
+	It("complete_installation_conflict", func() {
+		c := common.Cluster{
+			Cluster: models.Cluster{ID: &clusterId, Status: swag.String(clusterStatusInstalling)},
+		}
+		Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
+		replay := capi.CompleteInstallation(ctx, &c, true, "", db)
+		Expect(replay).Should(HaveOccurred())
+		Expect(int(replay.StatusCode())).Should(Equal(http.StatusConflict))
+		Expect(swag.StringValue(c.Status)).Should(Equal(clusterStatusInstalling))
+	})
+
+	It("complete_installation_conflict_failed", func() {
+		c := common.Cluster{
+			Cluster: models.Cluster{ID: &clusterId, Status: swag.String(clusterStatusInstalling)},
+		}
+		Expect(db.Create(&c).Error).ShouldNot(HaveOccurred())
+		replay := capi.CompleteInstallation(ctx, &c, false, "", db)
+		Expect(replay).Should(HaveOccurred())
+		Expect(int(replay.StatusCode())).Should(Equal(http.StatusConflict))
+		Expect(swag.StringValue(c.Status)).Should(Equal(clusterStatusInstalling))
+	})
+
 	AfterEach(func() {
 		db.Close()
 	})

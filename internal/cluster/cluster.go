@@ -58,7 +58,7 @@ type API interface {
 	ResetCluster(ctx context.Context, c *common.Cluster, reason string, db *gorm.DB) *common.ApiErrorResponse
 	PrepareForInstallation(ctx context.Context, c *common.Cluster) error
 	HandlePreInstallError(ctx context.Context, c *common.Cluster, err error)
-	CompleteInstallation(ctx context.Context, c *common.Cluster, successfullyFinished bool, failureReason string, db *gorm.DB) error
+	CompleteInstallation(ctx context.Context, c *common.Cluster, successfullyFinished bool, reason string, db *gorm.DB) *common.ApiErrorResponse
 }
 
 type Config struct {
@@ -277,23 +277,17 @@ func (m *Manager) ResetCluster(ctx context.Context, c *common.Cluster, reason st
 	return nil
 }
 
-func (m *Manager) CompleteInstallation(ctx context.Context, c *common.Cluster, successfullyFinished bool, failureReason string, db *gorm.DB) error {
-	clusterStatus := swag.StringValue(c.Status)
-	allowedStatuses := []string{clusterStatusFinalizing}
-	if !funk.ContainsString(allowedStatuses, clusterStatus) {
-		return common.NewApiError(http.StatusBadRequest,
-			errors.Errorf("Cluster is in %s state, cluster can be prepared for installation only in one of %s states",
-				clusterStatus, allowedStatuses))
+func (m *Manager) CompleteInstallation(ctx context.Context, c *common.Cluster, successfullyFinished bool, reason string, db *gorm.DB) *common.ApiErrorResponse {
+	err := m.sm.Run(TransitionTypeCompleteInstallation, newStateCluster(c), &TransitionArgsCompleteInstallation{
+		ctx:       ctx,
+		isSuccess: successfullyFinished,
+		reason:    reason,
+		db:        db,
+	})
+	if err != nil {
+		return common.NewApiError(http.StatusConflict, err)
 	}
-	statusToUpdateTo := clusterStatusInstalled
-	statusInfo := statusInfoInstalled
-	if !successfullyFinished {
-		statusToUpdateTo = clusterStatusError
-		statusInfo = failureReason
-	}
-	_, err := updateState(statusToUpdateTo, statusInfo, c, m.db,
-		logutil.FromContext(ctx, m.log))
-	return err
+	return nil
 }
 
 func (m *Manager) PrepareForInstallation(ctx context.Context, c *common.Cluster) error {

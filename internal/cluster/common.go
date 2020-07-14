@@ -26,7 +26,7 @@ const (
 	statusInfoReady                           = "Cluster ready to be installed"
 	statusInfoInsufficient                    = "cluster is insufficient, exactly 3 known master hosts are needed for installation"
 	statusInfoInstalling                      = "Installation in progress"
-	statusFinalizing                   = "Finalizing cluster installation"
+	statusFinalizing                          = "Finalizing cluster installation"
 	statusInfoInstalled                       = "installed"
 	statusInfoPreparingForInstallation        = "Preparing cluster for installation"
 	statusInfoPreparingForInstallationTimeout = "Preparing cluster for installation timeout"
@@ -70,7 +70,13 @@ func updateState(state string, statusInfo string, c *common.Cluster, db *gorm.DB
 func updateClusterStateWithParams(log logrus.FieldLogger, srcStatus, statusInfo string, c *common.Cluster, db *gorm.DB,
 	extra ...interface{}) error {
 
-	updates := map[string]interface{}{"status": swag.StringValue(c.Status), "status_info": statusInfo}
+	updates := map[string]interface{}{"status": swag.StringValue(c.Status), "status_info": statusInfo, "status_updated_at": strfmt.DateTime(time.Now())}
+	if srcStatus == clusterStatusReady && swag.StringValue(c.Status) == clusterStatusPrepareForInstallation {
+		updates["install_started_at"] = strfmt.DateTime(time.Now())
+	} else if srcStatus == clusterStatusFinalizing && swag.StringValue(c.Status) == clusterStatusInstalled {
+		updates["install_completed_at"] = strfmt.DateTime(time.Now())
+	}
+
 	if len(extra)%2 != 0 {
 		return errors.Errorf("invalid update extra parameters %+v", extra)
 	}
