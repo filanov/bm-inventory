@@ -334,10 +334,8 @@ var _ = Describe("cluster install", func() {
 			_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 			Expect(err).NotTo(HaveOccurred())
 			waitForClusterInstallationToStart(clusterID)
-			rep, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
-			Expect(err).NotTo(HaveOccurred())
-			c := rep.GetPayload()
-			Expect(swag.StringValue(c.Status)).Should(Equal("installing"))
+			waitForClusterState(ctx, clusterID, models.ClusterStatusInstalling, defaultWaitForClusterStateTimeout,
+				IgnoreStateInfo)
 			_, err = bmclient.Installer.RegisterHost(context.Background(), &installer.RegisterHostParams{
 				ClusterID: clusterID,
 				NewHostParams: &models.HostCreateParams{
@@ -470,11 +468,13 @@ var _ = Describe("cluster install", func() {
 			_, err = bmclient.Installer.CompleteInstallation(ctx,
 				&installer.CompleteInstallationParams{ClusterID: clusterID, CompletionParams: &models.CompletionParams{IsSuccess: &success, ErrorInfo: "failed"}})
 			Expect(err).NotTo(HaveOccurred())
-			rep, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
-			Expect(err).NotTo(HaveOccurred())
-			c = rep.GetPayload()
-			Expect(swag.StringValue(c.Status)).Should(Equal("error"))
-			Expect(swag.StringValue(c.StatusInfo)).Should(Equal("failed"))
+
+			waitForClusterState(ctx, clusterID, "error", defaultWaitForClusterStateTimeout, "failed")
+			//rep, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+			//Expect(err).NotTo(HaveOccurred())
+			//c = rep.GetPayload()
+			//Expect(swag.StringValue(c.Status)).Should(Equal("error"))
+			//Expect(swag.StringValue(c.StatusInfo)).Should(Equal("failed"))
 
 		})
 
@@ -1547,7 +1547,7 @@ var _ = Describe("cluster install, with default network params", func() {
 		Expect(len(c.Hosts)).Should(Equal(3))
 		Expect(c.InstallStartedAt).ShouldNot(Equal(startTimeInstalling))
 		for _, host := range c.Hosts {
-			Expect(swag.StringValue(host.Status)).Should(Equal("installing"))
+			waitForHostState(ctx, clusterID, *host.ID, "installing", 10*time.Second)
 		}
 		// fake installation completed
 		for _, host := range c.Hosts {
@@ -1559,6 +1559,8 @@ var _ = Describe("cluster install, with default network params", func() {
 		_, err = bmclient.Installer.CompleteInstallation(ctx,
 			&installer.CompleteInstallationParams{ClusterID: clusterID, CompletionParams: &models.CompletionParams{IsSuccess: &success, ErrorInfo: ""}})
 		Expect(err).NotTo(HaveOccurred())
+
+		waitForClusterState(ctx, clusterID, "installed", defaultWaitForClusterStateTimeout, "installed")
 
 		rep, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
 

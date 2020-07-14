@@ -1919,8 +1919,10 @@ func (b *bareMetalInventory) CompleteInstallation(ctx context.Context, params in
 	}
 
 	if err := b.clusterApi.CompleteInstallation(ctx, &c, *params.CompletionParams.IsSuccess, params.CompletionParams.ErrorInfo, tx); err != nil {
+		log.WithError(err).Errorf("Failed to set complete cluster state on %s ", params.ClusterID.String())
 		return common.GenerateErrorResponder(err)
 	}
+	txSuccess = true
 
 	return installer.NewCompleteInstallationAccepted().WithPayload(&c.Cluster)
 }
