@@ -2,19 +2,24 @@ package requestid
 
 import (
 	"context"
-	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"testing"
+
+	"github.com/filanov/bm-inventory/client"
+	installer2 "github.com/filanov/bm-inventory/client/installer"
+	"github.com/google/uuid"
+
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/runtime/security"
-	"net/http"
-	"net/http/httptest"
-	"testing"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/filanov/bm-inventory/restapi"
 	"github.com/filanov/bm-inventory/restapi/operations/installer"
 	"github.com/sirupsen/logrus"
-	"gotest.tools/assert"
-
 	"github.com/stretchr/testify/mock"
 )
 
@@ -76,11 +81,6 @@ func TestTransport(t *testing.T) {
 }
 
 func TestAuth(t *testing.T) {
-	url1 := installer.ListClustersURL{}
-	url2 := installer.GetClusterURL{ClusterID: "2faecba1-4903-4e2f-a994-fb58bd770066"}
-
-	listClustersUrl := url1.String()
-	getClusterUrl := url2.String()
 	agentKey := "X-Secret-Key"
 	userKey := "X-User-Key"
 	agentKeyValue := "SecretKey"
@@ -88,48 +88,50 @@ func TestAuth(t *testing.T) {
 
 	t.Parallel()
 	tests := []struct {
-		name               string
-		tokenKey           string
-		expectedTokenValue string
-		url                string
-		enableAuth         bool
-		addHeaders         bool
+		name                   string
+		tokenKey               string
+		expectedTokenValue     string
+		isListOperation        bool
+		enableAuth             bool
+		addHeaders             bool
 		expectedRequestSuccess bool
 	}{
+		/*
+			{
+				name:                   "agent auth",
+				tokenKey:               agentKey,
+				expectedTokenValue:     agentKeyValue,
+			    isListOperation:         false,
+				enableAuth:             true,
+				addHeaders:             true,
+				expectedRequestSuccess: true,
+			},
+		*/
 		{
-			name:               "user auth",
-			tokenKey:           userKey,
-			expectedTokenValue: userKeyValue,
-			url:                listClustersUrl,
-			enableAuth: true,
-			addHeaders: true,
+			name:                   "user auth",
+			tokenKey:               userKey,
+			expectedTokenValue:     userKeyValue,
+			isListOperation:        true,
+			enableAuth:             true,
+			addHeaders:             true,
 			expectedRequestSuccess: true,
 		},
 		{
-			name:               "agent auth",
-			tokenKey:           agentKey,
-			expectedTokenValue: agentKeyValue,
-			url:                getClusterUrl,
-			enableAuth: true,
-			addHeaders: true,
-			expectedRequestSuccess: true,
-		},
-		{
-			name:               "Fail auth without headers",
-			tokenKey:           userKey,
-			expectedTokenValue: userKeyValue,
-			url:                listClustersUrl,
-			enableAuth: true,
-			addHeaders: false,
+			name:                   "Fail auth without headers",
+			tokenKey:               agentKey,
+			expectedTokenValue:     agentKeyValue,
+			isListOperation:        false,
+			enableAuth:             true,
+			addHeaders:             false,
 			expectedRequestSuccess: false,
 		},
 		{
-			name:               "Ignore auth if disabled",
-			tokenKey:           agentKey,
-			expectedTokenValue: agentKeyValue,
-			url:                getClusterUrl,
-			enableAuth: false,
-			addHeaders: false,
+			name:                   "Ignore auth if disabled",
+			tokenKey:               userKey,
+			expectedTokenValue:     userKeyValue,
+			isListOperation:        true,
+			enableAuth:             false,
+			addHeaders:             false,
 			expectedRequestSuccess: true,
 		},
 	}
@@ -154,38 +156,66 @@ func TestAuth(t *testing.T) {
 			}
 
 			h, _ := restapi.Handler(restapi.Config{
-				AuthAgentAuth:     authAgentAuth,
-				AuthUserAuth:      authUserAuth,
+				AuthAgentAuth:       authAgentAuth,
+				AuthUserAuth:        authUserAuth,
 				APIKeyAuthenticator: createAuthenticator(tt.enableAuth),
-				InstallerAPI:      fakeInventory{},
-				EventsAPI:         nil,
-				Logger:            logrus.Printf,
-				VersionsAPI:       nil,
-				ManagedDomainsAPI: nil,
-				InnerMiddleware:   nil,
+				InstallerAPI:        fakeInventory{},
+				EventsAPI:           nil,
+				Logger:              logrus.Printf,
+				VersionsAPI:         nil,
+				ManagedDomainsAPI:   nil,
+				InnerMiddleware:     nil,
 			})
 
-			// create a mock request to use
-			req := httptest.NewRequest("GET", tt.url, nil)
-			if tt.addHeaders {
-				req.Header.Set(tt.tokenKey, tt.expectedTokenValue)
+			clientAuth := func() runtime.ClientAuthInfoWriter {
+				return runtime.ClientAuthInfoWriterFunc(func(r runtime.ClientRequest, _ strfmt.Registry) error {
+					return r.SetHeaderParam(tt.tokenKey, tt.expectedTokenValue)
+				})
 			}
 
-			// call the handler using a mock response recorder (we'll not use that anyway)
-			rec := httptest.NewRecorder()
-			h.ServeHTTP(rec, req)
-			fmt.Println(rec)
+			cfg := client.Config{
+				URL: &url.URL{
+					Scheme: client.DefaultSchemes[0],
+					Host:   "localhost:8081",
+					Path:   client.DefaultBasePath,
+				},
+			}
+			if tt.addHeaders {
+				cfg.AuthInfo = clientAuth()
+			}
+			bmclient := client.New(cfg)
+
+			server := &http.Server{Addr: "localhost:8081", Handler: h}
+			go server.ListenAndServe()
+			defer server.Close()
+
 			expectedStatusCode := 401
 			if tt.expectedRequestSuccess {
 				expectedStatusCode = 200
 			}
-			assert.Equal(t, rec.Code, expectedStatusCode)
+
+			var e error
+			if tt.isListOperation {
+				_, e = bmclient.Installer.ListClusters(context.TODO(), &installer2.ListClustersParams{})
+			} else {
+				id := uuid.New()
+				_, e = bmclient.Installer.GetCluster(context.TODO(), &installer2.GetClusterParams{
+					ClusterID: strfmt.UUID(id.String()),
+				})
+			}
+			if expectedStatusCode == 200 {
+				assert.Nil(t, e)
+			} else {
+				apierr := e.(*runtime.APIError)
+				assert.Equal(t, apierr.Code, expectedStatusCode)
+
+			}
 		})
 	}
 }
 
 func createAuthenticator(isEnabled bool) func(name, in string, authenticate security.TokenAuthentication) runtime.Authenticator {
-	return func(name string,  _ string, authenticate security.TokenAuthentication) runtime.Authenticator {
+	return func(name string, _ string, authenticate security.TokenAuthentication) runtime.Authenticator {
 		getToken := func(r *http.Request) string { return r.Header.Get(name) }
 
 		return security.HttpAuthenticator(func(r *http.Request) (bool, interface{}, error) {
@@ -202,6 +232,7 @@ func createAuthenticator(isEnabled bool) func(name, in string, authenticate secu
 		})
 	}
 }
+
 type fakeInventory struct{}
 
 func (f fakeInventory) CancelInstallation(ctx context.Context, params installer.CancelInstallationParams) middleware.Responder {
