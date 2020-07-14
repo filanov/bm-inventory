@@ -3,7 +3,9 @@ package requestid
 import (
 	"context"
 	"fmt"
+	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/runtime/security"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -90,18 +92,45 @@ func TestAuth(t *testing.T) {
 		tokenKey           string
 		expectedTokenValue string
 		url                string
+		enableAuth         bool
+		addHeaders         bool
+		expectedRequestSuccess bool
 	}{
 		{
 			name:               "user auth",
 			tokenKey:           userKey,
 			expectedTokenValue: userKeyValue,
 			url:                listClustersUrl,
+			enableAuth: true,
+			addHeaders: true,
+			expectedRequestSuccess: true,
 		},
 		{
 			name:               "agent auth",
 			tokenKey:           agentKey,
 			expectedTokenValue: agentKeyValue,
 			url:                getClusterUrl,
+			enableAuth: true,
+			addHeaders: true,
+			expectedRequestSuccess: true,
+		},
+		{
+			name:               "Fail auth without headers",
+			tokenKey:           userKey,
+			expectedTokenValue: userKeyValue,
+			url:                listClustersUrl,
+			enableAuth: true,
+			addHeaders: false,
+			expectedRequestSuccess: false,
+		},
+		{
+			name:               "Ignore auth if disabled",
+			tokenKey:           agentKey,
+			expectedTokenValue: agentKeyValue,
+			url:                getClusterUrl,
+			enableAuth: false,
+			addHeaders: false,
+			expectedRequestSuccess: true,
 		},
 	}
 
@@ -123,9 +152,11 @@ func TestAuth(t *testing.T) {
 				assert.Equal(t, tt.tokenKey, userKey)
 				return "user1", nil
 			}
+
 			h, _ := restapi.Handler(restapi.Config{
 				AuthAgentAuth:     authAgentAuth,
 				AuthUserAuth:      authUserAuth,
+				APIKeyAuthenticator: createAuthenticator(tt.enableAuth),
 				InstallerAPI:      fakeInventory{},
 				EventsAPI:         nil,
 				Logger:            logrus.Printf,
@@ -136,17 +167,41 @@ func TestAuth(t *testing.T) {
 
 			// create a mock request to use
 			req := httptest.NewRequest("GET", tt.url, nil)
-			req.Header.Set(tt.tokenKey, tt.expectedTokenValue)
+			if tt.addHeaders {
+				req.Header.Set(tt.tokenKey, tt.expectedTokenValue)
+			}
 
 			// call the handler using a mock response recorder (we'll not use that anyway)
 			rec := httptest.NewRecorder()
 			h.ServeHTTP(rec, req)
 			fmt.Println(rec)
-			assert.Equal(t, rec.Code, 200)
+			expectedStatusCode := 401
+			if tt.expectedRequestSuccess {
+				expectedStatusCode = 200
+			}
+			assert.Equal(t, rec.Code, expectedStatusCode)
 		})
 	}
 }
 
+func createAuthenticator(isEnabled bool) func(name, in string, authenticate security.TokenAuthentication) runtime.Authenticator {
+	return func(name string,  _ string, authenticate security.TokenAuthentication) runtime.Authenticator {
+		getToken := func(r *http.Request) string { return r.Header.Get(name) }
+
+		return security.HttpAuthenticator(func(r *http.Request) (bool, interface{}, error) {
+			if !isEnabled {
+				return true, "", nil
+			}
+			token := getToken(r)
+			if token == "" {
+				return false, nil, nil
+			}
+
+			p, err := authenticate(token)
+			return true, p, err
+		})
+	}
+}
 type fakeInventory struct{}
 
 func (f fakeInventory) CancelInstallation(ctx context.Context, params installer.CancelInstallationParams) middleware.Responder {
