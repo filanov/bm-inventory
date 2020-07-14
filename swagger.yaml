@@ -17,6 +17,18 @@ produces:
   - application/json
 
 
+securityDefinitions:
+  agentAuth:
+    type: apiKey
+    in: header
+    name: X-Secret-Key
+  userAuth:
+    type: apiKey
+    in: header
+    name: X-User-Key
+
+security:
+  - userAuth: []
 paths:
   /clusters:
     post:
@@ -65,6 +77,8 @@ paths:
         - installer
       summary: Retrieves the details of the OpenShift bare metal cluster.
       operationId: GetCluster
+      security:
+        - agentAuth: []
       parameters:
         - in: path
           name: cluster_id
