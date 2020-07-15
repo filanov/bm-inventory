@@ -449,6 +449,13 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 			errors.New("Another request to generate an image has been recently submitted. Please wait a few seconds and try again.")))
 	}
 
+	if !cluster.PullSecretSet {
+		err := "Can't generate cluster ISO without pull secret"
+		log.Error(err)
+		return installer.NewGenerateClusterISOBadRequest().
+			WithPayload(common.GenerateError(http.StatusBadRequest, errors.New(err)))
+	}
+
 	/* If the request has the same parameters as the previous request and the image is still in S3,
 	just refresh the timestamp.
 	*/

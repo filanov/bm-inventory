@@ -87,17 +87,18 @@ var _ = Describe("GenerateClusterISO", func() {
 		bm = NewBareMetalInventory(db, getTestLog(), nil, nil, cfg, mockJob, mockEvents, nil)
 	})
 
-	registerCluster := func() *common.Cluster {
+	registerCluster := func(pullSecretSet bool) *common.Cluster {
 		clusterId := strfmt.UUID(uuid.New().String())
 		cluster := common.Cluster{Cluster: models.Cluster{
-			ID: &clusterId,
+			ID:            &clusterId,
+			PullSecretSet: pullSecretSet,
 		}}
 		Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
 		return &cluster
 	}
 
 	It("success", func() {
-		clusterId := registerCluster().ID
+		clusterId := registerCluster(true).ID
 		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Monitor(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -112,7 +113,7 @@ var _ = Describe("GenerateClusterISO", func() {
 	})
 
 	It("success with proxy", func() {
-		clusterId := registerCluster().ID
+		clusterId := registerCluster(true).ID
 		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Monitor(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
@@ -133,7 +134,7 @@ var _ = Describe("GenerateClusterISO", func() {
 	})
 
 	It("failed_to_create_job", func() {
-		clusterId := registerCluster().ID
+		clusterId := registerCluster(true).ID
 		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).Times(1)
 		generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
@@ -144,7 +145,7 @@ var _ = Describe("GenerateClusterISO", func() {
 	})
 
 	It("job_failed", func() {
-		clusterId := registerCluster().ID
+		clusterId := registerCluster(true).ID
 		mockJob.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 		mockJob.EXPECT().Monitor(gomock.Any(), gomock.Any(), gomock.Any()).Return(fmt.Errorf("error")).Times(1)
@@ -153,6 +154,15 @@ var _ = Describe("GenerateClusterISO", func() {
 			ImageCreateParams: &models.ImageCreateParams{},
 		})
 		Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewGenerateClusterISOInternalServerError()))
+	})
+
+	It("failed_missing_pull_secret", func() {
+		clusterId := registerCluster(false).ID
+		generateReply := bm.GenerateClusterISO(ctx, installer.GenerateClusterISOParams{
+			ClusterID:         *clusterId,
+			ImageCreateParams: &models.ImageCreateParams{},
+		})
+		Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewGenerateClusterISOBadRequest()))
 	})
 
 	AfterEach(func() {
