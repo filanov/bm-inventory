@@ -849,6 +849,35 @@ var _ = Describe("cluster install", func() {
 					Expect(swag.StringValue(host.Status)).Should(Equal(models.HostStatusError))
 				}
 			})
+			It("[only_k8s]cancel installation - wrong boot order", func() {
+				clusterRep, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
+				Expect(err).ShouldNot(HaveOccurred())
+				waitForClusterInstallationToStart(clusterID)
+				c := clusterRep.GetPayload()
+				hostID := c.Hosts[0].ID
+				waitForHostState(ctx, clusterID, *hostID, models.HostStatusInstalling,
+					defaultWaitForHostStateTimeout)
+				updateProgress(*hostID, clusterID, models.HostStageRebooting)
+				host := getHost(clusterID, *hostID)
+				_, err = bmclient.Installer.RegisterHost(ctx, &installer.RegisterHostParams{
+					ClusterID: clusterID,
+					NewHostParams: &models.HostCreateParams{
+						HostID: host.ID,
+					},
+				})
+				Expect(err).ShouldNot(HaveOccurred())
+				waitForHostState(ctx, clusterID, *host.ID, models.HostStatusInstallingPendingUserAction,
+					defaultWaitForHostStateTimeout)
+				_, err = bmclient.Installer.CancelInstallation(ctx, &installer.CancelInstallationParams{ClusterID: clusterID})
+				Expect(err).ShouldNot(HaveOccurred())
+				rep, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+				Expect(err).ShouldNot(HaveOccurred())
+				c = rep.GetPayload()
+				Expect(swag.StringValue(c.Status)).Should(Equal(models.ClusterStatusError))
+				for _, host := range c.Hosts {
+					Expect(swag.StringValue(host.Status)).Should(Equal(models.HostStatusError))
+				}
+			})
 		})
 		Context("reset installation", func() {
 			It("[only_k8s]reset cluster and register hosts", func() {
