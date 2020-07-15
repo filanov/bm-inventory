@@ -8,7 +8,7 @@
 
 ## Prerequisites
 
-1. Docker
+1. DDocker
 1. skipper https://github.com/stratoscale/skipper
 1. minikube (for tests)
 1. kubectl
