@@ -333,11 +333,17 @@ func (m *Manager) UpdateRole(ctx context.Context, h *models.Host, role models.Ho
 	}
 
 	h.Role = role
+
+	updates := map[string]interface{}{"role": role}
+	if role == models.HostRoleWorker {
+		updates["bootstrap"] = false
+	}
+
 	cdb := m.db
 	if db != nil {
 		cdb = db
 	}
-	return cdb.Model(h).Update("role", role).Error
+	return cdb.Model(h).Updates(updates).Error
 }
 
 func (m *Manager) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) error {

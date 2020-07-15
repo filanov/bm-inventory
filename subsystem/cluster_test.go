@@ -1023,6 +1023,56 @@ var _ = Describe("cluster install", func() {
 						defaultWaitForHostStateTimeout)
 				}
 			})
+			It("[only_k8s]bootstrap become worker after reset", func() {
+				_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
+				Expect(err).NotTo(HaveOccurred())
+				waitForClusterInstallationToStart(clusterID)
+				rep, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+				Expect(err).NotTo(HaveOccurred())
+				c := rep.GetPayload()
+				_, err = bmclient.Installer.CancelInstallation(ctx, &installer.CancelInstallationParams{ClusterID: clusterID})
+				Expect(err).NotTo(HaveOccurred())
+				_, err = bmclient.Installer.ResetCluster(ctx, &installer.ResetClusterParams{ClusterID: clusterID})
+				Expect(err).NotTo(HaveOccurred())
+				waitForClusterState(ctx, clusterID, models.ClusterStatusInsufficient, defaultWaitForClusterStateTimeout, clusterResetStateInfo)
+				bootstrapFound := false
+				for _, host := range c.Hosts {
+					waitForHostState(ctx, clusterID, *host.ID, models.HostStatusResetting,
+						defaultWaitForHostStateTimeout)
+					_, err = bmclient.Installer.RegisterHost(ctx, &installer.RegisterHostParams{
+						ClusterID: clusterID,
+						NewHostParams: &models.HostCreateParams{
+							HostID: host.ID,
+						},
+					})
+					Expect(err).ShouldNot(HaveOccurred())
+					waitForHostState(ctx, clusterID, *host.ID, models.HostStatusKnown,
+						defaultWaitForHostStateTimeout)
+					if host.Bootstrap {
+						_, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
+							ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
+								{ID: *host.ID, Role: models.HostRoleUpdateParamsWorker},
+							},
+							},
+							ClusterID: clusterID,
+						})
+						Expect(err).ShouldNot(HaveOccurred())
+						bootstrapFound = true
+					}
+				}
+				Expect(bootstrapFound).Should(Equal(true))
+				rep, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+				Expect(err).NotTo(HaveOccurred())
+				c = rep.GetPayload()
+				bootstrapFound = false
+				for _, host := range c.Hosts {
+					if host.Bootstrap {
+						bootstrapFound = true
+						break
+					}
+				}
+				Expect(bootstrapFound).Should(Equal(false))
+			})
 		})
 	})
 
