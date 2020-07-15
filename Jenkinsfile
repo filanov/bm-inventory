@@ -1,7 +1,7 @@
 pipeline {
   agent any
   stages {
-    stage('') {
+    stage('love') {
       steps {
         sh 'pwd'
       }
