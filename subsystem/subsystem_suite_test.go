@@ -41,7 +41,7 @@ func init() {
 		},
 	})
 
-	db, err := gorm.Open("postgres",
+	db, err = gorm.Open("postgres",
 		fmt.Sprintf("host=%s port=%s user=admin dbname=installer password=admin sslmode=disable",
 			Options.DBHost, Options.DBPort))
 	if err != nil {
