@@ -346,6 +346,32 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 	return installer.NewRegisterClusterCreated().WithPayload(&cluster.Cluster)
 }
 
+func (b *bareMetalInventory) UpdateHostCluster(ctx context.Context, params installer.UpdateHostClusterParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Infof("Update host %s cluster from: %s to: %s", params.HostID, params.ClusterID, *params.MoveParams.DestClusterID)
+
+	var host models.Host
+	err := b.db.First(&host, "id = ? and cluster_id = ?", params.HostID, params.ClusterID).Error
+	if err != nil {
+		log.WithError(err).Errorf("failed to find host <%s> in cluster <%s>", params.HostID, params.ClusterID)
+		return common.NewApiError(http.StatusNotFound, err)
+	}
+	var destCluster common.Cluster
+	if err := b.db.First(&destCluster, "id = ?", params.MoveParams.DestClusterID).Error; err != nil {
+		log.WithError(err).Errorf("failed to find destination cluster <%s>", *params.MoveParams.DestClusterID)
+		return installer.NewDeregisterClusterNotFound().
+			WithPayload(common.GenerateError(http.StatusNotFound, err))
+	}
+	// Let's start with debug command later we can move it to the state machine
+	moveStep := models.DebugStep{
+		Command: swag.String(fmt.Sprintf("/usr/bin/sed -i %s/%s; systemctl daemon-reload; systemctl restart agent;", params.ClusterID, params.MoveParams.DestClusterID)),
+	}
+	b.SetDebugStep(ctx, installer.SetDebugStepParams{ClusterID: params.ClusterID, HostID: params.HostID, Step: &moveStep})
+	// We don't get any feedback for now while the move operation is in progress
+	// at some point we will see the host in the new cluster and it will show up as disconnected in the src cluster.
+	return installer.NewUpdateHostClusterOK()
+}
+
 func (b *bareMetalInventory) DeregisterCluster(ctx context.Context, params installer.DeregisterClusterParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	var cluster common.Cluster
