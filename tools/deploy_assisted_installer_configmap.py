@@ -43,6 +43,8 @@ def main():
             data = data.replace("REPLACE_PORT", '"{}"'.format(service_port))
             data = data.replace("REPLACE_DOMAINS", '"{}"'.format(deploy_options.base_dns_domains))
             data = data.replace('REPLACE_NAMESPACE', deploy_options.namespace)
+            data = data.replace("IS_AUTH_ENABLED", '"{}"'.format(os.environ.get("ENABLE_AUTH", "false")))
+            data = data.replace("REPLACE_JWKS_URL", '"{}"'.format(os.environ.get("JWKS_URL", "")))
             print("Deploying {}".format(DST_FILE))
 
             versions = {"IMAGE_BUILDER": "installer-image-build",

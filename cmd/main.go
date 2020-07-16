@@ -166,7 +166,7 @@ func main() {
 	} else {
 		log.Info("Disabled image expiration monitor")
 	}
-	auth.InitAuthHandler(Options.Auth.JwkCertURL, Options.Auth.JwkCertCA)
+	auth.InitAuthHandler(Options.Auth.JwkCertURL)
 
 	h, err := restapi.Handler(restapi.Config{
 		AuthAgentAuth:       auth.AuthAgentAuth,
