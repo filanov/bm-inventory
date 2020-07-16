@@ -65,6 +65,18 @@ var Options struct {
 }
 
 func main() {
+	port := flag.String("port", "8090", "define port that the service will listen to")
+	flag.Usage = func() {
+		fmt.Println("Usage of bm-inventory")
+		flag.PrintDefaults()
+		fmt.Println()
+		err := envconfig.Usage("myapp", &Options)
+		if err != nil {
+			panic(err)
+		}
+	}
+	flag.Parse()
+
 	log := logrus.New()
 	log.SetReportCaller(true)
 
@@ -72,9 +84,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
-	port := flag.String("port", "8090", "define port that the service will listen to")
-	flag.Parse()
 
 	log.Println("Starting bm service")
 
@@ -165,7 +174,7 @@ func main() {
 		Logger:            log.Printf,
 		VersionsAPI:       versionHandler,
 		ManagedDomainsAPI: domainHandler,
-		InnerMiddleware:   metrics.WithMatchedRoute(log.WithField("pkg", "matched-h")),
+		InnerMiddleware:   metrics.WithMatchedRoute(log.WithField("pkg", "Http-metrics")),
 	})
 	h = app.WithMetricsResponderMiddleware(h)
 	h = app.WithHealthMiddleware(h)
