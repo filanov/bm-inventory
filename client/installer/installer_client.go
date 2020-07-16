@@ -91,6 +91,9 @@ type API interface {
 	   UpdateCluster updates an open shift bare metal cluster definition*/
 	UpdateCluster(ctx context.Context, params *UpdateClusterParams) (*UpdateClusterCreated, error)
 	/*
+	   UpdateHostCluster moves the host to another cluster*/
+	UpdateHostCluster(ctx context.Context, params *UpdateHostClusterParams) (*UpdateHostClusterOK, error)
+	/*
 	   UpdateHostInstallProgress updates installation progress*/
 	UpdateHostInstallProgress(ctx context.Context, params *UpdateHostInstallProgressParams) (*UpdateHostInstallProgressOK, error)
 	/*
@@ -689,6 +692,30 @@ func (a *Client) UpdateCluster(ctx context.Context, params *UpdateClusterParams)
 		return nil, err
 	}
 	return result.(*UpdateClusterCreated), nil
+
+}
+
+/*
+UpdateHostCluster moves the host to another cluster
+*/
+func (a *Client) UpdateHostCluster(ctx context.Context, params *UpdateHostClusterParams) (*UpdateHostClusterOK, error) {
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "UpdateHostCluster",
+		Method:             "POST",
+		PathPattern:        "/clusters/{cluster_id}/hosts/{host_id}/actions/move",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"http"},
+		Params:             params,
+		Reader:             &UpdateHostClusterReader{formats: a.formats},
+		Context:            ctx,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(*UpdateHostClusterOK), nil
 
 }
 
