@@ -346,6 +346,29 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 	return installer.NewRegisterClusterCreated().WithPayload(&cluster.Cluster)
 }
 
+func (b *bareMetalInventory) UpdateHostCluster(ctx context.Context, params installer.UpdateHostClusterParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Infof("Update host %s cluster from: %s to: %s", params.HostID, params.ClusterID, params.MoveParams.DestClusterID)
+
+	var host models.Host
+	err := b.db.First(&host, "id = ? and cluster_id = ?", params.HostID, params.ClusterID).Error
+	if err != nil {
+		log.WithError(err).Errorf("failed to find host <%s> in cluster <%s>", params.HostID, params.ClusterID)
+		return common.NewApiError(http.StatusNotFound, err)
+	}
+	var destCluster common.Cluster
+	if err := b.db.First(&destCluster, "id = ?", params.MoveParams.DestClusterID).Error; err != nil {
+		log.WithError(err).Errorf("failed to find destination cluster <%s>", params.MoveParams.DestClusterID)
+		return installer.NewDeregisterClusterNotFound().
+			WithPayload(common.GenerateError(http.StatusNotFound, err))
+	}
+	if err := b.hostApi.Move(ctx, &host, params.MoveParams.DestClusterID); err != nil {
+		return installer.NewUpdateHostClusterInternalServerError().
+			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+	}
+
+	return installer.NewUpdateHostClusterOK()
+}
 func (b *bareMetalInventory) DeregisterCluster(ctx context.Context, params installer.DeregisterClusterParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	var cluster common.Cluster

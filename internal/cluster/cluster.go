@@ -232,7 +232,7 @@ func (m *Manager) UploadIngressCert(c *common.Cluster) (err error) {
 
 func (m *Manager) AcceptRegistration(c *common.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
-	allowedStatuses := []string{clusterStatusInsufficient, clusterStatusReady}
+	allowedStatuses := []string{clusterStatusInsufficient, clusterStatusReady, clusterStatusInstalled}
 	if !funk.ContainsString(allowedStatuses, clusterStatus) {
 		err = errors.Errorf("Cluster %s is in %s state, host can register only in one of %s", c.ID, clusterStatus, allowedStatuses)
 	}

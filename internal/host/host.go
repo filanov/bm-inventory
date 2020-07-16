@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-openapi/strfmt"
+
 	"github.com/filanov/bm-inventory/internal/common"
 	"github.com/filanov/bm-inventory/internal/connectivity"
 	"github.com/filanov/bm-inventory/internal/events"
@@ -101,6 +103,7 @@ type API interface {
 	UpdateInventory(ctx context.Context, h *models.Host, inventory string) error
 	GetStagesByRole(role models.HostRole, isbootstrap bool) []models.HostStage
 	IsInstallable(h *models.Host) bool
+	Move(ctx context.Context, h *models.Host, destClusterID strfmt.UUID) error
 }
 
 type Manager struct {
@@ -427,4 +430,9 @@ func (m *Manager) GetStagesByRole(role models.HostRole, isbootstrap bool) []mode
 
 func (m *Manager) IsInstallable(h *models.Host) bool {
 	return swag.StringValue(h.Status) == models.HostStatusKnown
+}
+
+func (m *Manager) Move(ctx context.Context, h *models.Host, destClusterID strfmt.UUID) error {
+	//Do something
+	return nil
 }
