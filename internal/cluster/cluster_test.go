@@ -318,7 +318,7 @@ var _ = Describe("VerifyRegisterHost", func() {
 		db          *gorm.DB
 		id          strfmt.UUID
 		clusterApi  *Manager
-		errTemplate = "Cluster %s is in %s state, host can register only in one of [insufficient ready]"
+		errTemplate = "Cluster %s is in %s state, host can register only in one of [insufficient ready installed]"
 	)
 
 	BeforeEach(func() {
@@ -355,7 +355,7 @@ var _ = Describe("VerifyRegisterHost", func() {
 	})
 
 	It("Register host while cluster in installed state", func() {
-		checkVerifyRegisterHost(clusterStatusInstalled, true)
+		checkVerifyRegisterHost(clusterStatusInstalled, false)
 	})
 	AfterEach(func() {
 		db.Close()
