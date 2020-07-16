@@ -346,6 +346,9 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 	return installer.NewRegisterClusterCreated().WithPayload(&cluster.Cluster)
 }
 
+func (b *bareMetalInventory) UpdateHostCluster(ctx context.Context, params installer.UpdateHostClusterParams) middleware.Responder {
+	return installer.NewUpdateHostClusterNotFound()
+}
 func (b *bareMetalInventory) DeregisterCluster(ctx context.Context, params installer.DeregisterClusterParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	var cluster common.Cluster
