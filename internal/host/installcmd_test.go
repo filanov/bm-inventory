@@ -42,7 +42,7 @@ var _ = Describe("installcmd", func() {
 		disks             []*models.Disk
 	)
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("installcmd")
 		ctrl = gomock.NewController(GinkgoT())
 		mockValidator = hardware.NewMockValidator(ctrl)
 		instructionConfig = defaultInstructionConfig

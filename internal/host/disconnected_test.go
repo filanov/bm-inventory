@@ -37,7 +37,7 @@ var _ = Describe("disconnected_state", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("disconnected_state")
 		ctrl = gomock.NewController(GinkgoT())
 		mockHWValidator = hardware.NewMockValidator(ctrl)
 		mockConnectivityValidator = connectivity.NewMockValidator(ctrl)

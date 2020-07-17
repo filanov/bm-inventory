@@ -24,7 +24,7 @@ var _ = Describe("resetting_state", func() {
 	var expectedReply *expect
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("resetting_state")
 		state = &Manager{resetting: NewResettingState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())

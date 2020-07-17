@@ -35,7 +35,7 @@ var _ = Describe("discovering_state", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("discovering_state")
 		ctrl = gomock.NewController(GinkgoT())
 		mockHWValidator = hardware.NewMockValidator(ctrl)
 		mockConnectivityValidator = connectivity.NewMockValidator(ctrl)

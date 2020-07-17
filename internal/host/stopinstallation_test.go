@@ -21,7 +21,7 @@ var _ = Describe("stop-podman", func() {
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("stop_podman")
 		stopCmd = NewStopInstallationCmd(getTestLog())
 
 		id = strfmt.UUID(uuid.New().String())

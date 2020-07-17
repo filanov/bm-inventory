@@ -29,7 +29,7 @@ var _ = Describe("RefreshStatus", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockEvents = events.NewMockHandler(ctrl)
-		db = prepareDB()
+		db = prepareDB("RefreshStatus")
 		hapi = NewManager(getTestLog(), db, mockEvents, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())

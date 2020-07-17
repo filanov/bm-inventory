@@ -21,7 +21,7 @@ var _ = Describe("connectivitycheckcmd", func() {
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("connectivitycheckcmd")
 		connectivityCheckCmd = NewConnectivityCheckCmd(getTestLog(), db, nil, "quay.io/ocpmetal/connectivity_check:latest")
 
 		id = strfmt.UUID(uuid.New().String())

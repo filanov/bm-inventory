@@ -2,7 +2,8 @@ package events_test
 
 import (
 	"context"
-
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/swag"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/types"
@@ -21,9 +22,31 @@ import (
 )
 
 func prepareDB() *gorm.DB {
-	db, err := gorm.Open("sqlite3", ":memory:")
+	dbName := "events_test"
+
+	db, err := gorm.Open("postgres",
+		fmt.Sprintf("host=127.0.0.1 port=5432 user=admin password=admin sslmode=disable"))
+
 	Expect(err).ShouldNot(HaveOccurred())
 	//db = db.Debug()
+	db = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", strings.ToLower(dbName)))
+
+	if db.Error != nil {
+		panic(fmt.Sprintf("Failed to drop %s %s", dbName, db.Error))
+	}
+
+	db = db.Exec(fmt.Sprintf("CREATE DATABASE %s;", strings.ToLower(dbName)))
+	if db.Error != nil {
+		fmt.Println("Unable to create DB , attempting to connect assuming it exists...", db.Error)
+		panic(fmt.Sprintf("Failed to create db %s", db.Error))
+	}
+
+	db.Close()
+
+	db, err = gorm.Open("postgres",
+		fmt.Sprintf("host=127.0.0.1 port=5432 dbname=%s user=admin password=admin sslmode=disable", strings.ToLower(dbName)))
+	Expect(err).ShouldNot(HaveOccurred())
+
 	db.AutoMigrate(&events.Event{})
 	return db
 }

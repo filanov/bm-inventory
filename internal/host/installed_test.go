@@ -24,7 +24,7 @@ var _ = Describe("installed_state", func() {
 	var expectedReply *expect
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("installed_state")
 		state = &Manager{installed: NewInstalledState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())

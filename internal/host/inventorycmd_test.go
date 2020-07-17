@@ -21,7 +21,7 @@ var _ = Describe("inventory", func() {
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("inventorycmd")
 		invCmd = NewInventoryCmd(getTestLog(), "quay.io/ocpmetal/inventory:latest")
 
 		id = strfmt.UUID(uuid.New().String())

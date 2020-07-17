@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -14,7 +15,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/sirupsen/logrus"
 
 	"github.com/filanov/bm-inventory/internal/common"
@@ -528,12 +529,31 @@ func createHost(clusterId strfmt.UUID, state string, db *gorm.DB) {
 }
 
 func prepareDB() *gorm.DB {
-	db, err := gorm.Open("sqlite3", ":memory:")
+	db, err := gorm.Open("postgres",
+		fmt.Sprintf("host=127.0.0.1 port=5432 user=admin password=admin sslmode=disable"))
 	Expect(err).ShouldNot(HaveOccurred())
 	db.AutoMigrate(&common.Cluster{})
 	db.AutoMigrate(&models.Host{})
 	return db
 }
+
+//func prepareDB() *gorm.DB {
+//	db, err := gorm.Open("postgres",
+//		fmt.Sprintf("host=127.0.0.1 port=5432 user=admin password=admin sslmode=disable"))
+//	db = db.Exec("DROP DATABASE test_db;")
+//	db = db.Exec("CREATE DATABASE test_db;")
+//	if db.Error != nil {
+//		fmt.Println("Unable to create DB test_db, attempting to connect assuming it exists...")
+//		panic("Failed to create test.db")
+//	}
+//
+//	db, err = gorm.Open("postgres",
+//		fmt.Sprintf("host=127.0.0.1 port=5432 dbname=test_db user=admin password=admin sslmode=disable"))
+//	Expect(err).ShouldNot(HaveOccurred())
+//	// db = db.Debug()
+//	db.AutoMigrate(&models.Host{}, &common.Cluster{})
+//	return db
+//}
 
 func TestCluster(t *testing.T) {
 	RegisterFailHandler(Fail)

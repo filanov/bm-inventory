@@ -24,7 +24,7 @@ var _ = Describe("disabled_state", func() {
 	var expectedReply *expect
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("disabled_state")
 		state = &Manager{disabled: NewDisabledState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())

@@ -21,7 +21,7 @@ var _ = Describe("reset", func() {
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("resetcmd")
 		rstCmd = NewResetInstallationCmd(getTestLog())
 
 		id = strfmt.UUID(uuid.New().String())

@@ -31,7 +31,7 @@ var _ = Describe("instructionmanager", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("instructionmanager")
 		ctrl = gomock.NewController(GinkgoT())
 		hwValidator = hardware.NewMockValidator(ctrl)
 		instMng = NewInstructionManager(getTestLog(), db, hwValidator, instructionConfig, nil)

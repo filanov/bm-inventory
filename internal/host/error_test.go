@@ -24,7 +24,7 @@ var _ = Describe("error_state", func() {
 	var expectedReply *expect
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("error_state")
 		state = &Manager{error: NewErrorState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())

@@ -21,7 +21,7 @@ var _ = Describe("hwinfocmd", func() {
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("hwinfocmd")
 		hwCmd = NewHwInfoCmd(getTestLog(), "quay.io/ocpmetal/hardware_info:latest")
 		id = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())

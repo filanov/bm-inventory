@@ -2,7 +2,6 @@ package host
 
 import (
 	"context"
-
 	"github.com/go-openapi/swag"
 
 	. "github.com/onsi/gomega"
@@ -24,7 +23,7 @@ var _ = Describe("RegisterHost", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("RegisterHost")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -241,7 +240,7 @@ var _ = Describe("HostInstallationFailed", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("HostInstallationFailed")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -272,7 +271,7 @@ var _ = Describe("Install", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("Install")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -411,7 +410,7 @@ var _ = Describe("Disable", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("Disable")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -515,7 +514,7 @@ var _ = Describe("Enable", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("Enable")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())

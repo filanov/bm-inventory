@@ -24,7 +24,7 @@ var _ = Describe("resetting-pending-user-action_state", func() {
 	var expectedReply *expect
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = prepareDB("reset_pending_user")
 		state = &Manager{resettingPendingUserAction: NewResettingPendingUserActionState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())
