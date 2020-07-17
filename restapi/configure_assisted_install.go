@@ -108,6 +108,9 @@ type InstallerAPI interface {
 	/* UpdateCluster Updates an OpenShift bare metal cluster definition. */
 	UpdateCluster(ctx context.Context, params installer.UpdateClusterParams) middleware.Responder
 
+	/* UpdateHostCluster Move the host to another cluster. */
+	UpdateHostCluster(ctx context.Context, params installer.UpdateHostClusterParams) middleware.Responder
+
 	/* UpdateHostInstallProgress Update installation progress */
 	UpdateHostInstallProgress(ctx context.Context, params installer.UpdateHostInstallProgressParams) middleware.Responder
 
@@ -276,6 +279,10 @@ func HandlerAPI(c Config) (http.Handler, *operations.AssistedInstallAPI, error) 
 	api.InstallerUpdateClusterHandler = installer.UpdateClusterHandlerFunc(func(params installer.UpdateClusterParams) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		return c.InstallerAPI.UpdateCluster(ctx, params)
+	})
+	api.InstallerUpdateHostClusterHandler = installer.UpdateHostClusterHandlerFunc(func(params installer.UpdateHostClusterParams) middleware.Responder {
+		ctx := params.HTTPRequest.Context()
+		return c.InstallerAPI.UpdateHostCluster(ctx, params)
 	})
 	api.InstallerUpdateHostInstallProgressHandler = installer.UpdateHostInstallProgressHandlerFunc(func(params installer.UpdateHostInstallProgressParams) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
