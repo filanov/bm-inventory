@@ -7,7 +7,6 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -15,7 +14,6 @@ import (
 var _ = Describe("installed_state", func() {
 	ctx := context.Background()
 	var state API
-	var db *gorm.DB
 	currentState := HostStatusInstalled
 	var host models.Host
 	var id, clusterId strfmt.UUID
@@ -24,7 +22,6 @@ var _ = Describe("installed_state", func() {
 	var expectedReply *expect
 
 	BeforeEach(func() {
-		db = prepareDB("installed_state")
 		state = &Manager{installed: NewInstalledState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())
@@ -47,7 +44,6 @@ var _ = Describe("installed_state", func() {
 	AfterEach(func() {
 		postValidation(expectedReply, currentState, db, id, clusterId, updateReply, updateErr)
 		// cleanup
-		db.Close()
 		expectedReply = nil
 		updateReply = nil
 		updateErr = nil

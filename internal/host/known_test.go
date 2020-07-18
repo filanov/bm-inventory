@@ -7,7 +7,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -21,7 +20,6 @@ var _ = Describe("known_state", func() {
 	var (
 		ctx                       = context.Background()
 		state                     API
-		db                        *gorm.DB
 		currentState              = HostStatusKnown
 		host                      models.Host
 		id, clusterId             strfmt.UUID
@@ -35,7 +33,6 @@ var _ = Describe("known_state", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB("known_state")
 		ctrl = gomock.NewController(GinkgoT())
 		mockHWValidator = hardware.NewMockValidator(ctrl)
 		mockConnectivityValidator = connectivity.NewMockValidator(ctrl)
@@ -71,7 +68,6 @@ var _ = Describe("known_state", func() {
 		ctrl.Finish()
 		postValidation(expectedReply, currentState, db, id, clusterId, updateReply, updateErr)
 		// cleanup
-		db.Close()
 		expectedReply = nil
 		updateReply = nil
 		updateErr = nil

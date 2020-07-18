@@ -31,7 +31,6 @@ var _ = Describe("installcmd", func() {
 		ctx               = context.Background()
 		host              models.Host
 		cluster           common.Cluster
-		db                *gorm.DB
 		installCmd        *installCmd
 		clusterId         strfmt.UUID
 		stepReply         *models.Step
@@ -42,7 +41,6 @@ var _ = Describe("installcmd", func() {
 		disks             []*models.Disk
 	)
 	BeforeEach(func() {
-		db = prepareDB("installcmd")
 		ctrl = gomock.NewController(GinkgoT())
 		mockValidator = hardware.NewMockValidator(ctrl)
 		instructionConfig = defaultInstructionConfig
@@ -100,7 +98,6 @@ var _ = Describe("installcmd", func() {
 	AfterEach(func() {
 
 		// cleanup
-		db.Close()
 		ctrl.Finish()
 		stepReply = nil
 		stepErr = nil

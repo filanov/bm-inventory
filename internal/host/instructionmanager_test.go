@@ -20,7 +20,6 @@ var _ = Describe("instructionmanager", func() {
 	var (
 		ctx               = context.Background()
 		host              models.Host
-		db                *gorm.DB
 		stepsReply        models.Steps
 		hostId, clusterId strfmt.UUID
 		stepsErr          error
@@ -31,7 +30,6 @@ var _ = Describe("instructionmanager", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB("instructionmanager")
 		ctrl = gomock.NewController(GinkgoT())
 		hwValidator = hardware.NewMockValidator(ctrl)
 		instMng = NewInstructionManager(getTestLog(), db, hwValidator, instructionConfig, nil)
@@ -83,7 +81,6 @@ var _ = Describe("instructionmanager", func() {
 
 	AfterEach(func() {
 		// cleanup
-		db.Close()
 		ctrl.Finish()
 		stepsReply = models.Steps{}
 		stepsErr = nil

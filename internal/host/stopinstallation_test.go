@@ -6,7 +6,6 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -14,14 +13,12 @@ import (
 var _ = Describe("stop-podman", func() {
 	ctx := context.Background()
 	var host models.Host
-	var db *gorm.DB
 	var stopCmd *stopInstallationCmd
 	var id, clusterId strfmt.UUID
 	var stepReply *models.Step
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB("stop_podman")
 		stopCmd = NewStopInstallationCmd(getTestLog())
 
 		id = strfmt.UUID(uuid.New().String())

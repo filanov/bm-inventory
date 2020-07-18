@@ -6,7 +6,6 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -14,14 +13,12 @@ import (
 var _ = Describe("inventory", func() {
 	ctx := context.Background()
 	var host models.Host
-	var db *gorm.DB
 	var invCmd *inventoryCmd
 	var id, clusterId strfmt.UUID
 	var stepReply *models.Step
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB("inventorycmd")
 		invCmd = NewInventoryCmd(getTestLog(), "quay.io/ocpmetal/inventory:latest")
 
 		id = strfmt.UUID(uuid.New().String())
@@ -38,7 +35,6 @@ var _ = Describe("inventory", func() {
 
 	AfterEach(func() {
 		// cleanup
-		db.Close()
 		stepReply = nil
 		stepErr = nil
 	})

@@ -6,7 +6,6 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -14,14 +13,12 @@ import (
 var _ = Describe("hwinfocmd", func() {
 	ctx := context.Background()
 	var host models.Host
-	var db *gorm.DB
 	var hwCmd *hwInfoCmd
 	var id, clusterId strfmt.UUID
 	var stepReply *models.Step
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB("hwinfocmd")
 		hwCmd = NewHwInfoCmd(getTestLog(), "quay.io/ocpmetal/hardware_info:latest")
 		id = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -37,7 +34,6 @@ var _ = Describe("hwinfocmd", func() {
 
 	AfterEach(func() {
 		// cleanup
-		db.Close()
 		stepReply = nil
 		stepErr = nil
 	})

@@ -10,7 +10,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -19,7 +18,6 @@ var _ = Describe("RefreshStatus", func() {
 	var (
 		ctx               = context.Background()
 		hapi              API
-		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 		host              models.Host
 		ctrl              *gomock.Controller
@@ -29,7 +27,6 @@ var _ = Describe("RefreshStatus", func() {
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockEvents = events.NewMockHandler(ctrl)
-		db = prepareDB("RefreshStatus")
 		hapi = NewManager(getTestLog(), db, mockEvents, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -69,7 +66,6 @@ var _ = Describe("RefreshStatus", func() {
 	})
 
 	AfterEach(func() {
-		_ = db.Close()
 		ctrl.Finish()
 	})
 })

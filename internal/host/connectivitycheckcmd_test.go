@@ -6,7 +6,6 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -14,14 +13,12 @@ import (
 var _ = Describe("connectivitycheckcmd", func() {
 	ctx := context.Background()
 	var host models.Host
-	var db *gorm.DB
 	var connectivityCheckCmd *connectivityCheckCmd
 	var id, clusterId strfmt.UUID
 	var stepReply *models.Step
 	var stepErr error
 
 	BeforeEach(func() {
-		db = prepareDB("connectivitycheckcmd")
 		connectivityCheckCmd = NewConnectivityCheckCmd(getTestLog(), db, nil, "quay.io/ocpmetal/connectivity_check:latest")
 
 		id = strfmt.UUID(uuid.New().String())
@@ -44,7 +41,6 @@ var _ = Describe("connectivitycheckcmd", func() {
 	})
 
 	AfterEach(func() {
-		db.Close()
 		stepReply = nil
 		stepErr = nil
 	})

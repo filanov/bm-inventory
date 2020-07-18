@@ -18,12 +18,10 @@ var _ = Describe("RegisterHost", func() {
 	var (
 		ctx               = context.Background()
 		hapi              API
-		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 	)
 
 	BeforeEach(func() {
-		db = prepareDB("RegisterHost")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -234,13 +232,11 @@ var _ = Describe("HostInstallationFailed", func() {
 	var (
 		ctx               = context.Background()
 		hapi              API
-		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 		host              models.Host
 	)
 
 	BeforeEach(func() {
-		db = prepareDB("HostInstallationFailed")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -271,7 +267,6 @@ var _ = Describe("Install", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB("Install")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -410,7 +405,6 @@ var _ = Describe("Disable", func() {
 	)
 
 	BeforeEach(func() {
-		db = prepareDB("Disable")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -508,13 +502,11 @@ var _ = Describe("Enable", func() {
 	var (
 		ctx               = context.Background()
 		hapi              API
-		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 		host              models.Host
 	)
 
 	BeforeEach(func() {
-		db = prepareDB("Enable")
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -606,7 +598,4 @@ var _ = Describe("Enable", func() {
 		}
 	})
 
-	AfterEach(func() {
-		_ = db.Close()
-	})
 })
