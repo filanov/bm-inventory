@@ -1409,7 +1409,7 @@ func init() {
           "description": "The time that this cluster was created.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "host_networks": {
           "description": "List of host networks to be filled during query.",
@@ -1454,13 +1454,13 @@ func init() {
           "description": "The time that this cluster completed installation.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone;default:'2000-01-01 00:00:00z'\""
         },
         "install_started_at": {
           "description": "The time that this cluster began installation.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone;default:'2000-01-01 00:00:00z'\""
         },
         "kind": {
           "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object or 'ClusterLink' if it is just a link.",
@@ -1521,13 +1521,13 @@ func init() {
           "description": "The last time that the cluster status has been updated",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "updated_at": {
           "description": "The last time that this cluster was updated.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         }
       }
     },
@@ -1931,7 +1931,7 @@ func init() {
         "event_time": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "message": {
           "type": "string",
@@ -2012,7 +2012,7 @@ func init() {
           "description": "The last time the host's agent communicated with the service.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "cluster_id": {
           "description": "The cluster that this host is associated with.",
@@ -2027,7 +2027,7 @@ func init() {
         "created_at": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "discovery_agent_version": {
           "type": "string"
@@ -2108,12 +2108,12 @@ func init() {
           "description": "The last time that the host status has been updated",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "updated_at": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         }
       }
     },
@@ -2218,7 +2218,7 @@ func init() {
         "created_at": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "generator_version": {
           "description": "Image generator version",
@@ -3993,7 +3993,7 @@ func init() {
           "description": "The time that this cluster was created.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "host_networks": {
           "description": "List of host networks to be filled during query.",
@@ -4038,13 +4038,13 @@ func init() {
           "description": "The time that this cluster completed installation.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone;default:'2000-01-01 00:00:00z'\""
         },
         "install_started_at": {
           "description": "The time that this cluster began installation.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime;default:0\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone;default:'2000-01-01 00:00:00z'\""
         },
         "kind": {
           "description": "Indicates the type of this object. Will be 'Cluster' if this is a complete object or 'ClusterLink' if it is just a link.",
@@ -4105,13 +4105,13 @@ func init() {
           "description": "The last time that the cluster status has been updated",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "updated_at": {
           "description": "The last time that this cluster was updated.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         }
       }
     },
@@ -4497,7 +4497,7 @@ func init() {
         "event_time": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "message": {
           "type": "string",
@@ -4578,7 +4578,7 @@ func init() {
           "description": "The last time the host's agent communicated with the service.",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "cluster_id": {
           "description": "The cluster that this host is associated with.",
@@ -4593,7 +4593,7 @@ func init() {
         "created_at": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "discovery_agent_version": {
           "type": "string"
@@ -4674,12 +4674,12 @@ func init() {
           "description": "The last time that the host status has been updated",
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "updated_at": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         }
       }
     },
@@ -4784,7 +4784,7 @@ func init() {
         "created_at": {
           "type": "string",
           "format": "date-time",
-          "x-go-custom-tag": "gorm:\"type:datetime\""
+          "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
         "generator_version": {
           "description": "Image generator version",
