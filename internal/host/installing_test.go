@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/filanov/bm-inventory/internal/common"
+
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
@@ -22,9 +24,10 @@ var _ = Describe("installing_state", func() {
 	var updateReply *UpdateReply
 	var updateErr error
 	var expectedReply *expect
+	dbName := "installing_state"
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		state = &Manager{installing: NewInstallingState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())
@@ -47,7 +50,7 @@ var _ = Describe("installing_state", func() {
 	AfterEach(func() {
 		postValidation(expectedReply, currentState, db, id, clusterId, updateReply, updateErr)
 		// cleanup
-		db.Close()
+		common.DeleteTestDB(db, dbName)
 		expectedReply = nil
 		updateReply = nil
 		updateErr = nil

@@ -24,12 +24,13 @@ var _ = Describe("RefreshStatus", func() {
 		host              models.Host
 		ctrl              *gomock.Controller
 		mockEvents        *events.MockHandler
+		dbName            = "refresh_status"
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockEvents = events.NewMockHandler(ctrl)
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		hapi = NewManager(getTestLog(), db, mockEvents, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -69,7 +70,7 @@ var _ = Describe("RefreshStatus", func() {
 	})
 
 	AfterEach(func() {
-		_ = db.Close()
+		common.DeleteTestDB(db, dbName)
 		ctrl.Finish()
 	})
 })

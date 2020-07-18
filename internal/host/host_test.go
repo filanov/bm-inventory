@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/filanov/bm-inventory/internal/common"
-	"github.com/filanov/bm-inventory/internal/connectivity"
 	"github.com/filanov/bm-inventory/internal/events"
+
+	"github.com/filanov/bm-inventory/internal/connectivity"
 	"github.com/filanov/bm-inventory/internal/hardware"
 	"github.com/filanov/bm-inventory/internal/validators"
 	"github.com/filanov/bm-inventory/models"
@@ -21,7 +22,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -31,6 +32,34 @@ import (
 var defaultHwInfo = "default hw info"                                 // invalid hw info used only for tests
 var defaultInventoryS = "default inventory"                           // invalid inventory info used only for tests
 var defaultProgressStage = models.HostStage("default progress stage") // invalid progress stage used only for tests
+
+//func common.PrepareTestDB(dbName string) *gorm.DB {
+//	dbTemp, err := gorm.Open("postgres",
+//		fmt.Sprintf("host=127.0.0.1 port=5432 user=admin password=admin sslmode=disable"))
+//	defer dbTemp.Close()
+//	Expect(err).ShouldNot(HaveOccurred())
+//
+//	dbTemp = dbTemp.Exec(fmt.Sprintf("CREATE DATABASE %s;", strings.ToLower(dbName)))
+//	Expect(dbTemp.Error).ShouldNot(HaveOccurred())
+//
+//	db, err := gorm.Open("postgres",
+//		fmt.Sprintf("host=127.0.0.1 port=5432 dbname=%s user=admin password=admin sslmode=disable", strings.ToLower(dbName)))
+//	Expect(err).ShouldNot(HaveOccurred())
+//	// db = db.Debug()
+//	db.AutoMigrate(&models.Host{}, &common.Cluster{})
+//	return db
+//}
+//
+//func common.DeleteTestDB(db *gorm.DB, dbName string) {
+//	_ = db.Close()
+//	db, err := gorm.Open("postgres",
+//		fmt.Sprintf("host=127.0.0.1 port=5432 user=admin password=admin sslmode=disable"))
+//	defer db.Close()
+//	Expect(err).ShouldNot(HaveOccurred())
+//
+//	db = db.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s;", strings.ToLower(dbName)))
+//	Expect(db.Error).ShouldNot(HaveOccurred())
+//}
 
 var _ = Describe("statemachine", func() {
 	var (
@@ -44,10 +73,11 @@ var _ = Describe("statemachine", func() {
 		stateReply                *UpdateReply
 		stateErr                  error
 		mockEvents                *events.MockHandler
+		dbName                    = "statemachine"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		ctrl = gomock.NewController(GinkgoT())
 		mockHwValidator = hardware.NewMockValidator(ctrl)
 		mockConnectivityValidator = connectivity.NewMockValidator(ctrl)
@@ -56,6 +86,11 @@ var _ = Describe("statemachine", func() {
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
 		host = getTestHost(id, clusterId, "unknown invalid state")
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+		common.DeleteTestDB(db, dbName)
 	})
 
 	Context("unknown_host_state", func() {
@@ -70,10 +105,6 @@ var _ = Describe("statemachine", func() {
 		})
 	})
 
-	AfterEach(func() {
-		ctrl.Finish()
-		db.Close()
-	})
 })
 
 var _ = Describe("update_role", func() {
@@ -83,13 +114,18 @@ var _ = Describe("update_role", func() {
 		state         API
 		host          models.Host
 		id, clusterID strfmt.UUID
+		dbName        = "update_role"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		state = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		id = strfmt.UUID(uuid.New().String())
 		clusterID = strfmt.UUID(uuid.New().String())
+	})
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
 	})
 
 	Context("update role by src state", func() {
@@ -210,16 +246,21 @@ var _ = Describe("update_progress", func() {
 		host       models.Host
 		ctrl       *gomock.Controller
 		mockEvents *events.MockHandler
+		dbName     = "update_progress"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		ctrl = gomock.NewController(GinkgoT())
 		mockEvents = events.NewMockHandler(ctrl)
 		state = NewManager(getTestLog(), db, mockEvents, nil, nil, nil)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
 		host = getTestHost(id, clusterId, "")
+	})
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
 	})
 
 	Context("installaing host", func() {
@@ -327,10 +368,11 @@ var _ = Describe("monitor_disconnection", func() {
 		host       models.Host
 		ctrl       *gomock.Controller
 		mockEvents *events.MockHandler
+		dbName     = "monitor_disconnection"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		ctrl = gomock.NewController(GinkgoT())
 		mockEvents = events.NewMockHandler(ctrl)
 		state = NewManager(getTestLog(), db, mockEvents, nil, nil, nil)
@@ -338,6 +380,10 @@ var _ = Describe("monitor_disconnection", func() {
 		err := state.RegisterHost(ctx, &host)
 		Expect(err).ShouldNot(HaveOccurred())
 		db.First(&host, "id = ? and cluster_id = ?", host.ID, host.ClusterID)
+	})
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
 	})
 
 	Context("host_disconnecting", func() {
@@ -379,10 +425,6 @@ var _ = Describe("monitor_disconnection", func() {
 			Expect(*host.Status).Should(Equal(HostStatusDiscovering))
 		})
 	})
-
-	AfterEach(func() {
-		db.Close()
-	})
 })
 
 var _ = Describe("cancel_installation", func() {
@@ -393,16 +435,21 @@ var _ = Describe("cancel_installation", func() {
 		h          models.Host
 		ctrl       *gomock.Controller
 		mockEvents *events.MockHandler
+		dbName     = "cancel_installation"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		ctrl = gomock.NewController(GinkgoT())
 		mockEvents = events.NewMockHandler(ctrl)
 		state = NewManager(getTestLog(), db, mockEvents, nil, nil, nil)
 		id := strfmt.UUID(uuid.New().String())
 		clusterId := strfmt.UUID(uuid.New().String())
 		h = getTestHost(id, clusterId, HostStatusDiscovering)
+	})
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
 	})
 
 	Context("cancel_installation", func() {
@@ -429,23 +476,23 @@ var _ = Describe("cancel_installation", func() {
 			Expect(state.CancelInstallation(ctx, &h, "some reason", db)).Should(HaveOccurred())
 		})
 	})
-
-	AfterEach(func() {
-		db.Close()
-	})
 })
 
 var _ = Describe("reset_host", func() {
 	var (
-		ctx   = context.Background()
-		db    *gorm.DB
-		state API
-		h     models.Host
+		ctx    = context.Background()
+		db     *gorm.DB
+		state  API
+		h      models.Host
+		dbName = "reset_host"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		state = NewManager(getTestLog(), db, nil, nil, nil, nil)
+	})
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
 	})
 
 	Context("cancel_installation", func() {
@@ -480,9 +527,6 @@ var _ = Describe("reset_host", func() {
 		})
 	})
 
-	AfterEach(func() {
-		db.Close()
-	})
 })
 
 func TestSubsystem(t *testing.T) {
@@ -494,14 +538,6 @@ func getHost(hostId, clusterId strfmt.UUID, db *gorm.DB) *models.Host {
 	var host models.Host
 	Expect(db.First(&host, "id = ? and cluster_id = ?", hostId, clusterId).Error).ShouldNot(HaveOccurred())
 	return &host
-}
-
-func prepareDB() *gorm.DB {
-	db, err := gorm.Open("sqlite3", ":memory:")
-	Expect(err).ShouldNot(HaveOccurred())
-	// db = db.Debug()
-	db.AutoMigrate(&models.Host{}, &common.Cluster{})
-	return db
 }
 
 type expect struct {
@@ -628,14 +664,20 @@ var _ = Describe("UpdateInventory", func() {
 		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 		host              models.Host
+		dbName            = "update_inventory"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
 	})
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
+	})
+
 	Context("enable host", func() {
 		newInventory := "new inventory stuff"
 		success := func(reply error) {
@@ -723,9 +765,6 @@ var _ = Describe("UpdateInventory", func() {
 			})
 		}
 	})
-	AfterEach(func() {
-		_ = db.Close()
-	})
 })
 
 var _ = Describe("UpdateHwInfo", func() {
@@ -735,10 +774,11 @@ var _ = Describe("UpdateHwInfo", func() {
 		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 		host              models.Host
+		dbName            = "update_hwInfo"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -832,7 +872,7 @@ var _ = Describe("UpdateHwInfo", func() {
 	})
 
 	AfterEach(func() {
-		_ = db.Close()
+		common.DeleteTestDB(db, dbName)
 	})
 })
 
@@ -843,10 +883,11 @@ var _ = Describe("SetBootstrap", func() {
 		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 		host              models.Host
+		dbName            = "SetBootstrap"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -880,7 +921,7 @@ var _ = Describe("SetBootstrap", func() {
 	}
 
 	AfterEach(func() {
-		_ = db.Close()
+		common.DeleteTestDB(db, dbName)
 	})
 })
 
@@ -891,10 +932,11 @@ var _ = Describe("PrepareForInstallation", func() {
 		db                *gorm.DB
 		hostId, clusterId strfmt.UUID
 		host              models.Host
+		dbName            = "prepare_for_installation"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		hapi = NewManager(getTestLog(), db, nil, nil, nil, nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
@@ -943,6 +985,6 @@ var _ = Describe("PrepareForInstallation", func() {
 	})
 
 	AfterEach(func() {
-		_ = db.Close()
+		common.DeleteTestDB(db, dbName)
 	})
 })

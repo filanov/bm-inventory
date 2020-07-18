@@ -24,10 +24,11 @@ var _ = Describe("insufficient_state", func() {
 		updateReply  *UpdateReply
 		updateErr    error
 		cluster      common.Cluster
+		dbName       = "cluster_insufficient_state"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		state = &Manager{insufficient: NewInsufficientState(getTestLog(), db)}
 		registerManager := NewRegistrar(getTestLog(), db)
 
@@ -78,7 +79,7 @@ var _ = Describe("insufficient_state", func() {
 	})
 
 	AfterEach(func() {
-		db.Close()
+		common.DeleteTestDB(db, dbName)
 		updateReply = nil
 		updateErr = nil
 	})

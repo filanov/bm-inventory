@@ -20,10 +20,11 @@ var _ = Describe("Transition tests", func() {
 		capi      API
 		db        *gorm.DB
 		clusterId strfmt.UUID
+		dbName    = "cluster_transition_test"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		capi = NewManager(defaultTestConfig, getTestLog(), db, nil)
 		clusterId = strfmt.UUID(uuid.New().String())
 	})
@@ -106,6 +107,6 @@ var _ = Describe("Transition tests", func() {
 		})
 	})
 	AfterEach(func() {
-		db.Close()
+		common.DeleteTestDB(db, dbName)
 	})
 })

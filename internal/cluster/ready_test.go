@@ -22,10 +22,11 @@ var _ = Describe("ready_state", func() {
 		updateReply *UpdateReply
 		updateErr   error
 		cluster     common.Cluster
+		dbName      = "cluster_ready_state"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		state = &Manager{ready: NewReadyState(getTestLog(), db)}
 
 		id = strfmt.UUID(uuid.New().String())
@@ -69,9 +70,8 @@ var _ = Describe("ready_state", func() {
 
 		})
 	})
-
 	AfterEach(func() {
-		db.Close()
+		common.DeleteTestDB(db, dbName)
 		updateReply = nil
 		updateErr = nil
 	})

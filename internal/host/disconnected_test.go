@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/filanov/bm-inventory/internal/common"
+
 	"github.com/filanov/bm-inventory/internal/connectivity"
 
 	"github.com/go-openapi/strfmt"
@@ -34,10 +36,11 @@ var _ = Describe("disconnected_state", func() {
 		mockHWValidator           *hardware.MockValidator
 		mockConnectivityValidator *connectivity.MockValidator
 		mockEvents                *events.MockHandler
+		dbName                    = "disconnected_state"
 	)
 
 	BeforeEach(func() {
-		db = prepareDB()
+		db = common.PrepareTestDB(dbName)
 		ctrl = gomock.NewController(GinkgoT())
 		mockHWValidator = hardware.NewMockValidator(ctrl)
 		mockConnectivityValidator = connectivity.NewMockValidator(ctrl)
@@ -74,7 +77,7 @@ var _ = Describe("disconnected_state", func() {
 		ctrl.Finish()
 		postValidation(expectedReply, currentState, db, id, clusterId, updateReply, updateErr)
 		// cleanup
-		db.Close()
+		common.DeleteTestDB(db, dbName)
 		expectedReply = nil
 		updateReply = nil
 		updateErr = nil
