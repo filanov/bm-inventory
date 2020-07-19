@@ -3,6 +3,7 @@ pipeline {
   stages {
     stage('clear deployment') {
       steps {
+        sh 'export PATH=$PATH:/usr/local/go/bin;'
         sh 'make clear-deployment'
       }
     }
@@ -19,7 +20,7 @@ kubectl  get pods -A'''
 
     stage('test') {
       steps {
-        sh 'export PATH=$PATH:/usr/local/go/bin; make subsystem-run'
+        sh 'make subsystem-run'
       }
     }
 
