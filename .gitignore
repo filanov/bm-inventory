@@ -8,5 +8,10 @@ kubevirtci/
 __pycache__/
 *.pyc
 
+client
+models
+restapi
+**/mock_*.go
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out

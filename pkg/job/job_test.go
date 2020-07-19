@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/filanov/bm-inventory/pkg/externalmocks"
+	externalmocks "github.com/filanov/bm-inventory/pkg/externalmocks"
 	"github.com/go-openapi/swag"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"

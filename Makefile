@@ -1,5 +1,6 @@
 PWD = $(shell pwd)
 UID = $(shell id -u)
+CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
 BUILD_FOLDER = $(PWD)/build
 
 TARGET := $(or ${TARGET},minikube)
@@ -27,7 +28,7 @@ lint:
 	golangci-lint run -v
 
 .PHONY: build
-build: create-build-dir lint unit-test
+build: create-build-dir generate-from-swagger generate lint unit-test
 	CGO_ENABLED=0 go build -o $(BUILD_FOLDER)/bm-inventory cmd/main.go
 
 create-build-dir:
@@ -41,11 +42,11 @@ generate:
 
 generate-from-swagger:
 	rm -rf client models restapi
-	docker run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
-		quay.io/goswagger/swagger:v0.24.0 generate server	--template=stratoscale -f swagger.yaml \
+	$(CONTAINER_RUNTIME) run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
+		quay.io/goswagger/swagger:v0.24.0 generate server --template=stratoscale -f swagger.yaml \
 		--template-dir=/templates/contrib
-	docker run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
-		quay.io/goswagger/swagger:v0.24.0 generate client	--template=stratoscale -f swagger.yaml \
+	$(CONTAINER_RUNTIME) run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
+		quay.io/goswagger/swagger:v0.24.0 generate client --template=stratoscale -f swagger.yaml \
 		--template-dir=/templates/contrib
 
 ##########
@@ -53,12 +54,12 @@ generate-from-swagger:
 ##########
 
 update: build create-python-client
-	GIT_REVISION=${GIT_REVISION} docker build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
-	docker push $(SERVICE)
+	GIT_REVISION=${GIT_REVISION} $(CONTAINER_RUNTIME) build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
+	$(CONTAINER_RUNTIME) push $(SERVICE)
 
 update-minikube: build create-python-client
 	eval $$(SHELL=$${SHELL:-/bin/sh} minikube docker-env) && \
-	GIT_REVISION=${GIT_REVISION} docker build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
+	GIT_REVISION=${GIT_REVISION} $(CONTAINER_RUNTIME) build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
 
 create-python-client: build/bm-inventory-client-${GIT_REVISION}.tar.gz
 
@@ -66,7 +67,7 @@ build/bm-inventory-client/setup.py: swagger.yaml
 	cp swagger.yaml $(BUILD_FOLDER)
 	echo '{"packageName" : "bm_inventory_client", "packageVersion": "1.0.0"}' > $(BUILD_FOLDER)/code-gen-config.json
 	sed -i '/pattern:/d' $(BUILD_FOLDER)/swagger.yaml
-	docker run --rm -u $(shell id -u $(USER)) -v $(BUILD_FOLDER):/swagger-api/out:Z \
+	$(CONTAINER_RUNTIME) run --rm -u $(shell id -u $(USER)) -v $(BUILD_FOLDER):/swagger-api/out:Z \
 		-v $(BUILD_FOLDER)/swagger.yaml:/swagger.yaml:ro,Z -v $(BUILD_FOLDER)/code-gen-config.json:/config.json:ro,Z \
 		jimschubert/swagger-codegen-cli:2.3.1 generate --lang python --config /config.json --output ./bm-inventory-client/ --input-spec /swagger.yaml
 	rm -f $(BUILD_FOLDER)/swagger.yaml
@@ -162,6 +163,7 @@ clear-all: clean subsystem-clean clear-deployment
 
 clean:
 	-rm -rf $(BUILD_FOLDER)
+	-rm -rf models client restapi
 
 subsystem-clean:
 	-$(KUBECTL) get pod -o name | grep create-image | xargs $(KUBECTL) delete 1> /dev/null || true
