@@ -15,7 +15,7 @@ type Versions struct {
 	AgentDockerImg      string `envconfig:"AGENT_DOCKER_IMAGE" default:"quay.io/ocpmetal/agent:latest"`
 	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/ocpmetal/ignition-manifests-and-kubeconfig-generate:latest"`
 	InstallerImage      string `envconfig:"INSTALLER_IMAGE" default:"quay.io/ocpmetal/assisted-installer:latest"`
-	ControllerImage     string `envconfig:"CONTROLLER_IMAGE" default:"quay.io/ocpmetal/assisted-installer-controller:latest"`
+	ControllerImage     string `envconfig:"CONTROLLER_IMAGE" default:"quay.io/yshnaidm/assisted-installer-controller:bmh"`
 	ReleaseTag          string `envconfig:"RELEASE_TAG" default:""`
 }
 

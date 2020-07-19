@@ -822,8 +822,16 @@ func (b *bareMetalInventory) generateClusterInstallConfig(ctx context.Context, c
 		log.WithError(err).Errorf("failed to get install config for cluster %s", cluster.ID)
 		return errors.Wrapf(err, "failed to get install config for cluster %s", cluster.ID)
 	}
+
+	bmhCfg, err := installcfg.GetBMHConfig(log, &cluster)
+	if err != nil {
+		log.WithError(err).Errorf("failed to get bmh config for cluster %s", cluster.ID)
+		return errors.Wrapf(err, "failed to get bmh config for cluster %s", cluster.ID)
+	}
+
 	jobName := fmt.Sprintf("%s-%s-%s", kubeconfigPrefix, cluster.ID.String(), uuid.New().String())[:63]
-	if err := b.job.Create(ctx, b.createKubeconfigJob(&cluster, jobName, cfg)); err != nil {
+	log.Infof("YEV - bmhCfg is <%s>", string(bmhCfg))
+	if err := b.job.Create(ctx, b.createKubeconfigJob(&cluster, jobName, cfg, bmhCfg)); err != nil {
 		log.WithError(err).Errorf("Failed to create kubeconfig generation job %s for cluster %s", jobName, cluster.ID)
 		return errors.Wrapf(err, "Failed to create kubeconfig generation job %s for cluster %s", jobName, cluster.ID)
 	}
@@ -1533,11 +1541,13 @@ func (b *bareMetalInventory) EnableHost(ctx context.Context, params installer.En
 	return installer.NewEnableHostOK().WithPayload(&host)
 }
 
-func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobName string, cfg []byte) *batch.Job {
+func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobName string, cfg, bmCfg []byte) *batch.Job {
 	id := cluster.ID
 	// [TODO] need to find more generic way to set the openshift release image
 	//OCP 4.5.2
-	overrideImageName := "quay.io/openshift-release-dev/ocp-release@sha256:8f923b7b8efdeac619eb0e7697106c1d17dd3d262c49d8742b38600417cf7d1d"
+	//overrideImageName := "quay.io/openshift-release-dev/ocp-release@sha256:8f923b7b8efdeac619eb0e7697106c1d17dd3d262c49d8742b38600417cf7d1d"
+	overrideImageName := "quay.io/openshift-release-dev/ocp-release-nightly@sha256:b0600325129b5b14d272ad61bcbd7fe609b812ac2620976158046a7bd2c31c62"
+	//overrideImageName := "docker.io/yshnaidman/release-images-4.6:bmh"
 	// [TODO]  make sure that we use openshift-installer from the release image, otherwise the KubeconfigGenerator image must be updated here per opnshift version
 	kubeConfigGeneratorImage := b.Config.KubeconfigGenerator
 	return &batch.Job{
@@ -1570,6 +1580,10 @@ func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobNam
 								{
 									Name:  "INSTALLER_CONFIG",
 									Value: string(cfg),
+								},
+								{
+									Name:  "BMH_CONFIG",
+									Value: string(bmCfg),
 								},
 								{
 									Name:  "IMAGE_NAME",

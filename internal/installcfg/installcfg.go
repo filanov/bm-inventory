@@ -8,6 +8,8 @@ import (
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/swag"
 
+	"encoding/json"
+
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -67,6 +69,23 @@ type InstallerConfigBaremetal struct {
 	Platform   platform `yaml:"platform"`
 	PullSecret string   `yaml:"pullSecret"`
 	SSHKey     string   `yaml:"sshKey"`
+}
+
+type BMHNicData struct {
+	Name   string `yaml:"name"`
+	Mac    string `yaml:"mac"`
+	IpAddr string `yaml:"ipAddr"`
+	Speed  int64  `yaml:"speed"`
+}
+
+type BMHHostData struct {
+	Role     models.HostRole `yaml:"role"`
+	Hostname string          `yaml:"hostname"`
+	Nics     []BMHNicData    `yaml:"nics"`
+}
+
+type BMHConfigData struct {
+	Hosts []BMHHostData `yaml:"hosts"`
 }
 
 func countHostsByRole(cluster *common.Cluster, role models.HostRole) int {
@@ -155,7 +174,7 @@ func setBMPlatformInstallconfig(log logrus.FieldLogger, cluster *common.Cluster,
 
 	// dummy MAC and port, once we start using real BMH, those values should be set from cluster
 	dummyMAC := "00:aa:39:b3:51:10"
-	dummyPort := 6230
+	//dummyPort := 6230
 
 	for i := range hosts {
 		log.Infof("Setting master, host %d, master count %d", i, masterCount)
@@ -168,11 +187,13 @@ func setBMPlatformInstallconfig(log logrus.FieldLogger, cluster *common.Cluster,
 			hosts[i].Role = string(models.HostRoleMaster)
 			masterCount += 1
 		}
-		hosts[i].Bmc = bmc{
-			Address:  fmt.Sprintf("ipmi://192.168.111.1:%d", dummyPort+i),
-			Username: "admin",
-			Password: "rackattack",
-		}
+		/*
+			hosts[i].Bmc = bmc{
+				Address:  fmt.Sprintf("ipmi://192.168.111.1:%d", dummyPort+i),
+				Username: "admin",
+				Password: "rackattack",
+			}
+		*/
 		hwMac, err := getDummyMAC(log, dummyMAC, i)
 		if err != nil {
 			log.Warn("Failed to parse dummyMac")
@@ -184,7 +205,7 @@ func setBMPlatformInstallconfig(log logrus.FieldLogger, cluster *common.Cluster,
 	}
 	cfg.Platform = platform{
 		Baremetal: baremetal{
-			ProvisioningNetworkInterface: "ethh0",
+			ProvisioningNetworkInterface: "ens4",
 			APIVIP:                       cluster.APIVip,
 			IngressVIP:                   cluster.IngressVip,
 			DNSVIP:                       cluster.APIVip,
@@ -201,4 +222,45 @@ func GetInstallConfig(log logrus.FieldLogger, cluster *common.Cluster) ([]byte, 
 		return nil, err
 	}
 	return yaml.Marshal(*cfg)
+}
+
+func getBMHHostNics(log logrus.FieldLogger, inventory *models.Inventory) []BMHNicData {
+	var nics []BMHNicData
+	for _, networkInterface := range inventory.Interfaces {
+		// currently we iterate over IPV4 addresses only
+		for _, ipCIDR := range networkInterface.IPV4Addresses {
+			var nicData BMHNicData
+			nicData.Name = networkInterface.Name
+			nicData.Mac = networkInterface.MacAddress
+			ipAddr, _, err := net.ParseCIDR(ipCIDR)
+			if err != nil {
+				log.Warn("Failed to parse ipCIDR %s", ipCIDR)
+				ipAddr = net.ParseIP("0.0.0.0")
+			}
+			nicData.IpAddr = ipAddr.String()
+			nicData.Speed = networkInterface.SpeedMbps
+			nics = append(nics, nicData)
+		}
+	}
+	return nics
+}
+
+func GetBMHConfig(log logrus.FieldLogger, cluster *common.Cluster) ([]byte, error) {
+	var bmhConfig BMHConfigData
+	for _, host := range cluster.Hosts {
+		var inventory models.Inventory
+		var bmhHost BMHHostData
+		err := json.Unmarshal([]byte(host.Inventory), &inventory)
+		if err != nil {
+			return nil, err
+		}
+		bmhHost.Role = host.Role
+		bmhHost.Hostname, err = common.GetCurrentHostName(host)
+		if err != nil {
+			return nil, err
+		}
+		bmhHost.Nics = getBMHHostNics(log, &inventory)
+		bmhConfig.Hosts = append(bmhConfig.Hosts, bmhHost)
+	}
+	return yaml.Marshal(bmhConfig)
 }
