@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // HostProgress host progress
@@ -22,6 +23,14 @@ type HostProgress struct {
 
 	// progress info
 	ProgressInfo string `json:"progress_info,omitempty" gorm:"type:varchar(2048)"`
+
+	// Time at which the current progress stage started
+	// Format: date-time
+	StageStartedAt strfmt.DateTime `json:"stage_started_at,omitempty" gorm:"type:datetime"`
+
+	// Time at which the current progress stage was last updated
+	// Format: date-time
+	StageUpdatedAt strfmt.DateTime `json:"stage_updated_at,omitempty" gorm:"type:datetime"`
 }
 
 // Validate validates this host progress
@@ -29,6 +38,14 @@ func (m *HostProgress) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCurrentStage(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStageStartedAt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStageUpdatedAt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -44,6 +61,32 @@ func (m *HostProgress) validateCurrentStage(formats strfmt.Registry) error {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("current_stage")
 		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *HostProgress) validateStageStartedAt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.StageStartedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("stage_started_at", "body", "date-time", m.StageStartedAt.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *HostProgress) validateStageUpdatedAt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.StageUpdatedAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("stage_updated_at", "body", "date-time", m.StageUpdatedAt.String(), formats); err != nil {
 		return err
 	}
 
