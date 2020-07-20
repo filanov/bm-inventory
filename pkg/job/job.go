@@ -16,6 +16,7 @@ import (
 )
 
 //go:generate mockgen -source=job.go -package=job -destination=mock_job.go
+//go:generate mockgen -destination ../externalmocks/mock_kube_client.go sigs.k8s.io/controller-runtime/pkg/client Client
 type API interface {
 	// Create k8s job
 	Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error
