@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-openapi/runtime/security"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/filanov/bm-inventory/pkg/ocm"
 	"github.com/sirupsen/logrus"
 )
 
@@ -37,12 +39,14 @@ type AuthHandler struct {
 	KeyMap     map[string]*rsa.PublicKey
 	utils      AUtilsInteface
 	log        logrus.FieldLogger
+	client     *ocm.Client
 }
 
-func NewAuthHandler(cfg Config, log logrus.FieldLogger) *AuthHandler {
+func NewAuthHandler(cfg Config, ocmCLient *ocm.Client, log logrus.FieldLogger) *AuthHandler {
 	a := &AuthHandler{
 		EnableAuth: cfg.EnableAuth,
 		utils:      NewAuthUtils(cfg.JwkCert, cfg.JwkCertURL),
+		client:     ocmCLient,
 		log:        log,
 	}
 	err := a.populateKeyMap()
@@ -81,8 +85,16 @@ func (a *AuthHandler) getValidationToken(token *jwt.Token) (interface{}, error) 
 }
 
 func (a *AuthHandler) AuthAgentAuth(token string) (interface{}, error) {
-	//TODO: Validate agent pull secret
-	return "user_foo", nil
+	a.log.Error("AuthAgentAuth")
+	a.log.Error(token) // TODO REMOVE
+	if a.client == nil {
+		return nil, fmt.Errorf("OCM client unavailable")
+	}
+	user, err := a.client.Authentication.AuthenticatePullSecret(context.Background(), token)
+	if err != nil {
+		a.log.Error("Error Authenticating PullSecret token: %e", err)
+	}
+	return user, nil
 }
 
 func parsePayload(userToken *jwt.Token) (*AuthPayload, error) {

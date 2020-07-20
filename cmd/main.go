@@ -29,6 +29,7 @@ import (
 	"github.com/filanov/bm-inventory/pkg/auth"
 	"github.com/filanov/bm-inventory/pkg/db"
 	"github.com/filanov/bm-inventory/pkg/job"
+	"github.com/filanov/bm-inventory/pkg/ocm"
 	"github.com/filanov/bm-inventory/pkg/requestid"
 	awsS3Client "github.com/filanov/bm-inventory/pkg/s3Client"
 	"github.com/filanov/bm-inventory/pkg/s3wrapper"
@@ -66,6 +67,7 @@ var Options struct {
 	ImageExpirationInterval     time.Duration `envconfig:"IMAGE_EXPIRATION_INTERVAL" default:"30m"`
 	ImageExpirationTime         time.Duration `envconfig:"IMAGE_EXPIRATION_TIME" default:"60m"`
 	ClusterConfig               cluster.Config
+	OCMConfig                   ocm.Config
 }
 
 func main() {
@@ -121,7 +123,15 @@ func main() {
 	if err = db.AutoMigrate(&models.Host{}, &common.Cluster{}, &events.Event{}).Error; err != nil {
 		log.Fatal("failed to auto migrate, ", err)
 	}
-	authHandler := auth.NewAuthHandler(Options.Auth, log.WithField("pkg", "auth"))
+
+	ocmClient, err := ocm.NewClient(Options.OCMConfig)
+
+	if err != nil {
+		log.Warn("Failed to Create OCM Client,", err)
+	}
+
+	authHandler := auth.NewAuthHandler(Options.Auth, ocmClient, log.WithField("pkg", "auth"))
+
 	versionHandler := versions.NewHandler(Options.Versions)
 	domainHandler := domains.NewHandler(Options.BMConfig.BaseDNSDomains)
 	eventsHandler := events.New(db, log.WithField("pkg", "events"))
@@ -168,6 +178,7 @@ func main() {
 	} else {
 		log.Info("Disabled image expiration monitor")
 	}
+
 	h, err := restapi.Handler(restapi.Config{
 		AuthAgentAuth:       authHandler.AuthAgentAuth,
 		AuthUserAuth:        authHandler.AuthUserAuth,
