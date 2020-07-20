@@ -28,6 +28,7 @@ import (
 	"github.com/filanov/bm-inventory/pkg/app"
 	"github.com/filanov/bm-inventory/pkg/auth"
 	"github.com/filanov/bm-inventory/pkg/job"
+	"github.com/filanov/bm-inventory/pkg/ocm"
 	"github.com/filanov/bm-inventory/pkg/requestid"
 	awsS3Client "github.com/filanov/bm-inventory/pkg/s3Client"
 	"github.com/filanov/bm-inventory/pkg/s3wrapper"
@@ -67,6 +68,7 @@ var Options struct {
 	ImageExpirationInterval     time.Duration `envconfig:"IMAGE_EXPIRATION_INTERVAL" default:"30m"`
 	ImageExpirationTime         time.Duration `envconfig:"IMAGE_EXPIRATION_TIME" default:"60m"`
 	ClusterConfig               cluster.Config
+	OCMConfig                   ocm.Config
 }
 
 func main() {
@@ -166,7 +168,12 @@ func main() {
 	} else {
 		log.Info("Disabled image expiration monitor")
 	}
-	auth.InitAuthHandler(Options.Auth.JwkCertURL)
+	ocmClient, err := ocm.NewClient(Options.OCMConfig)
+	if err != nil {
+		log.Error("Failed to OCM Client,", err)
+	}
+
+	auth.InitAuthHandler(Options.Auth.JwkCertURL, ocmClient)
 
 	h, err := restapi.Handler(restapi.Config{
 		AuthAgentAuth:       auth.AuthAgentAuth,

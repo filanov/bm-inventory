@@ -45,6 +45,8 @@ def main():
             data = data.replace('REPLACE_NAMESPACE', deploy_options.namespace)
             data = data.replace("IS_AUTH_ENABLED", '"{}"'.format(os.environ.get("ENABLE_AUTH", "false")))
             data = data.replace("REPLACE_JWKS_URL", '"{}"'.format(os.environ.get("JWKS_URL", "")))
+            data = data.replace("REPLACE_OCM_CLIENT_SECRET", '"{}"'.format(os.environ.get("OCM_CLIENT_SECRET", "")))
+            data = data.replace("REPLACE_OCM_CLIENT_ID", '"{}"'.format(os.environ.get("OCM_CLIENT_ID", "")))
             print("Deploying {}".format(DST_FILE))
 
             versions = {"IMAGE_BUILDER": "installer-image-build",
