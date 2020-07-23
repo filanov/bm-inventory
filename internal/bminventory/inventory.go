@@ -1405,6 +1405,7 @@ func handleReplyByType(params installer.PostStepReplyParams, b *bareMetalInvento
 	switch params.Reply.StepType {
 	case models.StepTypeInventory:
 		err = b.hostApi.UpdateInventory(ctx, &host, stepReply)
+		b.hostApi.AutoRoleSelection(&host)
 	case models.StepTypeConnectivityCheck:
 		err = b.hostApi.UpdateConnectivityReport(ctx, &host, stepReply)
 	case models.StepTypeFreeNetworkAddresses:

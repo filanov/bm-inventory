@@ -12,8 +12,8 @@ import (
 	"github.com/filanov/bm-inventory/internal/metrics"
 	"github.com/filanov/bm-inventory/models"
 	logutil "github.com/filanov/bm-inventory/pkg/log"
+	"github.com/filanov/bm-inventory/pkg/requestid"
 	"github.com/filanov/stateswitch"
-
 	"github.com/go-openapi/swag"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
@@ -89,17 +89,19 @@ type API interface {
 	GetStagesByRole(role models.HostRole, isbootstrap bool) []models.HostStage
 	IsInstallable(h *models.Host) bool
 	PrepareForInstallation(ctx context.Context, h *models.Host, db *gorm.DB) error
+	AutoRoleSelection(h *models.Host)
 }
 
 type Manager struct {
-	log            logrus.FieldLogger
-	db             *gorm.DB
-	instructionApi InstructionApi
-	hwValidator    hardware.Validator
-	eventsHandler  events.Handler
-	sm             stateswitch.StateMachine
-	rp             *refreshPreprocessor
-	metricApi      metrics.API
+	log                logrus.FieldLogger
+	db                 *gorm.DB
+	instructionApi     InstructionApi
+	hwValidator        hardware.Validator
+	eventsHandler      events.Handler
+	sm                 stateswitch.StateMachine
+	rp                 *refreshPreprocessor
+	metricApi          metrics.API
+	autoRoleSelectChan chan *models.Host
 }
 
 func NewManager(log logrus.FieldLogger, db *gorm.DB, eventsHandler events.Handler, hwValidator hardware.Validator, instructionApi InstructionApi,
@@ -108,16 +110,19 @@ func NewManager(log logrus.FieldLogger, db *gorm.DB, eventsHandler events.Handle
 		db:  db,
 		log: log,
 	}
-	return &Manager{
-		log:            log,
-		db:             db,
-		instructionApi: instructionApi,
-		hwValidator:    hwValidator,
-		eventsHandler:  eventsHandler,
-		sm:             NewHostStateMachine(th),
-		rp:             newRefreshPreprocessor(log, hwValidatorCfg),
-		metricApi:      metricApi,
+	m := &Manager{
+		log:                log,
+		db:                 db,
+		instructionApi:     instructionApi,
+		hwValidator:        hwValidator,
+		eventsHandler:      eventsHandler,
+		sm:                 NewHostStateMachine(th),
+		rp:                 newRefreshPreprocessor(log, hwValidatorCfg),
+		metricApi:          metricApi,
+		autoRoleSelectChan: make(chan *models.Host, 100),
 	}
+	go m.handleAutoRoleSelection()
+	return m
 }
 
 func (m *Manager) RegisterHost(ctx context.Context, h *models.Host) error {
@@ -418,5 +423,69 @@ func (m *Manager) reportInstallationMetrics(ctx context.Context, h *models.Host,
 		log.WithError(err).Errorf("not reporting installation metrics - failed to find cluster %s", h.ClusterID)
 	} else {
 		m.metricApi.ReportHostInstallationMetrics(log, cluster.OpenshiftVersion, h, previousProgress, CurrentStage)
+	}
+}
+func (m *Manager) AutoRoleSelection(h *models.Host) {
+	// using channel as a queue to prevent races between different hosts
+	go func() { m.autoRoleSelectChan <- h }()
+}
+
+func (m *Manager) handleAutoRoleSelection() {
+	var h *models.Host
+	ctx := requestid.ToContext(context.Background(), requestid.NewID())
+	for {
+		h = <-m.autoRoleSelectChan
+		m.autoRoleSelection(ctx, h)
+	}
+}
+
+func (m *Manager) autoRoleSelection(ctx context.Context, h *models.Host) {
+	var (
+		host             models.Host
+		autoSelectedRole = models.HostRoleWorker
+		log              = logutil.FromContext(ctx, m.log)
+	)
+
+	if err := m.db.Take(&host, "id = ? and cluster_id = ?", h.ID.String(), h.ClusterID.String()).Error; err != nil {
+		log.WithError(err).Errorf("failed to get host %s for auto role selection", h.ID.String())
+		return
+	}
+	// check if role already selected
+	if funk.ContainsString([]string{string(models.HostRoleMaster), string(models.HostRoleWorker)}, string(host.Role)) {
+		return
+	}
+
+	// in case of any error host will be set a worker
+	defer func() {
+		if err := m.db.Model(host).
+			Where("id = ? and cluster_id = ? and role = ?", host.ID.String(), host.ClusterID.String(), "").
+			Update("role", autoSelectedRole).Error; err == nil {
+			log.Info("Auto selected role %s for host %s", autoSelectedRole, host.ID.String())
+		}
+	}()
+
+	// count already existing masters
+	mastersCount := 0
+	if err := m.db.Model(&models.Host{}).Where("cluster_id = ? and status != ? and role = ?",
+		host.ClusterID, models.HostStatusDisabled, models.HostRoleMaster).Count(&mastersCount).Error; err != nil {
+		log.WithError(err).Errorf("failed to count masters in cluster %s", host.ClusterID.String())
+		return
+	}
+
+	if mastersCount < 3 {
+		host.Role = models.HostRoleMaster
+		vc, err := newValidationContext(&host, m.db)
+		if err != nil {
+			log.WithError(err).Errorf("failed to create new validation context for host %s", host.ID.String())
+			return
+		}
+		conditions, _, err := m.rp.preprocess(vc)
+		if err != nil {
+			log.WithError(err).Errorf("failed to run validations on host %s", host.ID.String())
+			return
+		}
+		if conditions[HasCPUCoresForRole] && conditions[HasMemoryForRole] {
+			autoSelectedRole = models.HostRoleMaster
+		}
 	}
 }

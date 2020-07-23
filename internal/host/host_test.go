@@ -997,3 +997,104 @@ var _ = Describe("PrepareForInstallation", func() {
 		common.DeleteTestDB(db, dbName)
 	})
 })
+
+var _ = Describe("AutoSelectRole", func() {
+	var (
+		hapi              API
+		db                *gorm.DB
+		hostId, clusterId strfmt.UUID
+		host              models.Host
+		dbName            = "auto_select_role"
+	)
+
+	BeforeEach(func() {
+		db = common.PrepareTestDB(dbName, &models.Host{}, &common.Cluster{})
+		hapi = NewManager(getTestLog(), db, nil, nil, nil, createValidatorCfg(), nil)
+		hostId = strfmt.UUID(uuid.New().String())
+		clusterId = strfmt.UUID(uuid.New().String())
+		cluster := getTestCluster(clusterId, "1.1.0.0/16")
+		Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
+	})
+
+	tests := []struct {
+		name         string
+		sourceRole   models.HostRole
+		expectedRole models.HostRole
+		inventory    string
+	}{
+		{
+			name:         "worker inventory",
+			sourceRole:   "",
+			inventory:    workerInventory(),
+			expectedRole: models.HostRoleWorker,
+		},
+		{
+			name:         "master inventory",
+			sourceRole:   "",
+			inventory:    masterInventory(),
+			expectedRole: models.HostRoleMaster,
+		},
+		{
+			name:         "no inventory",
+			sourceRole:   "",
+			expectedRole: models.HostRoleWorker,
+		},
+		{
+			name:         "role already exists",
+			sourceRole:   models.HostRoleWorker,
+			expectedRole: models.HostRoleWorker,
+		},
+	}
+
+	for _, t := range tests {
+		It(t.name, func() {
+			host = getTestHost(hostId, clusterId, models.HostStatusDiscovering)
+			host.Role = t.sourceRole
+			host.Inventory = t.inventory
+			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+			hapi.AutoRoleSelection(getHost(hostId, clusterId, db))
+			Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
+				Should(Equal(t.expectedRole))
+		})
+	}
+
+	It("cluster already have 3 masters", func() {
+		for i := 0; i < 3; i++ {
+			host = getTestHost(strfmt.UUID(uuid.New().String()), clusterId, models.HostStatusDiscovering)
+			host.Role = models.HostRoleMaster
+			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+		}
+		host = getTestHost(hostId, clusterId, models.HostStatusDiscovering)
+		host.Role = ""
+		host.Inventory = masterInventory()
+
+		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+		hapi.AutoRoleSelection(getHost(hostId, clusterId, db))
+		Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
+			Should(Equal(models.HostRoleWorker))
+	})
+
+	It("cluster already have 3 masters one of them disabled", func() {
+		for i := 0; i < 2; i++ {
+			host = getTestHost(strfmt.UUID(uuid.New().String()), clusterId, models.HostStatusDiscovering)
+			host.Role = models.HostRoleMaster
+			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+		}
+		host = getTestHost(strfmt.UUID(uuid.New().String()), clusterId, models.HostStatusDisabled)
+		host.Role = models.HostRoleMaster
+		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+
+		host = getTestHost(hostId, clusterId, models.HostStatusDiscovering)
+		host.Role = ""
+		host.Inventory = masterInventory()
+		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+
+		hapi.AutoRoleSelection(getHost(hostId, clusterId, db))
+		Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
+			Should(Equal(models.HostRoleMaster))
+	})
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
+	})
+})

@@ -1507,6 +1507,54 @@ var _ = Describe("cluster install", func() {
 
 	})
 
+	It("role auto select", func() {
+		By("register 10 hosts")
+		clusterID := *cluster.ID
+		for i := 0; i < 10; i++ {
+			registerHost(clusterID)
+		}
+
+		By("set valid hw info for all the hosts")
+		getReply, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+		Expect(err).ShouldNot(HaveOccurred())
+		c := getReply.GetPayload()
+		for i, h := range c.Hosts {
+			generateHWPostStepReply(h, validHwInfo, fmt.Sprintf("h%d", i))
+		}
+
+		hostsWithRolesCount := func() int {
+			getReply, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+			Expect(err).ShouldNot(HaveOccurred())
+			c = getReply.GetPayload()
+			count := 0
+			for _, h := range c.Hosts {
+				if h.Role == models.HostRoleMaster || h.Role == models.HostRoleWorker {
+					count++
+				}
+			}
+			return count
+		}
+		By("validate that all the hosts have roles master or worker")
+		Eventually(hostsWithRolesCount, 10).Should(Equal(10))
+
+		By("validate that cluster have 3 masters and 7 workers")
+		getReply, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+		Expect(err).ShouldNot(HaveOccurred())
+		c = getReply.GetPayload()
+		mastersCount := 0
+		workersCount := 0
+		for _, h := range c.Hosts {
+			if h.Role == models.HostRoleMaster {
+				mastersCount++
+			}
+			if h.Role == models.HostRoleWorker {
+				workersCount++
+			}
+		}
+		Expect(mastersCount).Should(Equal(3))
+		Expect(workersCount).Should(Equal(7))
+	})
+
 	It("[only_k8s]different_roles_stages", func() {
 		clusterID := *cluster.ID
 		registerHostsAndSetRoles(clusterID, 4)
