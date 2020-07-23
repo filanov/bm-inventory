@@ -1546,8 +1546,8 @@ func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobNam
 	// [TODO] need to find more generic way to set the openshift release image
 	//OCP 4.5.2
 	//overrideImageName := "quay.io/openshift-release-dev/ocp-release@sha256:8f923b7b8efdeac619eb0e7697106c1d17dd3d262c49d8742b38600417cf7d1d"
-	overrideImageName := "quay.io/openshift-release-dev/ocp-release-nightly@sha256:b0600325129b5b14d272ad61bcbd7fe609b812ac2620976158046a7bd2c31c62"
-	//overrideImageName := "docker.io/yshnaidman/release-images-4.6:bmh"
+	//overrideImageName := "quay.io/openshift-release-dev/ocp-release-nightly@sha256:b0600325129b5b14d272ad61bcbd7fe609b812ac2620976158046a7bd2c31c62"
+	overrideImageName := "docker.io/yshnaidman/release-images-4.6:bmh"
 	// [TODO]  make sure that we use openshift-installer from the release image, otherwise the KubeconfigGenerator image must be updated here per opnshift version
 	kubeConfigGeneratorImage := b.Config.KubeconfigGenerator
 	return &batch.Job{
@@ -1582,8 +1582,10 @@ func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobNam
 									Value: string(cfg),
 								},
 								{
-									Name:  "BMH_CONFIG",
-									Value: string(bmCfg),
+									//Name:  "BMH_CONFIG",
+									//Value: string(bmCfg),
+									Name:  "INVENTORY_ENDPOINT",
+									Value: "http://" + b.InventoryURL + ":" + b.InventoryPort + "/api/assisted-install/v1",
 								},
 								{
 									Name:  "IMAGE_NAME",
