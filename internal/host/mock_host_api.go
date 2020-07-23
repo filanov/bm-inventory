@@ -357,3 +357,15 @@ func (mr *MockAPIMockRecorder) PrepareForInstallation(ctx, h, db interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareForInstallation", reflect.TypeOf((*MockAPI)(nil).PrepareForInstallation), ctx, h, db)
 }
+
+// AutoRoleSelection mocks base method
+func (m *MockAPI) AutoRoleSelection(h *models.Host) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AutoRoleSelection", h)
+}
+
+// AutoRoleSelection indicates an expected call of AutoRoleSelection
+func (mr *MockAPIMockRecorder) AutoRoleSelection(h interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoRoleSelection", reflect.TypeOf((*MockAPI)(nil).AutoRoleSelection), h)
+}
