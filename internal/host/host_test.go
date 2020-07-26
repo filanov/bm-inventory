@@ -10,10 +10,8 @@ import (
 	"time"
 
 	"github.com/filanov/bm-inventory/internal/common"
-	"github.com/filanov/bm-inventory/internal/metrics"
-
 	"github.com/filanov/bm-inventory/internal/events"
-
+	"github.com/filanov/bm-inventory/internal/metrics"
 	"github.com/filanov/bm-inventory/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -1005,11 +1003,17 @@ var _ = Describe("AutoSelectRole", func() {
 		hostId, clusterId strfmt.UUID
 		host              models.Host
 		dbName            = "auto_select_role"
+		ctrl              *gomock.Controller
+		mockEvents        *events.MockHandler
 	)
 
 	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockEvents = events.NewMockHandler(ctrl)
+		mockEvents.EXPECT().AddEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return().AnyTimes()
 		db = common.PrepareTestDB(dbName, &models.Host{}, &common.Cluster{})
-		hapi = NewManager(getTestLog(), db, nil, nil, nil, createValidatorCfg(), nil)
+		hapi = NewManager(getTestLog(), db, mockEvents, nil, nil, createValidatorCfg(), nil)
 		hostId = strfmt.UUID(uuid.New().String())
 		clusterId = strfmt.UUID(uuid.New().String())
 		cluster := getTestCluster(clusterId, "1.1.0.0/16")
@@ -1052,7 +1056,7 @@ var _ = Describe("AutoSelectRole", func() {
 			host.Role = t.sourceRole
 			host.Inventory = t.inventory
 			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
-			hapi.AutoRoleSelection(getHost(hostId, clusterId, db))
+			hapi.HostMonitoring()
 			Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
 				Should(Equal(t.expectedRole))
 		})
@@ -1069,7 +1073,7 @@ var _ = Describe("AutoSelectRole", func() {
 		host.Inventory = masterInventory()
 
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
-		hapi.AutoRoleSelection(getHost(hostId, clusterId, db))
+		hapi.HostMonitoring()
 		Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
 			Should(Equal(models.HostRoleWorker))
 	})
@@ -1089,12 +1093,13 @@ var _ = Describe("AutoSelectRole", func() {
 		host.Inventory = masterInventory()
 		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 
-		hapi.AutoRoleSelection(getHost(hostId, clusterId, db))
+		hapi.HostMonitoring()
 		Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
 			Should(Equal(models.HostRoleMaster))
 	})
 
 	AfterEach(func() {
+		ctrl.Finish()
 		common.DeleteTestDB(db, dbName)
 	})
 })

@@ -288,20 +288,6 @@ func (mr *MockAPIMockRecorder) Install(ctx, h, db interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Install", reflect.TypeOf((*MockAPI)(nil).Install), ctx, h, db)
 }
 
-// UpdateHwInfo mocks base method
-func (m *MockAPI) UpdateHwInfo(ctx context.Context, h *models.Host, hwInfo string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateHwInfo", ctx, h, hwInfo)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateHwInfo indicates an expected call of UpdateHwInfo
-func (mr *MockAPIMockRecorder) UpdateHwInfo(ctx, h, hwInfo interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateHwInfo", reflect.TypeOf((*MockAPI)(nil).UpdateHwInfo), ctx, h, hwInfo)
-}
-
 // UpdateInventory mocks base method
 func (m *MockAPI) UpdateInventory(ctx context.Context, h *models.Host, inventory string) error {
 	m.ctrl.T.Helper()
@@ -356,16 +342,4 @@ func (m *MockAPI) PrepareForInstallation(ctx context.Context, h *models.Host, db
 func (mr *MockAPIMockRecorder) PrepareForInstallation(ctx, h, db interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareForInstallation", reflect.TypeOf((*MockAPI)(nil).PrepareForInstallation), ctx, h, db)
-}
-
-// AutoRoleSelection mocks base method
-func (m *MockAPI) AutoRoleSelection(h *models.Host) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AutoRoleSelection", h)
-}
-
-// AutoRoleSelection indicates an expected call of AutoRoleSelection
-func (mr *MockAPIMockRecorder) AutoRoleSelection(h interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AutoRoleSelection", reflect.TypeOf((*MockAPI)(nil).AutoRoleSelection), h)
 }

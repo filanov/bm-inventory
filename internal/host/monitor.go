@@ -15,13 +15,20 @@ func (m *Manager) HostMonitoring() {
 		log       = requestid.RequestIDLogger(m.log, requestID)
 	)
 
-	monitorStates := []string{HostStatusDiscovering, HostStatusKnown, HostStatusDisconnected, HostStatusInsufficient,
-		HostStatusPendingForInput, models.HostStatusPreparingForInstallation}
+	monitorStates := []string{
+		models.HostStatusDiscovering,
+		models.HostStatusKnown,
+		models.HostStatusDisconnected,
+		models.HostStatusInsufficient,
+		models.HostStatusPendingForInput,
+		models.HostStatusPreparingForInstallation,
+	}
 	if err := m.db.Where("status IN (?)", monitorStates).Find(&hosts).Error; err != nil {
 		log.WithError(err).Errorf("failed to get hosts")
 		return
 	}
 	for _, host := range hosts {
+		m.autoRoleSelection(ctx, host)
 		if err := m.RefreshStatus(ctx, host, m.db); err != nil {
 			log.WithError(err).Errorf("failed to refresh host %s state", *host.ID)
 		}
