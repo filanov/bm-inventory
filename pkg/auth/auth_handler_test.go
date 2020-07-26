@@ -2,71 +2,68 @@ package auth
 
 import (
 	"context"
-	"crypto/rsa"
-	"crypto/x509"
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/filanov/bm-inventory/client"
 	clientInstaller "github.com/filanov/bm-inventory/client/installer"
-	"github.com/google/uuid"
-
+	"github.com/filanov/bm-inventory/restapi"
+	"github.com/filanov/bm-inventory/restapi/operations/installer"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/filanov/bm-inventory/restapi"
-	"github.com/filanov/bm-inventory/restapi/operations/installer"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
-
-func NewFakeAuthUtils(url string) AUtilsInteface {
-	return &fakeAUtils{
-		url: url,
-	}
-}
-
-type fakeAUtils struct {
-	url string
-}
-
-func (au *fakeAUtils) downloadPublicKeys(cas *x509.CertPool) (keyMap map[string]*rsa.PublicKey, err error) {
-	return nil, nil
-}
-
-func NewFakeAuthHandler(cfg Config, log logrus.FieldLogger) *AuthHandler {
-	a := &AuthHandler{
-		EnableAuth: cfg.EnableAuth,
-		utils:      NewFakeAuthUtils(cfg.JwkCertURL),
-		log:        log,
-	}
-	err := a.populateKeyMap()
-	if err != nil {
-		log.Fatalln("Failed to init auth handler,", err)
-	}
-	return a
-}
 
 func serv(server *http.Server) {
 	_ = server.ListenAndServe()
 }
 
+func GetTokenAndCert() (string, []byte) {
+
+	//Generate RSA Keypair
+	pub, priv, _ := GenKeys(2048)
+
+	//Generate keys in JWK format
+	pubJSJWKS, _, kid, _ := GenJSJWKS(priv, pub)
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+		"account_number": "1234567",
+		"is_internal":    false,
+		"is_active":      true,
+		"account_id":     "7654321",
+		"org_id":         "1010101",
+		"last_name":      "Doe",
+		"type":           "User",
+		"locale":         "en_US",
+		"first_name":     "John",
+		"email":          "jdoe123@example.com",
+		"username":       "jdoe123@example.com",
+		"is_org_admin":   false,
+		"clientId":       "1234",
+	})
+	token.Header["kid"] = kid
+	tokenString, _ := token.SignedString(priv)
+	return tokenString, pubJSJWKS
+}
+
 func TestAuth(t *testing.T) {
 	log := logrus.New()
 
-	agentKey := "X-Secret-Key"
-	agentKeyValue := "SecretKey"
-
-	userKey := "Authorization"
-	userKeyValue := "userKey"
-
+	userToken, JwkCert := GetTokenAndCert()
+	agentKeyValue := "fake_pull_secret"
+	userKeyValue := "bearer " + userToken
 	t.Parallel()
 	tests := []struct {
 		name                   string
-		tokenKey               string
 		expectedTokenValue     string
+		authInfo               runtime.ClientAuthInfoWriter
 		isListOperation        bool
 		enableAuth             bool
 		addHeaders             bool
@@ -74,8 +71,8 @@ func TestAuth(t *testing.T) {
 	}{
 		{
 			name:                   "User Successful Authentication",
-			tokenKey:               userKey,
 			expectedTokenValue:     userKeyValue,
+			authInfo:               UserAuthHeaderWriter(userKeyValue),
 			isListOperation:        true,
 			enableAuth:             true,
 			addHeaders:             true,
@@ -83,8 +80,8 @@ func TestAuth(t *testing.T) {
 		},
 		{
 			name:                   "Fail auth without headers",
-			tokenKey:               agentKey,
 			expectedTokenValue:     agentKeyValue,
+			authInfo:               AgentAuthHeaderWriter(agentKeyValue),
 			isListOperation:        false,
 			enableAuth:             true,
 			addHeaders:             false,
@@ -92,8 +89,8 @@ func TestAuth(t *testing.T) {
 		},
 		{
 			name:                   "Ignore auth if disabled",
-			tokenKey:               userKey,
 			expectedTokenValue:     userKeyValue,
+			authInfo:               UserAuthHeaderWriter(userKeyValue),
 			isListOperation:        true,
 			enableAuth:             false,
 			addHeaders:             false,
@@ -105,26 +102,15 @@ func TestAuth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeConfig := Config{
 				EnableAuth: tt.enableAuth,
-				JwkCertURL: "https://api.openshift.com/.well-known/jwks.json",
+				JwkCertURL: "",
+				JwkCert:    string(JwkCert),
 			}
-			fakeAuthHandler := NewFakeAuthHandler(fakeConfig, log.WithField("pkg", "auth"))
-
-			authAgentAuth := func(token string) (interface{}, error) {
-				assert.Equal(t, tt.expectedTokenValue, token)
-				assert.Equal(t, tt.tokenKey, agentKey)
-				return "user2", nil
-			}
-
-			authUserAuth := func(token string) (interface{}, error) {
-				assert.Equal(t, tt.expectedTokenValue, token)
-				assert.Equal(t, tt.tokenKey, userKey)
-				return "user1", nil
-			}
+			AuthHandler := NewAuthHandler(fakeConfig, log.WithField("pkg", "auth"))
 
 			h, _ := restapi.Handler(restapi.Config{
-				AuthAgentAuth:       authAgentAuth,
-				AuthUserAuth:        authUserAuth,
-				APIKeyAuthenticator: fakeAuthHandler.CreateAuthenticator(),
+				AuthAgentAuth:       AuthHandler.AuthAgentAuth,
+				AuthUserAuth:        AuthHandler.AuthUserAuth,
+				APIKeyAuthenticator: AuthHandler.CreateAuthenticator(),
 				InstallerAPI:        fakeInventory{},
 				EventsAPI:           nil,
 				Logger:              logrus.Printf,
@@ -132,12 +118,6 @@ func TestAuth(t *testing.T) {
 				ManagedDomainsAPI:   nil,
 				InnerMiddleware:     nil,
 			})
-
-			clientAuth := func() runtime.ClientAuthInfoWriter {
-				return runtime.ClientAuthInfoWriterFunc(func(r runtime.ClientRequest, _ strfmt.Registry) error {
-					return r.SetHeaderParam(tt.tokenKey, tt.expectedTokenValue)
-				})
-			}
 
 			cfg := client.Config{
 				URL: &url.URL{
@@ -147,13 +127,14 @@ func TestAuth(t *testing.T) {
 				},
 			}
 			if tt.addHeaders {
-				cfg.AuthInfo = clientAuth()
+				cfg.AuthInfo = tt.authInfo
 			}
 			bmclient := client.New(cfg)
 
 			server := &http.Server{Addr: "localhost:8081", Handler: h}
 			go serv(server)
 			defer server.Close()
+			time.Sleep(time.Second * 1) // Allow the server to start
 
 			expectedStatusCode := 401
 			if tt.expectedRequestSuccess {
@@ -259,11 +240,11 @@ func (f fakeInventory) PostStepReply(ctx context.Context, params installer.PostS
 }
 
 func (f fakeInventory) RegisterCluster(ctx context.Context, params installer.RegisterClusterParams) middleware.Responder {
-	panic("Implement Me!")
+	return installer.NewRegisterClusterCreated()
 }
 
 func (f fakeInventory) RegisterHost(ctx context.Context, params installer.RegisterHostParams) middleware.Responder {
-	panic("Implement Me!")
+	return installer.NewRegisterHostCreated()
 }
 
 func (f fakeInventory) ResetCluster(ctx context.Context, params installer.ResetClusterParams) middleware.Responder {
