@@ -72,6 +72,7 @@ type Config struct {
 	ImageBuilder        string            `envconfig:"IMAGE_BUILDER" default:"quay.io/ocpmetal/installer-image-build:latest"`
 	AgentDockerImg      string            `envconfig:"AGENT_DOCKER_IMAGE" default:"quay.io/ocpmetal/agent:latest"`
 	KubeconfigGenerator string            `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/ocpmetal/ignition-manifests-and-kubeconfig-generate:latest"` // TODO: update the latest once the repository has git workflow
+	ReleaseImage        string            `envconfig:"OPENSHIFT_INSTALL_RELEASE_IMAGE" default:""`
 	InventoryURL        string            `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
 	InventoryPort       string            `envconfig:"INVENTORY_PORT" default:"30485"`
 	S3EndpointURL       string            `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
@@ -1537,7 +1538,7 @@ func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobNam
 	id := cluster.ID
 	// [TODO] need to find more generic way to set the openshift release image
 	//OCP 4.5.3
-	overrideImageName := "quay.io/openshift-release-dev/ocp-release@sha256:eab93b4591699a5a4ff50ad3517892653f04fb840127895bb3609b3cc68f98f3"
+	//overrideImageName := "quay.io/openshift-release-dev/ocp-release@sha256:eab93b4591699a5a4ff50ad3517892653f04fb840127895bb3609b3cc68f98f3"
 	// [TODO]  make sure that we use openshift-installer from the release image, otherwise the KubeconfigGenerator image must be updated here per opnshift version
 	kubeConfigGeneratorImage := b.Config.KubeconfigGenerator
 	return &batch.Job{
@@ -1589,7 +1590,7 @@ func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobNam
 								},
 								{
 									Name:  "OPENSHIFT_INSTALL_RELEASE_IMAGE_OVERRIDE",
-									Value: overrideImageName, //TODO: change this to match the cluster openshift version
+									Value: b.ReleaseImage, //TODO: change this to match the cluster openshift version
 								},
 								{
 									Name:  "aws_access_key_id",
