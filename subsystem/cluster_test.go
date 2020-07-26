@@ -1075,7 +1075,7 @@ var _ = Describe("cluster install", func() {
 				checkHostsStatuses()
 			})
 
-			It("[only_k8s]require user reset", func() {
+			It("[only_k8s]reset cluster and register hosts - wrong boot order", func() {
 				_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 				Expect(err).NotTo(HaveOccurred())
 				waitForClusterInstallationToStart(clusterID)
@@ -1099,8 +1099,7 @@ var _ = Describe("cluster install", func() {
 						},
 					})
 					Expect(err).ShouldNot(HaveOccurred())
-					waitForHostState(ctx, clusterID, *host.ID, models.HostStatusDiscovering,
-						defaultWaitForHostStateTimeout)
+					waitForHostState(ctx, clusterID, *host.ID, models.HostStatusKnown, time.Minute)
 				}
 			})
 			It("[only_k8s]reset cluster with a disabled host", func() {
