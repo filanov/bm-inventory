@@ -28,11 +28,11 @@ type AuthPayload struct {
 
 type Config struct {
 	EnableAuth bool   `envconfig:"ENABLE_AUTH" default:"true"`
+	JwkCert    string `envconfig:"JWKS_CERT"`
 	JwkCertURL string `envconfig:"JWKS_URL" default:"https://api.openshift.com/.well-known/jwks.json"`
 }
 
 type AuthHandler struct {
-	CertURL    string
 	EnableAuth bool
 	KeyMap     map[string]*rsa.PublicKey
 	utils      AUtilsInteface
@@ -42,7 +42,7 @@ type AuthHandler struct {
 func NewAuthHandler(cfg Config, log logrus.FieldLogger) *AuthHandler {
 	a := &AuthHandler{
 		EnableAuth: cfg.EnableAuth,
-		utils:      NewAuthUtils(cfg.JwkCertURL),
+		utils:      NewAuthUtils(cfg.JwkCert, cfg.JwkCertURL),
 		log:        log,
 	}
 	err := a.populateKeyMap()
@@ -60,7 +60,7 @@ func (a *AuthHandler) populateKeyMap() error {
 	}
 
 	// Try to read the JWT public key object file.
-	a.KeyMap, err = a.utils.downloadPublicKeys(trustedCAs)
+	a.KeyMap, err = a.utils.proccessPublicKeys(trustedCAs)
 	return err
 }
 

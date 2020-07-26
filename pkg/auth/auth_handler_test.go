@@ -7,39 +7,40 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/filanov/bm-inventory/client"
 	clientInstaller "github.com/filanov/bm-inventory/client/installer"
-	"github.com/google/uuid"
-
+	"github.com/filanov/bm-inventory/restapi"
+	"github.com/filanov/bm-inventory/restapi/operations/installer"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/filanov/bm-inventory/restapi"
-	"github.com/filanov/bm-inventory/restapi/operations/installer"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
-func NewFakeAuthUtils(url string) AUtilsInteface {
+func NewFakeAuthUtils(JwkCert string, JwkCertURL string) AUtilsInteface {
 	return &fakeAUtils{
-		url: url,
+		JwkCert:    JwkCert,
+		JwkCertURL: JwkCertURL,
 	}
 }
 
 type fakeAUtils struct {
-	url string
+	JwkCert    string
+	JwkCertURL string
 }
 
-func (au *fakeAUtils) downloadPublicKeys(cas *x509.CertPool) (keyMap map[string]*rsa.PublicKey, err error) {
+func (au *fakeAUtils) proccessPublicKeys(cas *x509.CertPool) (keyMap map[string]*rsa.PublicKey, err error) {
 	return nil, nil
 }
 
 func NewFakeAuthHandler(cfg Config, log logrus.FieldLogger) *AuthHandler {
 	a := &AuthHandler{
 		EnableAuth: cfg.EnableAuth,
-		utils:      NewFakeAuthUtils(cfg.JwkCertURL),
+		utils:      NewFakeAuthUtils(cfg.JwkCert, cfg.JwkCertURL),
 		log:        log,
 	}
 	err := a.populateKeyMap()
@@ -60,7 +61,7 @@ func TestAuth(t *testing.T) {
 	agentKeyValue := "SecretKey"
 
 	userKey := "Authorization"
-	userKeyValue := "userKey"
+	userKeyValue := "bearer userKey"
 
 	t.Parallel()
 	tests := []struct {
@@ -105,7 +106,7 @@ func TestAuth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeConfig := Config{
 				EnableAuth: tt.enableAuth,
-				JwkCertURL: "https://api.openshift.com/.well-known/jwks.json",
+				JwkCertURL: "https://api.example.com/.well-known/jwks.json",
 			}
 			fakeAuthHandler := NewFakeAuthHandler(fakeConfig, log.WithField("pkg", "auth"))
 
@@ -154,6 +155,7 @@ func TestAuth(t *testing.T) {
 			server := &http.Server{Addr: "localhost:8081", Handler: h}
 			go serv(server)
 			defer server.Close()
+			time.Sleep(time.Second * 1) // Allow the server to start
 
 			expectedStatusCode := 401
 			if tt.expectedRequestSuccess {

@@ -118,7 +118,7 @@ deploy-inventory-service-file: deploy-namespace
 	sleep 5;  # wait for service to get an address
 
 deploy-service-requirements: deploy-namespace deploy-inventory-service-file
-	python3 ./tools/deploy_assisted_installer_configmap.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --base-dns-domains "$(BASE_DNS_DOMAINS)" --namespace "$(NAMESPACE)" $(DEPLOY_TAG_OPTION)
+	python3 ./tools/deploy_assisted_installer_configmap.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --base-dns-domains "$(BASE_DNS_DOMAINS)" --namespace "$(NAMESPACE)" $(DEPLOY_TAG_OPTION) --enable-auth "$(ENABLE_AUTH)"
 
 deploy-service: deploy-namespace deploy-service-requirements deploy-role
 	python3 ./tools/deploy_assisted_installer.py $(DEPLOY_TAG_OPTION) --namespace "$(NAMESPACE)" $(TEST_FLAGS)
@@ -130,9 +130,9 @@ deploy-role: deploy-namespace
 deploy-postgres: deploy-namespace
 	python3 ./tools/deploy_postgres.py --namespace "$(NAMESPACE)"
 
-deploy-test:
-	export SERVICE=quay.io/ocpmetal/bm-inventory:test && export TEST_FLAGS=--subsystem-test && \
-	$(MAKE) update-minikube deploy-all
+deploy-test: generate-keys
+	export SERVICE=quay.io/ocpmetal/bm-inventory:test && export TEST_FLAGS=--subsystem-test && export ENABLE_AUTH="True" \
+	&& $(MAKE) update-minikube deploy-all
 
 ########
 # Test #
@@ -140,10 +140,15 @@ deploy-test:
 
 subsystem-run: test subsystem-clean
 
-test:
+generate-keys:
+	cd tools && rm -f auth-test.json auth-test-pub.json auth-tokenString  && go run auth_keys_generator.go
+
+test: generate-keys
 	INVENTORY=$(shell $(call get_service,bm-inventory) | sed 's/http:\/\///g') \
 		DB_HOST=$(shell $(call get_service,postgres) | sed 's/http:\/\///g' | cut -d ":" -f 1) \
 		DB_PORT=$(shell $(call get_service,postgres) | sed 's/http:\/\///g' | cut -d ":" -f 2) \
+		TEST_TOKEN="$(shell cat tools/auth-tokenString)" \
+		ENABLE_AUTH="true" \
 		go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v -timeout 20m
 
 deploy-olm: deploy-namespace

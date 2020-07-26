@@ -18,17 +18,19 @@ import (
 )
 
 type AUtilsInteface interface {
-	downloadPublicKeys(cas *x509.CertPool) (map[string]*rsa.PublicKey, error)
+	proccessPublicKeys(cas *x509.CertPool) (map[string]*rsa.PublicKey, error)
 }
 
-func NewAuthUtils(url string) AUtilsInteface {
+func NewAuthUtils(JwkCert string, JwkCertURL string) AUtilsInteface {
 	return &aUtils{
-		url: url,
+		JwkCert:    JwkCert,
+		JwkCertURL: JwkCertURL,
 	}
 }
 
 type aUtils struct {
-	url string
+	JwkCert    string
+	JwkCertURL string
 }
 
 // jwtCert on jwt key
@@ -46,8 +48,7 @@ type jwtKeys struct {
 	Keys []jwtCert `json:"keys"`
 }
 
-// downloadPublicKeys download public keys from URL.
-func (au *aUtils) downloadPublicKeys(cas *x509.CertPool) (keyMap map[string]*rsa.PublicKey, err error) {
+func (au *aUtils) proccessPublicKeys(cas *x509.CertPool) (keyMap map[string]*rsa.PublicKey, err error) {
 	var body []byte
 	var certs jwtKeys
 	var res *http.Response
@@ -56,32 +57,39 @@ func (au *aUtils) downloadPublicKeys(cas *x509.CertPool) (keyMap map[string]*rsa
 	// Init KeyMap
 	keyMap = map[string]*rsa.PublicKey{}
 
-	// Download the JSON token signing certificates:
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: cas,
+	if au.JwkCert != "" {
+		// Use locally provided Cert
+		err = json.Unmarshal([]byte(au.JwkCert), &certs)
+		if err != nil {
+			return
+		}
+	} else {
+		// Download the JSON token signing certificates:
+		client := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: cas,
+				},
 			},
-		},
-	}
-	logrus.Infof("Getting JWK public key from %s", au.url)
-	res, err = client.Get(au.url)
-	if err != nil {
-		return
-	}
+		}
+		logrus.Infof("Getting JWK public key from %s", au.JwkCertURL)
+		res, err = client.Get(au.JwkCertURL)
+		if err != nil {
+			return
+		}
 
-	// Try to read the response body.
-	body, err = ioutil.ReadAll(res.Body)
-	if err != nil {
-		return
-	}
+		// Try to read the response body.
+		body, err = ioutil.ReadAll(res.Body)
+		if err != nil {
+			return
+		}
 
-	// Try to parse the response body.
-	err = json.Unmarshal(body, &certs)
-	if err != nil {
-		return
+		// Try to parse the response body.
+		err = json.Unmarshal(body, &certs)
+		if err != nil {
+			return
+		}
 	}
-
 	// Convert cert list to map.
 	for _, c := range certs.Keys {
 		var pubKey *rsa.PublicKey
@@ -98,7 +106,6 @@ func (au *aUtils) downloadPublicKeys(cas *x509.CertPool) (keyMap map[string]*rsa
 		}
 		keyMap[c.KID] = pubKey
 	}
-
 	return
 }
 
