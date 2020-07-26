@@ -13,7 +13,6 @@ import (
 	"github.com/filanov/bm-inventory/internal/host"
 	"github.com/filanov/bm-inventory/models"
 	logutil "github.com/filanov/bm-inventory/pkg/log"
-	"github.com/filanov/bm-inventory/pkg/requestid"
 	"github.com/filanov/stateswitch"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
@@ -51,6 +50,7 @@ type API interface {
 	RegistrationAPI
 	InstallationAPI
 	ClusterMonitoring()
+	UpdateHostsAndClusterStatus(ctx context.Context, cluster *common.Cluster, db *gorm.DB, log logrus.FieldLogger) error
 	DownloadFiles(c *common.Cluster) (err error)
 	DownloadKubeconfig(c *common.Cluster) (err error)
 	GetCredentials(c *common.Cluster) (err error)
@@ -85,6 +85,7 @@ type Manager struct {
 	eventsHandler   events.Handler
 	sm              stateswitch.StateMachine
 	metricAPI       metrics.API
+	hostAPI         host.API
 }
 
 func NewManager(cfg Config, log logrus.FieldLogger, db *gorm.DB, eventsHandler events.Handler, hostAPI host.API, metricApi metrics.API) *Manager {
@@ -107,6 +108,7 @@ func NewManager(cfg Config, log logrus.FieldLogger, db *gorm.DB, eventsHandler e
 		eventsHandler:   eventsHandler,
 		sm:              NewClusterStateMachine(th),
 		metricAPI:       metricApi,
+		hostAPI:         hostAPI,
 	}
 }
 
@@ -171,6 +173,7 @@ func (m *Manager) RefreshStatus(ctx context.Context, c *common.Cluster, db *gorm
 	}
 
 	clusterAfterRefresh, err := state.RefreshStatus(ctx, &cluster, db)
+
 	//report installation finished metric if needed
 	reportInstallationCompleteStatuses := []string{models.ClusterStatusInstalled, models.ClusterStatusError}
 	if err == nil && stateBeforeRefresh != "" && stateBeforeRefresh == models.ClusterStatusInstalling &&
@@ -186,33 +189,6 @@ func (m *Manager) Install(ctx context.Context, c *common.Cluster, db *gorm.DB) e
 
 func (m *Manager) GetMasterNodesIds(ctx context.Context, c *common.Cluster, db *gorm.DB) ([]*strfmt.UUID, error) {
 	return m.installationAPI.GetMasterNodesIds(ctx, c, db)
-}
-
-func (m *Manager) ClusterMonitoring() {
-	var (
-		clusters            []*common.Cluster
-		clusterAfterRefresh *common.Cluster
-		requestID           = requestid.NewID()
-		ctx                 = requestid.ToContext(context.Background(), requestID)
-		log                 = requestid.RequestIDLogger(m.log, requestID)
-		err                 error
-	)
-
-	if err = m.db.Find(&clusters).Error; err != nil {
-		log.WithError(err).Errorf("failed to get clusters")
-		return
-	}
-	for _, cluster := range clusters {
-		if clusterAfterRefresh, err = m.RefreshStatus(ctx, cluster, m.db); err != nil {
-			log.WithError(err).Errorf("failed to refresh cluster %s state", cluster.ID)
-			continue
-		}
-
-		if swag.StringValue(clusterAfterRefresh.Status) != swag.StringValue(cluster.Status) {
-			log.Infof("cluster %s updated status from %s to %s via monitor", cluster.ID,
-				swag.StringValue(cluster.Status), swag.StringValue(clusterAfterRefresh.Status))
-		}
-	}
 }
 
 func (m *Manager) DownloadFiles(c *common.Cluster) (err error) {

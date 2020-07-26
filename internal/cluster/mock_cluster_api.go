@@ -6,12 +6,12 @@ package cluster
 
 import (
 	context "context"
-	reflect "reflect"
-
 	common "github.com/filanov/bm-inventory/internal/common"
 	strfmt "github.com/go-openapi/strfmt"
 	gomock "github.com/golang/mock/gomock"
 	gorm "github.com/jinzhu/gorm"
+	logrus "github.com/sirupsen/logrus"
+	reflect "reflect"
 )
 
 // MockStateAPI is a mock of StateAPI interface
@@ -260,6 +260,20 @@ func (m *MockAPI) ClusterMonitoring() {
 func (mr *MockAPIMockRecorder) ClusterMonitoring() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClusterMonitoring", reflect.TypeOf((*MockAPI)(nil).ClusterMonitoring))
+}
+
+// UpdateHostsAndClusterStatus mocks base method
+func (m *MockAPI) UpdateHostsAndClusterStatus(ctx context.Context, cluster *common.Cluster, db *gorm.DB, log logrus.FieldLogger) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateHostsAndClusterStatus", ctx, cluster, db, log)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateHostsAndClusterStatus indicates an expected call of UpdateHostsAndClusterStatus
+func (mr *MockAPIMockRecorder) UpdateHostsAndClusterStatus(ctx, cluster, db, log interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateHostsAndClusterStatus", reflect.TypeOf((*MockAPI)(nil).UpdateHostsAndClusterStatus), ctx, cluster, db, log)
 }
 
 // DownloadFiles mocks base method
