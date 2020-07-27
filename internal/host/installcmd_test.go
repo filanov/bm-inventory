@@ -149,7 +149,7 @@ func postvalidation(isstepreplynil bool, issteperrnil bool, expectedstepreply *m
 func validateInstallCommand(reply *models.Step, role models.HostRole, clusterId string, hostId string, hostname string) {
 	if hostname != "" {
 		installCommand := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host " +
-			"--net=host -v /var/log:/var/log:rw " +
+			"--net=host --log-driver journald -v /var/log:/var/log:rw " +
 			"--name assisted-installer quay.io/ocpmetal/assisted-installer:latest --role %s " +
 			"--cluster-id %s --host %s --port %s " +
 			"--boot-device /dev/sdb --host-id %s --openshift-version 4.5 " +
@@ -159,7 +159,7 @@ func validateInstallCommand(reply *models.Step, role models.HostRole, clusterId 
 			defaultInstructionConfig.ControllerImage, hostname)))
 	} else {
 		installCommand := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host " +
-			"--net=host -v /var/log:/var/log:rw " +
+			"--net=host --log-driver journald -v /var/log:/var/log:rw " +
 			"--name assisted-installer quay.io/ocpmetal/assisted-installer:latest --role %s " +
 			"--cluster-id %s --host %s --port %s " +
 			"--boot-device /dev/sdb --host-id %s --openshift-version 4.5 " +
