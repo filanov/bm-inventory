@@ -48,7 +48,7 @@ func (i *installCmd) GetStep(ctx context.Context, host *models.Host) (*models.St
 		role = models.HostRoleBootstrap
 	}
 
-	cmdArgsTmpl := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host --net=host " +
+	cmdArgsTmpl := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host --net=host --log-driver journald " +
 		"-v /var/log:/var/log:rw --name assisted-installer {{.INSTALLER}} --role {{.ROLE}} --cluster-id {{.CLUSTER_ID}} --host {{.HOST}} " +
 		"--port {{.PORT}} --boot-device {{.BOOT_DEVICE}} --host-id {{.HOST_ID}} --openshift-version {{.OPENSHIFT_VERSION}} " +
 		"--controller-image {{.CONTROLLER_IMAGE}}"
