@@ -6,6 +6,8 @@ import (
 	"github.com/go-openapi/swag"
 )
 
+const NoStateChange stateswitch.State = "no state change"
+
 type stateHost struct {
 	srcState string
 	host     *models.Host
@@ -23,6 +25,9 @@ func (sh *stateHost) State() stateswitch.State {
 }
 
 func (sh *stateHost) SetState(state stateswitch.State) error {
+	if state == NoStateChange {
+		return nil
+	}
 	sh.host.Status = swag.String(string(state))
 	return nil
 }

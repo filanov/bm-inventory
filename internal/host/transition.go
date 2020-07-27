@@ -408,3 +408,23 @@ func (th *transitionHandler) PostRefreshHost(reason string) stateswitch.PostTran
 	}
 	return ret
 }
+
+////////////////////////////////////////////////////////////////////////////
+// Change host name
+////////////////////////////////////////////////////////////////////////////
+
+type TransitionArgsChangeHostName struct {
+	ctx      context.Context
+	db       *gorm.DB
+	hostname string
+}
+
+func (th *transitionHandler) ChangeHostName(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) error {
+	sHost, _ := sw.(*stateHost)
+	params, _ := args.(*TransitionArgsChangeHostName)
+	cdb := th.db
+	if params.db != nil {
+		cdb = params.db
+	}
+	return cdb.Model(sHost.host).Update("requested_hostname", params.hostname).Error
+}

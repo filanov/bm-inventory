@@ -16,6 +16,7 @@ const (
 	TransitionTypeResettingPendingUserAction = "ResettingPendingUserAction"
 	TransitionTypePrepareForInstallation     = "Prepare for installation"
 	TransitionTypeRefresh                    = "RefreshHost"
+	TransitionTypeChangeHostName             = "change host name"
 )
 
 func NewHostStateMachine(th *transitionHandler) stateswitch.StateMachine {
@@ -289,6 +290,19 @@ func NewHostStateMachine(th *transitionHandler) stateswitch.StateMachine {
 			DestinationState: state,
 		})
 	}
+
+	sm.AddTransition(stateswitch.TransitionRule{
+		TransitionType: TransitionTypeChangeHostName,
+		SourceStates: []stateswitch.State{
+			stateswitch.State(models.HostStatusDiscovering),
+			stateswitch.State(models.HostStatusKnown),
+			stateswitch.State(models.HostStatusDisconnected),
+			stateswitch.State(models.HostStatusInsufficient),
+			stateswitch.State(models.HostStatusPendingForInput),
+		},
+		DestinationState: NoStateChange,
+		Transition:       th.ChangeHostName,
+	})
 
 	return sm
 }

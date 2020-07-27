@@ -296,21 +296,15 @@ func (m *Manager) UpdateRole(ctx context.Context, h *models.Host, role models.Ho
 }
 
 func (m *Manager) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) error {
-	hostStatus := swag.StringValue(h.Status)
-	allowedStatuses := []string{HostStatusDiscovering, HostStatusKnown, HostStatusDisconnected, HostStatusInsufficient,
-		HostStatusPendingForInput}
-	if !funk.ContainsString(allowedStatuses, hostStatus) {
-		return common.NewApiError(http.StatusBadRequest,
-			errors.Errorf("Host is in %s state, host name can be set only in one of %s states",
-				hostStatus, allowedStatuses))
+	err := m.sm.Run(TransitionTypeChangeHostName, newStateHost(h), &TransitionArgsChangeHostName{
+		ctx:      ctx,
+		db:       db,
+		hostname: hostname,
+	})
+	if errors.Is(err, stateswitch.NoConditionPassedToRunTransaction) {
+		return common.NewApiError(http.StatusBadRequest, err)
 	}
-
-	h.RequestedHostname = hostname
-	cdb := m.db
-	if db != nil {
-		cdb = db
-	}
-	return cdb.Model(h).Update("requested_hostname", hostname).Error
+	return err
 }
 
 func (m *Manager) CancelInstallation(ctx context.Context, h *models.Host, reason string, db *gorm.DB) *common.ApiErrorResponse {
