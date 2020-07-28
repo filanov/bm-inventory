@@ -318,6 +318,7 @@ var _ = Describe("cluster monitor", func() {
 		c = geCluster(id, db)
 		saveUpdatedTime := c.StatusUpdatedAt
 		saveStatusInfo := c.StatusInfo
+		mockHostAPI.EXPECT().RefreshStatus(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		clusterApi.ClusterMonitoring()
 		after := time.Now().Truncate(10 * time.Millisecond)
 		c = geCluster(id, db)
@@ -336,6 +337,9 @@ var _ = Describe("cluster monitor", func() {
 		ctrl.Finish()
 	})
 
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
+	})
 })
 
 var _ = Describe("VerifyRegisterHost", func() {
