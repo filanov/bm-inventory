@@ -295,6 +295,72 @@ var _ = Describe("HostInstallationFailed", func() {
 	})
 })
 
+var _ = Describe("Cancel host installation", func() {
+	var (
+		ctx               = context.Background()
+		dbName            = "cancel_host_installation_test"
+		hapi              API
+		db                *gorm.DB
+		hostId, clusterId strfmt.UUID
+		host              models.Host
+		ctrl              *gomock.Controller
+		mockEventsHandler *events.MockHandler
+	)
+
+	BeforeEach(func() {
+		db = common.PrepareTestDB(dbName, &events.Event{})
+		ctrl = gomock.NewController(GinkgoT())
+		mockEventsHandler = events.NewMockHandler(ctrl)
+		hapi = NewManager(getTestLog(), db, mockEventsHandler, nil, nil, createValidatorCfg(), nil)
+	})
+
+	tests := []struct {
+		state      string
+		success    bool
+		statusCode int32
+	}{
+		{state: models.HostStatusInstalling, success: true},
+		{state: models.HostStatusInstallingInProgress, success: true},
+		{state: models.HostStatusInstalled, success: true},
+		{state: models.HostStatusError, success: true},
+		{state: models.HostStatusDisabled, success: true},
+		{state: models.HostStatusDiscovering, success: false, statusCode: http.StatusConflict},
+		{state: models.HostStatusKnown, success: false, statusCode: http.StatusConflict},
+		{state: models.HostStatusPreparingForInstallation, success: false, statusCode: http.StatusConflict},
+		{state: models.HostStatusPendingForInput, success: false, statusCode: http.StatusConflict},
+		{state: models.HostStatusInstallingPendingUserAction, success: false, statusCode: http.StatusConflict},
+		{state: models.HostStatusResettingPendingUserAction, success: false, statusCode: http.StatusConflict},
+		{state: models.HostStatusDisconnected, success: false, statusCode: http.StatusConflict},
+	}
+
+	acceptNewEvents := func(times int) {
+		mockEventsHandler.EXPECT().AddEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times)
+	}
+
+	It("reset_host_cases", func() {
+		acceptNewEvents(len(tests))
+		for _, t := range tests {
+			By(fmt.Sprintf("cancel from state %s", t.state))
+			hostId = strfmt.UUID(uuid.New().String())
+			clusterId = strfmt.UUID(uuid.New().String())
+			host = getTestHost(hostId, clusterId, "")
+			host.Status = swag.String(t.state)
+			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+			err := hapi.CancelInstallation(ctx, &host, "reason", db)
+			if t.success {
+				Expect(err).ShouldNot(HaveOccurred())
+			} else {
+				Expect(err).Should(HaveOccurred())
+				Expect(err.StatusCode()).Should(Equal(t.statusCode))
+			}
+		}
+	})
+
+	AfterEach(func() {
+		common.DeleteTestDB(db, dbName)
+	})
+})
+
 var _ = Describe("Reset host", func() {
 	var (
 		ctx               = context.Background()
