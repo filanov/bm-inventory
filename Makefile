@@ -18,7 +18,7 @@ endef # get_service
 endif # TARGET
 
 SERVICE := $(or ${SERVICE},quay.io/ocpmetal/bm-inventory:latest)
-RT_CMD := $(or ${RT_CMD},podman --storage-driver=vfs --cgroup-manager=cgroupfs)
+RT_CMD := $(or ${RT_CMD},docker)
 GIT_REVISION := $(shell git rev-parse HEAD)
 APPLY_NAMESPACE := $(or ${APPLY_NAMESPACE},True)
 ROUTE53_SECRET := ${ROUTE53_SECRET}
@@ -155,7 +155,7 @@ deploy-monitoring: deploy-olm deploy-prometheus deploy-grafana
 
 unit-test:
 	${RT_CMD} stop postgres || true
-	${RT_CMD} run -d  --rm --name postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -p 127.0.0.1:5432:5432 postgres:12.3-alpine -c 'max_connections=10000'
+	${RT_CMD} run -d --rm --name postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -p 127.0.0.1:5432:5432 postgres:12.3-alpine -c 'max_connections=10000'
 	until PGPASSWORD=admin pg_isready -U admin --dbname postgres --host 127.0.0.1 --port 5432; do sleep 1; done
 	SKIP_UT_DB=1 go test -v $(or ${TEST}, ${TEST}, $(shell go list ./... | grep -v subsystem)) -cover || (${RT_CMD} stop postgres && /bin/false)
 	${RT_CMD} stop postgres
