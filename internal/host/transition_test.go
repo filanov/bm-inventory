@@ -850,7 +850,7 @@ var _ = Describe("Refresh Host", func() {
 			inventory          string
 			role               string
 			machineNetworkCidr string
-			checkedInAt        strfmt.DateTime
+			validCheckInTime   bool
 			dstState           string
 			statusInfoChecker  statusInfoChecker
 			validationsChecker *validationsChecker
@@ -858,6 +858,7 @@ var _ = Describe("Refresh Host", func() {
 		}{
 			{
 				name:              "discovering to disconnected",
+				validCheckInTime:  false,
 				srcState:          HostStatusDiscovering,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -878,6 +879,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "insufficient to disconnected",
+				validCheckInTime:  false,
 				srcState:          HostStatusInsufficient,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -898,6 +900,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "known to disconnected",
+				validCheckInTime:  false,
 				srcState:          HostStatusKnown,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -905,6 +908,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "pending to disconnected",
+				validCheckInTime:  false,
 				srcState:          HostStatusPendingForInput,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -925,6 +929,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected to disconnected",
+				validCheckInTime:  false,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -945,7 +950,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected to discovering",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusDiscovering,
 				statusInfoChecker: makeValueChecker(statusInfoDiscovering),
@@ -966,7 +971,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "discovering to discovering",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusDiscovering,
 				dstState:          HostStatusDiscovering,
 				statusInfoChecker: makeValueChecker(statusInfoDiscovering),
@@ -987,7 +992,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected to insufficient (1)",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusInsufficient,
 				statusInfoChecker: makeValueChecker(statusInfoInsufficientHardware),
@@ -1009,7 +1014,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "insufficient to insufficient (1)",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusInsufficient,
 				dstState:          HostStatusInsufficient,
 				statusInfoChecker: makeValueChecker(statusInfoInsufficientHardware),
@@ -1031,7 +1036,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "discovering to insufficient (1)",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusDiscovering,
 				dstState:          HostStatusInsufficient,
 				statusInfoChecker: makeValueChecker(statusInfoInsufficientHardware),
@@ -1053,7 +1058,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "pending to insufficient (1)",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusPendingForInput,
 				dstState:          HostStatusPendingForInput,
 				statusInfoChecker: makeValueChecker(""),
@@ -1062,7 +1067,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "known to insufficient (1)",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusKnown,
 				dstState:          HostStatusKnown,
 				statusInfoChecker: makeValueChecker(""),
@@ -1071,7 +1076,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "disconnected to pending",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusPendingForInput,
 				statusInfoChecker: makeValueChecker(statusInfoPendingForInput),
@@ -1093,7 +1098,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "discovering to pending",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusDiscovering,
 				dstState:           HostStatusPendingForInput,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1116,7 +1121,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to pending",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusPendingForInput,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1139,7 +1144,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "known to pending",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusKnown,
 				dstState:          HostStatusPendingForInput,
 				role:              "worker",
@@ -1162,7 +1167,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:              "pending to pending",
-				checkedInAt:       strfmt.DateTime(time.Now()),
+				validCheckInTime:  true,
 				srcState:          HostStatusPendingForInput,
 				dstState:          HostStatusPendingForInput,
 				role:              "worker",
@@ -1185,7 +1190,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "disconnected to insufficient (2)",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusDisconnected,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1209,7 +1214,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "discovering to insufficient (2)",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusDiscovering,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1233,7 +1238,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to insufficient (2)",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1257,7 +1262,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "pending to insufficient (2)",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusPendingForInput,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1281,7 +1286,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to insufficient (2)",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1305,7 +1310,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to insufficient (2)",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1329,7 +1334,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to insufficient (localhost)",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1354,7 +1359,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "discovering to known",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusDiscovering,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1379,7 +1384,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to known",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1404,7 +1409,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "pending to known",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusPendingForInput,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1429,7 +1434,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to known",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1454,7 +1459,7 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to known with unexpected role",
-				checkedInAt:        strfmt.DateTime(time.Now()),
+				validCheckInTime:   true,
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1468,11 +1473,16 @@ var _ = Describe("Refresh Host", func() {
 		for i := range tests {
 			t := tests[i]
 			It(t.name, func() {
+				hostCheckInAt := strfmt.DateTime(time.Now())
+				if !t.validCheckInTime {
+					// Timeout for checkin is 3 minutes so subtract 4 minutes from the current time
+					hostCheckInAt = strfmt.DateTime(time.Now().Add(-4 * time.Minute))
+				}
 				srcState = t.srcState
 				host = getTestHost(hostId, clusterId, srcState)
 				host.Inventory = t.inventory
 				host.Role = models.HostRole(t.role)
-				host.CheckedInAt = t.checkedInAt
+				host.CheckedInAt = hostCheckInAt
 				Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 				cluster = getTestCluster(clusterId, t.machineNetworkCidr)
 				Expect(db.Create(&cluster).Error).ToNot(HaveOccurred())
@@ -1559,7 +1569,6 @@ var _ = Describe("Refresh Host", func() {
 			inventory              string
 			role                   string
 			machineNetworkCidr     string
-			checkedInAt            strfmt.DateTime
 			dstState               string
 			requestedHostname      string
 			otherState             string
@@ -1571,7 +1580,6 @@ var _ = Describe("Refresh Host", func() {
 		}{
 			{
 				name:               "insufficient to known",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1597,7 +1605,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to insufficient (same hostname) 1",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1623,7 +1630,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to insufficient (same hostname) 2",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1650,7 +1656,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to insufficient (same hostname) 3",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1677,7 +1682,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to insufficient (same hostname) 4",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1705,7 +1709,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "insufficient to known 2",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1734,7 +1737,6 @@ var _ = Describe("Refresh Host", func() {
 
 			{
 				name:               "known to known",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1760,7 +1762,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to insufficient (same hostname) 1",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1786,7 +1787,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to insufficient (same hostname) 2",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1813,7 +1813,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to insufficient (same hostname) 3",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1840,7 +1839,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to insufficient (same hostname) 4",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1868,7 +1866,6 @@ var _ = Describe("Refresh Host", func() {
 			},
 			{
 				name:               "known to known 2",
-				checkedInAt:        strfmt.DateTime(time.Now()),
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
@@ -1903,7 +1900,7 @@ var _ = Describe("Refresh Host", func() {
 				host = getTestHost(hostId, clusterId, srcState)
 				host.Inventory = t.inventory
 				host.Role = models.HostRole(t.role)
-				host.CheckedInAt = t.checkedInAt
+				host.CheckedInAt = strfmt.DateTime(time.Now())
 				host.RequestedHostname = t.requestedHostname
 				Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 				otherHost := getTestHost(otherHostID, clusterId, t.otherState)
