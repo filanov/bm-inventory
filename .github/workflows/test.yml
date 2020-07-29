@@ -1,0 +1,39 @@
+name: test-fork
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: split originating repo
+      uses: jungwinter/split@v1
+      id: split
+      with:
+        seperator: '/'
+        msg: ${{ github.head_ref }}
+    - name: Get release version
+      id: get_version
+      run: |
+        echo "the repository"
+        echo ${{ github.repository }}
+        echo "GITHUB_HEAD_REF:"
+        echo $GITHUB_HEAD_REF
+        echo "GITHUB_BASE_REF:"
+        echo $GITHUB_BASE_REF
+        echo "split result:"
+        echo ${{ steps.split.outputs._0 }}
+        echo ${{ steps.split.outputs._1 }}
+        echo ${{ steps.split.outputs._2 }}
+        echo "owner:"
+        echo ${{ github.repository_owner }}
+        echo "ref:"
+        echo ${{ github }}
+        echo "xx:"
+        echo ${{ github.event.pull_request.head.repo.full_name }}
+        echo ${{ github.event.pull_request.head.repo }}
