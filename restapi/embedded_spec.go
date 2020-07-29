@@ -2239,6 +2239,10 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
+        "download_url": {
+          "description": "The URL to use to download the image",
+          "type": "string"
+        },
         "generator_version": {
           "description": "Image generator version",
           "type": "string"
@@ -4747,6 +4751,10 @@ func init() {
           "type": "string",
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
+        },
+        "download_url": {
+          "description": "The URL to use to download the image",
+          "type": "string"
         },
         "generator_version": {
           "description": "Image generator version",
