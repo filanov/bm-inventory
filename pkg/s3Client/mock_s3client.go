@@ -9,6 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
+	"time"
 )
 
 // MockS3Client is a mock of S3Client interface
@@ -106,4 +107,19 @@ func (m *MockS3Client) DeleteFileFromS3(ctx context.Context, fileName, s3Bucket 
 func (mr *MockS3ClientMockRecorder) DeleteFileFromS3(ctx, fileName, s3Bucket interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFileFromS3", reflect.TypeOf((*MockS3Client)(nil).DeleteFileFromS3), ctx, fileName, s3Bucket)
+}
+
+// GetPresignedURL mocks base method
+func (m *MockS3Client) GetPresignedURL(ctx context.Context, objectName string, s3Bucket string, duration time.Duration) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPresignedURL", ctx, objectName, s3Bucket, duration)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPresignedURL indicates an expected call of GetPresignedURL
+func (mr *MockS3ClientMockRecorder) GetPresignedURL(ctx, objectName, s3Bucket, duration interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPresignedURL", reflect.TypeOf((*MockS3Client)(nil).GetPresignedURL), ctx, objectName, s3Bucket, duration)
 }

@@ -78,20 +78,21 @@ type Config struct {
 	AgentDockerImg      string `envconfig:"AGENT_DOCKER_IMAGE" default:"quay.io/ocpmetal/agent:latest"`
 	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/ocpmetal/ignition-manifests-and-kubeconfig-generate:latest"` // TODO: update the latest once the repository has git workflow
 	//[TODO] -  change the default of Releae image to "", once everyine wll update their environment
-	ReleaseImage       string            `envconfig:"OPENSHIFT_INSTALL_RELEASE_IMAGE" default:"quay.io/openshift-release-dev/ocp-release@sha256:eab93b4591699a5a4ff50ad3517892653f04fb840127895bb3609b3cc68f98f3"`
-	InventoryURL       string            `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
-	InventoryPort      string            `envconfig:"INVENTORY_PORT" default:"30485"`
-	S3EndpointURL      string            `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
-	S3Bucket           string            `envconfig:"S3_BUCKET" default:"test"`
-	AwsAccessKeyID     string            `envconfig:"AWS_ACCESS_KEY_ID" default:"accessKey1"`
-	AwsSecretAccessKey string            `envconfig:"AWS_SECRET_ACCESS_KEY" default:"verySecretKey1"`
-	Namespace          string            `envconfig:"NAMESPACE" default:"assisted-installer"`
-	UseK8s             bool              `envconfig:"USE_K8S" default:"true"` // TODO remove when jobs running deprecated
-	BaseDNSDomains     map[string]string `envconfig:"BASE_DNS_DOMAINS" default:""`
-	JobCPULimit        string            `envconfig:"JOB_CPU_LIMIT" default:"500m"`
-	JobMemoryLimit     string            `envconfig:"JOB_MEMORY_LIMIT" default:"1000Mi"`
-	JobCPURequests     string            `envconfig:"JOB_CPU_REQUESTS" default:"300m"`
-	JobMemoryRequests  string            `envconfig:"JOB_MEMORY_REQUESTS" default:"400Mi"`
+	ReleaseImage        string            `envconfig:"OPENSHIFT_INSTALL_RELEASE_IMAGE" default:"quay.io/openshift-release-dev/ocp-release@sha256:eab93b4591699a5a4ff50ad3517892653f04fb840127895bb3609b3cc68f98f3"`
+	InventoryURL        string            `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
+	InventoryPort       string            `envconfig:"INVENTORY_PORT" default:"30485"`
+	S3EndpointURL       string            `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
+	S3Bucket            string            `envconfig:"S3_BUCKET" default:"test"`
+	ImageExpirationTime time.Duration     `envconfig:"IMAGE_EXPIRATION_TIME" default:"60m"`
+	AwsAccessKeyID      string            `envconfig:"AWS_ACCESS_KEY_ID" default:"accessKey1"`
+	AwsSecretAccessKey  string            `envconfig:"AWS_SECRET_ACCESS_KEY" default:"verySecretKey1"`
+	Namespace           string            `envconfig:"NAMESPACE" default:"assisted-installer"`
+	UseK8s              bool              `envconfig:"USE_K8S" default:"true"` // TODO remove when jobs running deprecated
+	BaseDNSDomains      map[string]string `envconfig:"BASE_DNS_DOMAINS" default:""`
+	JobCPULimit         string            `envconfig:"JOB_CPU_LIMIT" default:"500m"`
+	JobMemoryLimit      string            `envconfig:"JOB_MEMORY_LIMIT" default:"1000Mi"`
+	JobCPURequests      string            `envconfig:"JOB_CPU_REQUESTS" default:"300m"`
+	JobMemoryRequests   string            `envconfig:"JOB_MEMORY_REQUESTS" default:"400Mi"`
 }
 
 const agentMessageOfTheDay = `
@@ -449,6 +450,33 @@ func (b *bareMetalInventory) DownloadClusterISO(ctx context.Context, params inst
 		resp.ContentLength)
 }
 
+func updateImageDownloadURL(ctx context.Context, b bareMetalInventory, imgName string, clusterID string) error {
+	var url string
+	if b.Config.UseK8s {
+		var err error
+		url, err = b.s3Client.GetPresignedURL(ctx, imgName, b.S3Bucket, b.Config.ImageExpirationTime)
+		if err != nil {
+			b.eventsHandler.AddEvent(ctx, clusterID, models.EventSeverityError,
+				"Failed to generate image: error during URL creation", time.Now())
+			return err)
+		}
+	} else {
+		url = fmt.Sprint("http://%s:%s/api/assisted-install/v1/clusters/%s/downloads/image",
+			strings.TrimSpace(b.InventoryURL), strings.TrimSpace(b.InventoryPort), clusterID)
+	}
+
+	tx := b.db.Begin()
+	if tx.Error != nil {
+		msg := "Failed to generate image: error starting DB transaction"
+		b.eventsHandler.AddEvent(ctx, params.ClusterID.String(), models.EventSeverityError, msg, time.Now())
+		log.WithError(tx.Error).Errorf("failed to start db transaction")
+		return installer.NewInstallClusterInternalServerError().
+			WithPayload(common.GenerateError(http.StatusInternalServerError, errors.New("DB error, failed to start transaction")))
+	}
+
+
+}
+
 func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params installer.GenerateClusterISOParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	log.Infof("prepare image for cluster %s", params.ClusterID)
@@ -526,6 +554,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 	updates["image_ssh_public_key"] = params.ImageCreateParams.SSHPublicKey
 	updates["image_created_at"] = strfmt.DateTime(now)
 	updates["image_generator_version"] = b.Config.ImageBuilder
+	updates["image_download_url"] = ""
 	dbReply := tx.Model(&common.Cluster{}).Where("id = ?", cluster.ID.String()).Updates(updates)
 	if dbReply.Error != nil {
 		log.WithError(dbReply.Error).Errorf("failed to update cluster: %s", params.ClusterID)

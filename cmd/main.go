@@ -64,7 +64,6 @@ var Options struct {
 	Versions                    versions.Versions
 	UseK8s                      bool          `envconfig:"USE_K8S" default:"true"` // TODO remove when jobs running deprecated
 	ImageExpirationInterval     time.Duration `envconfig:"IMAGE_EXPIRATION_INTERVAL" default:"30m"`
-	ImageExpirationTime         time.Duration `envconfig:"IMAGE_EXPIRATION_TIME" default:"60m"`
 	ClusterConfig               cluster.Config
 }
 
@@ -157,7 +156,7 @@ func main() {
 		if s3Err != nil {
 			log.Fatal("failed to create S3 client, ", err)
 		}
-		expirer := imgexpirer.NewManager(log, s3WrapperClient, Options.S3Config.S3Bucket, Options.ImageExpirationTime, eventsHandler)
+		expirer := imgexpirer.NewManager(log, s3WrapperClient, Options.S3Config.S3Bucket, Options.BMConfig.ImageExpirationTime, eventsHandler)
 		imageExpirationMonitor := thread.New(
 			log.WithField("pkg", "image-expiration-monitor"), "Image Expiration Monitor", Options.ImageExpirationInterval, expirer.ExpirationTask)
 		imageExpirationMonitor.Start()

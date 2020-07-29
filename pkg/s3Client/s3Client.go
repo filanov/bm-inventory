@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
+	"time"
 
 	logutil "github.com/filanov/bm-inventory/pkg/log"
 
@@ -21,6 +23,7 @@ type S3Client interface {
 	DoesObjectExist(ctx context.Context, fileName string, s3Bucket string) (bool, error)
 	UpdateObjectTag(ctx context.Context, objectName, s3Bucket, key, value string) (bool, error)
 	DeleteFileFromS3(ctx context.Context, fileName string, s3Bucket string) error
+	GetPresignedURL(ctx context.Context, objectName string, s3Bucket string, duration time.Duration) (string, error)
 }
 
 type s3Client struct {
@@ -117,4 +120,15 @@ func (s s3Client) UpdateObjectTag(ctx context.Context, objectName, s3Bucket, key
 		return false, errors.Wrap(err, fmt.Sprintf("failed to update tags on %s/%s", s3Bucket, objectName))
 	}
 	return true, nil
+}
+
+func (s s3Client) GetPresignedURL(ctx context.Context, objectName string, s3Bucket string, duration time.Duration) (string, error) {
+	log := logutil.FromContext(ctx, s.log)
+	u, err := s.client.PresignedGetObject(s3Bucket, objectName, duration, url.Values{})
+	if err != nil {
+		errResponse := minio.ToErrorResponse(err)
+		log.Errorf("Getting presigned URL failed: %s", errResponse.Code)
+		return "", errors.Wrap(err, fmt.Sprintf("failed to get URL for %s/%s", s3Bucket, objectName))
+	}
+	return u.String(), nil
 }
