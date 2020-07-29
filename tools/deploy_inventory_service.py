@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--target")
     parser.add_argument("--domain")
-    parser.add_argument('--enable-tls', type=lambda s: s.lower() in ['true', 'yes'], default=False)
+    parser.add_argument('--enable-tls', action='store_true', default=False)
     deploy_options = deployment_options.load_deployment_options(parser)
 
     src_file = os.path.join(os.getcwd(), "deploy/bm-inventory-service.yaml")
