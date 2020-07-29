@@ -79,7 +79,7 @@ type Config struct {
 	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/ocpmetal/ignition-manifests-and-kubeconfig-generate:latest"` // TODO: update the latest once the repository has git workflow
 	//[TODO] -  change the default of Releae image to "", once everyine wll update their environment
 	ReleaseImage       string            `envconfig:"OPENSHIFT_INSTALL_RELEASE_IMAGE" default:"quay.io/openshift-release-dev/ocp-release@sha256:eab93b4591699a5a4ff50ad3517892653f04fb840127895bb3609b3cc68f98f3"`
-	InventoryBaseURL   string			 `envconfig:"INVENTORY_BASE_URL" default:"http://10.35.59.36:30485"`
+	InventoryBaseURL   string            `envconfig:"INVENTORY_BASE_URL" default:"http://10.35.59.36:30485"`
 	S3EndpointURL      string            `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
 	S3Bucket           string            `envconfig:"S3_BUCKET" default:"test"`
 	AwsAccessKeyID     string            `envconfig:"AWS_ACCESS_KEY_ID" default:"accessKey1"`
@@ -292,13 +292,13 @@ func (b *bareMetalInventory) createImageJob(jobName, imgName, ignitionConfig str
 
 func (b *bareMetalInventory) formatIgnitionFile(cluster *common.Cluster, params installer.GenerateClusterISOParams) (string, error) {
 	var ignitionParams = map[string]string{
-		"userSshKey":     	b.getUserSshKey(params),
-		"AgentDockerImg": 	b.AgentDockerImg,
+		"userSshKey":       b.getUserSshKey(params),
+		"AgentDockerImg":   b.AgentDockerImg,
 		"InventoryBaseURL": strings.TrimSpace(b.InventoryBaseURL),
-		"clusterId":      	cluster.ID.String(),
-		"ProxyURL":       	params.ImageCreateParams.ProxyURL,
-		"PULL_SECRET":    	dataurl.EncodeBytes([]byte(cluster.PullSecret)),
-		"AGENT_MOTD":     	url.PathEscape(agentMessageOfTheDay),
+		"clusterId":        cluster.ID.String(),
+		"ProxyURL":         params.ImageCreateParams.ProxyURL,
+		"PULL_SECRET":      dataurl.EncodeBytes([]byte(cluster.PullSecret)),
+		"AGENT_MOTD":       url.PathEscape(agentMessageOfTheDay),
 	}
 	tmpl, err := template.New("ignitionConfig").Parse(ignitionConfigFormat)
 	if err != nil {

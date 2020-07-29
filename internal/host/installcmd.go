@@ -56,7 +56,7 @@ func (i *installCmd) GetStep(ctx context.Context, host *models.Host) (*models.St
 		"--controller-image {{.CONTROLLER_IMAGE}} --url {{.BASE_URL}}"
 
 	data := map[string]string{
-		"BASE_URL":			 strings.TrimSpace(i.instructionConfig.InventoryBaseUrl),
+		"BASE_URL":          strings.TrimSpace(i.instructionConfig.InventoryBaseUrl),
 		"CLUSTER_ID":        string(host.ClusterID),
 		"HOST_ID":           string(*host.ID),
 		"ROLE":              string(role),

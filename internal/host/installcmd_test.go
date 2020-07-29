@@ -22,9 +22,9 @@ const inventoryURL = "10.35.59.36"
 const inventoryPort = "30485"
 
 var defaultInstructionConfig = InstructionConfig{
-	InventoryBaseUrl:	fmt.Sprintf("http://%s:%s", inventoryURL, inventoryPort),
-	InstallerImage:  	"quay.io/ocpmetal/assisted-installer:latest",
-	ControllerImage: 	"quay.io/ocpmetal/assisted-installer-controller:latest",
+	InventoryBaseUrl: fmt.Sprintf("http://%s:%s", inventoryURL, inventoryPort),
+	InstallerImage:   "quay.io/ocpmetal/assisted-installer:latest",
+	ControllerImage:  "quay.io/ocpmetal/assisted-installer-controller:latest",
 }
 
 var _ = Describe("installcmd", func() {
@@ -148,7 +148,7 @@ func postvalidation(isstepreplynil bool, issteperrnil bool, expectedstepreply *m
 	}
 }
 
-func  validateInstallCommand(reply *models.Step, role models.HostRole, clusterId string, hostId string, hostname string) {
+func validateInstallCommand(reply *models.Step, role models.HostRole, clusterId string, hostId string, hostname string) {
 	if hostname != "" {
 		installCommand := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host " +
 			"--net=host -v /var/log:/var/log:rw " +
