@@ -6,8 +6,6 @@ metadata:
   labels:
     app: bm-inventory
 data:
-  INVENTORY_URL: REPLACE_URL
-  INVENTORY_PORT: REPLACE_PORT
   INVENTORY_BASE_URL: REPLACE_BASE_URL
   NAMESPACE: REPLACE_NAMESPACE
   BASE_DNS_DOMAINS: REPLACE_DOMAINS # example: name1:id1/provider1,name2:id2/provider2

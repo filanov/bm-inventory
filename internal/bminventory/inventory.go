@@ -113,7 +113,7 @@ const ignitionConfigFormat = `{
 "units": [{
 "name": "agent.service",
 "enabled": true,
-"contents": "[Service]\nType=simple\nRestart=always\nRestartSec=3\nStartLimitIntervalSec=0\nEnvironment=HTTPS_PROXY={{.ProxyURL}}\nEnvironment=HTTP_PROXY={{.ProxyURL}}\nEnvironment=http_proxy={{.ProxyURL}}\nEnvironment=https_proxy={{.ProxyURL}}\nExecStartPre=podman run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --url {{.InventoryBaseURL}} --cluster-id {{.clusterId}} --agent-version {{.AgentDockerImg}}\n\n[Install]\nWantedBy=multi-user.target"
+"contents": "[Service]\nType=simple\nRestart=always\nRestartSec=3\nStartLimitIntervalSec=0\nEnvironment=HTTPS_PROXY={{.ProxyURL}}\nEnvironment=HTTP_PROXY={{.ProxyURL}}\nEnvironment=http_proxy={{.ProxyURL}}\nEnvironment=https_proxy={{.ProxyURL}}\nExecStartPre=podman run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host {{.InventoryURL}} --port {{.InventoryPort}} --url {{.InventoryBaseURL}} --cluster-id {{.clusterId}} --agent-version {{.AgentDockerImg}}\n\n[Install]\nWantedBy=multi-user.target"
 }]
 },
 "storage": {
@@ -300,6 +300,16 @@ func (b *bareMetalInventory) formatIgnitionFile(cluster *common.Cluster, params 
 		"PULL_SECRET":      dataurl.EncodeBytes([]byte(cluster.PullSecret)),
 		"AGENT_MOTD":       url.PathEscape(agentMessageOfTheDay),
 	}
+
+	// TODO: left for backward compatibility, remove when assisted-installer reads URL
+	baseUrl, err := url.Parse(ignitionParams["InventoryBaseURL"])
+	if err != nil {
+		return "", err
+	}
+
+	ignitionParams["InventoryURL"] = baseUrl.Hostname()
+	ignitionParams["InventoryPort"] = baseUrl.Port()
+
 	tmpl, err := template.New("ignitionConfig").Parse(ignitionConfigFormat)
 	if err != nil {
 		return "", err
