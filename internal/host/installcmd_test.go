@@ -18,11 +18,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const inventoryURL = "10.35.59.36"
+const inventoryPort = "30485"
+
 var defaultInstructionConfig = InstructionConfig{
-	InventoryURL:    "10.35.59.36",
-	InventoryPort:   "30485",
-	InstallerImage:  "quay.io/ocpmetal/assisted-installer:latest",
-	ControllerImage: "quay.io/ocpmetal/assisted-installer-controller:latest",
+	InventoryBaseUrl: fmt.Sprintf("http://%s:%s", inventoryURL, inventoryPort),
+	InstallerImage:   "quay.io/ocpmetal/assisted-installer:latest",
+	ControllerImage:  "quay.io/ocpmetal/assisted-installer-controller:latest",
 }
 
 var _ = Describe("installcmd", func() {
@@ -151,22 +153,20 @@ func validateInstallCommand(reply *models.Step, role models.HostRole, clusterId 
 		installCommand := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host " +
 			"--net=host -v /var/log:/var/log:rw " +
 			"--name assisted-installer quay.io/ocpmetal/assisted-installer:latest --role %s " +
-			"--cluster-id %s --host %s --port %s " +
+			"--cluster-id %s " +
 			"--boot-device /dev/sdb --host-id %s --openshift-version 4.5 " +
-			"--controller-image %s --host-name %s"
+			"--controller-image %s --url %s --host-name %s"
 		ExpectWithOffset(1, reply.Args[1]).Should(Equal(fmt.Sprintf(installCommand, role, clusterId,
-			defaultInstructionConfig.InventoryURL, defaultInstructionConfig.InventoryPort, hostId,
-			defaultInstructionConfig.ControllerImage, hostname)))
+			hostId, defaultInstructionConfig.ControllerImage, defaultInstructionConfig.InventoryBaseUrl, hostname)))
 	} else {
 		installCommand := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host " +
 			"--net=host -v /var/log:/var/log:rw " +
 			"--name assisted-installer quay.io/ocpmetal/assisted-installer:latest --role %s " +
-			"--cluster-id %s --host %s --port %s " +
+			"--cluster-id %s " +
 			"--boot-device /dev/sdb --host-id %s --openshift-version 4.5 " +
-			"--controller-image %s"
+			"--controller-image %s --url %s"
 		ExpectWithOffset(1, reply.Args[1]).Should(Equal(fmt.Sprintf(installCommand, role, clusterId,
-			defaultInstructionConfig.InventoryURL, defaultInstructionConfig.InventoryPort, hostId,
-			defaultInstructionConfig.ControllerImage)))
+			hostId, defaultInstructionConfig.ControllerImage, defaultInstructionConfig.InventoryBaseUrl)))
 	}
 	ExpectWithOffset(1, reply.StepType).To(Equal(models.StepTypeInstall))
 }

@@ -167,6 +167,18 @@ var _ = Describe("GenerateClusterISO", func() {
 		})
 		Expect(generateReply).Should(BeAssignableToTypeOf(installer.NewGenerateClusterISOBadRequest()))
 	})
+
+	It("ignition_file_contains_url", func() {
+		cluster := registerCluster(false)
+
+		bm.InventoryBaseURL = "file://10.56.20.70:7878"
+		text, err := bm.formatIgnitionFile(cluster, installer.GenerateClusterISOParams{
+			ImageCreateParams: &models.ImageCreateParams{},
+		})
+
+		Expect(err).Should(BeNil())
+		Expect(text).Should(ContainSubstring(fmt.Sprintf("--url %s", bm.InventoryBaseURL)))
+	})
 })
 
 var _ = Describe("RegisterHost", func() {
