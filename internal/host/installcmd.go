@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"net/url"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -52,11 +53,10 @@ func (i *installCmd) GetStep(ctx context.Context, host *models.Host) (*models.St
 	cmdArgsTmpl := "sudo podman run -v /dev:/dev:rw -v /opt:/opt:rw --privileged --pid=host --net=host " +
 		"-v /var/log:/var/log:rw --name assisted-installer {{.INSTALLER}} --role {{.ROLE}} --cluster-id {{.CLUSTER_ID}} --host {{.HOST}} " +
 		"--port {{.PORT}} --boot-device {{.BOOT_DEVICE}} --host-id {{.HOST_ID}} --openshift-version {{.OPENSHIFT_VERSION}} " +
-		"--controller-image {{.CONTROLLER_IMAGE}}"
+		"--controller-image {{.CONTROLLER_IMAGE}} --url {{.BASE_URL}}"
 
 	data := map[string]string{
-		"HOST":              strings.TrimSpace(i.instructionConfig.InventoryURL),
-		"PORT":              strings.TrimSpace(i.instructionConfig.InventoryPort),
+		"BASE_URL":			 strings.TrimSpace(i.instructionConfig.InventoryBaseUrl),
 		"CLUSTER_ID":        string(host.ClusterID),
 		"HOST_ID":           string(*host.ID),
 		"ROLE":              string(role),
@@ -71,6 +71,15 @@ func (i *installCmd) GetStep(ctx context.Context, host *models.Host) (*models.St
 		cmdArgsTmpl = cmdArgsTmpl + " --host-name {{.HOST_NAME}}"
 		data["HOST_NAME"] = hostname
 	}
+
+	// TODO: left for backward compatibility, remove when assisted-installer reads URL
+	baseUrl, err := url.Parse(data["BASE_URL"])
+	if err != nil {
+		return nil, err
+	}
+
+	data["HOST"] = baseUrl.Hostname()
+	data["PORT"] = baseUrl.Port()
 
 	bootdevice, err := getBootDevice(i.log, i.hwValidator, *host)
 	if err != nil {
