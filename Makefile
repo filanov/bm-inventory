@@ -5,6 +5,7 @@ BUILD_FOLDER = $(PWD)/build
 TARGET := $(or ${TARGET},minikube)
 NAMESPACE := $(or ${NAMESPACE},assisted-installer)
 KUBECTL=kubectl -n $(NAMESPACE)
+RT_CMD := $(or ${CE},docker)
 
 ifeq ($(TARGET), minikube)
 define get_service
@@ -18,12 +19,16 @@ endef # get_service
 endif # TARGET
 
 SERVICE := $(or ${SERVICE},quay.io/ocpmetal/bm-inventory:latest)
-RT_CMD := $(or ${RT_CMD},docker)
 GIT_REVISION := $(shell git rev-parse HEAD)
 APPLY_NAMESPACE := $(or ${APPLY_NAMESPACE},True)
 ROUTE53_SECRET := ${ROUTE53_SECRET}
 
 all: build
+
+set_runtime:
+ifeq "${CE}" "podman"
+RT_CMD = podman --storage-driver=vfs --cgroup-manager=cgroupfs
+endif
 
 lint:
 	golangci-lint run -v
@@ -41,9 +46,9 @@ format:
 generate:
 	go generate $(shell go list ./... | grep -v 'bm-inventory/models\|bm-inventory/client\|bm-inventory/restapi')
 
-generate-from-swagger:
+generate-from-swagger: set_runtime
 	rm -rf client models restapi
-	${RT_CMD} run -v $(PWD):$(PWD):rw -v /etc/passwd:/etc/passwd -w $(PWD) \
+	${RT_CMD} run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
 		quay.io/goswagger/swagger:v0.24.0 generate server	--template=stratoscale -f swagger.yaml \
 		--template-dir=/templates/contrib
 	${RT_CMD} run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
@@ -54,11 +59,11 @@ generate-from-swagger:
 # Update #
 ##########
 
-update: build create-python-client
+update: set_runtime build create-python-client
 	GIT_REVISION=${GIT_REVISION} ${RT_CMD} build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
 	${RT_CMD} push $(SERVICE)
 
-update-minikube: build create-python-client
+update-minikube: set_runtime build create-python-client
 	eval $$(SHELL=$${SHELL:-/bin/sh} minikube docker-env) && \
 	GIT_REVISION=${GIT_REVISION} ${RT_CMD} build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
 
@@ -153,7 +158,7 @@ deploy-grafana: create-build-dir
 
 deploy-monitoring: deploy-olm deploy-prometheus deploy-grafana
 
-unit-test:
+unit-test: set_runtime
 	${RT_CMD} stop postgres || true
 	${RT_CMD} run -d --rm --name postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -p 127.0.0.1:5432:5432 postgres:12.3-alpine -c 'max_connections=10000'
 	until PGPASSWORD=admin pg_isready -U admin --dbname postgres --host 127.0.0.1 --port 5432; do sleep 1; done
