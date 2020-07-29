@@ -63,7 +63,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--service")
     parser.add_argument("--tls-san")
-    parser.add_argument("--tls-expiration", help="Server certificate expiration (days)", default=120)
+    parser.add_argument("--tls-expiration", help="Server certificate expiration (days)", type=int, default=120)
     deploy_options = deployment_options.load_deployment_options(parser)
 
     output_dir = os.path.join(os.getcwd(), "build")
