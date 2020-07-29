@@ -48,7 +48,7 @@ jobs:
         buildargs: GIT_REVISION
         tags: "latest,${{ env.GIT_REVISION }}"
     - name: Publish bm-inventory PR image to Registry
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' && github.repository == 'filanov/bm-inventory'
       uses: elgohr/Publish-Docker-Github-Action@2.15
       with:
         name: bm-inventory
