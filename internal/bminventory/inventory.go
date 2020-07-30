@@ -450,7 +450,7 @@ func (b *bareMetalInventory) DownloadClusterISO(ctx context.Context, params inst
 		resp.ContentLength)
 }
 
-func updateImageDownloadURL(ctx context.Context, b bareMetalInventory, imgName string, clusterID string) error {
+func updateImageDownloadURL(ctx context.Context, b *bareMetalInventory, imgName string, clusterID string) (string, error) {
 	var url string
 	if b.Config.UseK8s {
 		var err error
@@ -458,23 +458,20 @@ func updateImageDownloadURL(ctx context.Context, b bareMetalInventory, imgName s
 		if err != nil {
 			b.eventsHandler.AddEvent(ctx, clusterID, models.EventSeverityError,
 				"Failed to generate image: error during URL creation", time.Now())
-			return err)
+			return "", err
 		}
 	} else {
-		url = fmt.Sprint("http://%s:%s/api/assisted-install/v1/clusters/%s/downloads/image",
+		url = fmt.Sprintf("http://%s:%s/api/assisted-install/v1/clusters/%s/downloads/image",
 			strings.TrimSpace(b.InventoryURL), strings.TrimSpace(b.InventoryPort), clusterID)
 	}
 
-	tx := b.db.Begin()
-	if tx.Error != nil {
-		msg := "Failed to generate image: error starting DB transaction"
-		b.eventsHandler.AddEvent(ctx, params.ClusterID.String(), models.EventSeverityError, msg, time.Now())
-		log.WithError(tx.Error).Errorf("failed to start db transaction")
-		return installer.NewInstallClusterInternalServerError().
-			WithPayload(common.GenerateError(http.StatusInternalServerError, errors.New("DB error, failed to start transaction")))
+	updates := map[string]interface{}{}
+	updates["image_download_url"] = url
+	dbReply := b.db.Model(&models.Cluster{}).Where("id = ?", clusterID).Updates(updates)
+	if dbReply.Error != nil {
+		return "", errors.New("Failed to generate image: error updating image record")
 	}
-
-
+	return url, nil
 }
 
 func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params installer.GenerateClusterISOParams) middleware.Responder {
@@ -623,6 +620,13 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 		return installer.NewGenerateClusterISOInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
+
+	downloadUrl, err := updateImageDownloadURL(ctx, b, imgName, params.ClusterID.String())
+	if err != nil {
+		return installer.NewGenerateClusterISOInternalServerError().
+			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
+	}
+	cluster.ImageInfo.DownloadURL = downloadUrl
 
 	log.Infof("Generated cluster <%s> image with ignition config %s", params.ClusterID, ignitionConfig)
 	msg := fmt.Sprintf("Generated image (proxy URL is \"%s\", ", params.ImageCreateParams.ProxyURL)

@@ -28,7 +28,8 @@ lint:
 	golangci-lint run -v
 
 .PHONY: build
-build: create-build-dir lint unit-test
+#DONT COMMIT THIS CHANGE
+build: create-build-dir lint #unit-test
 	CGO_ENABLED=0 go build -o $(BUILD_FOLDER)/bm-inventory cmd/main.go
 
 create-build-dir:
