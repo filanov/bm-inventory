@@ -1,5 +1,5 @@
-FROM registry.fedoraproject.org/fedora-minimal:latest 
-
+FROM centos:7
+# Golang env vars
 ENV GO111MODULE=on \
     GOPATH=${HOME}/go \
     GOBIN=${HOME}/go/bin \
@@ -7,14 +7,29 @@ ENV GO111MODULE=on \
 ENV PATH="${GOBIN}:${PATH}" \
     GOCACHE="${GOPATH}/pkg/mod"
 
-RUN microdnf clean all && microdnf install go docker podman libvirt-client awscli python3-pip postgresql make -y && microdnf clean all
+# base: EPEL repo for extra tools
+RUN yum -y install epel-release 
 
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0
+# Install base tools
+RUN yum install -y go libvirt-client python3-pip postgresql make which git 
+
+# golangci-lint
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.24.0 \
+    && curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl \
+    && curl -L https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/docker-ce.repo
+
+# Go Deps
 RUN go get -u github.com/onsi/ginkgo/ginkgo@v1.12.2 \
               golang.org/x/tools/cmd/goimports@v0.0.0-20200520220537-cf2d1e09c845 \
               github.com/golang/mock/mockgen@v1.4.3 \
               github.com/vektra/mockery/.../@v1.1.2
-RUN pip3 install boto3==1.13.14 waiting==1.4.1
+
+# Python Deps
+RUN pip3 install boto3==1.13.14 waiting==1.4.1 awscli --user
+
+# Install Minikube
 RUN curl -Lo minikube https://storage.googleapis.com/minikube/releases/v1.10.1/minikube-linux-amd64 \
   && chmod +x minikube && mkdir -p /usr/local/bin/ && install minikube /usr/local/bin/
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+
+# Docker/Podman 
+RUN yum install -y docker-ce podman
