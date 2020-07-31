@@ -31,7 +31,8 @@ done
 DB_SERVICE=${@:$OPTIND:1}
 [[ -z "${DB_SERVICE}" ]] && print_usage "pod-name-filter is missing"
 
-SERVICE_URL=$(minikube service list | grep ${DB_SERVICE} | awk -F"|" '{print $5}' | tr -d '[:space:]')
+PROFILE=${PROFILE:-minikube}
+SERVICE_URL=$(minikube service list --profile ${PROFILE} | grep ${DB_SERVICE} | awk -F"|" '{print $5}' | tr -d '[:space:]')
 PORT=$(echo  ${SERVICE_URL}| awk -F"://|:" '{print $3}')
 SERVER=$(echo  ${SERVICE_URL}| awk -F"://|:" '{print $2}')
 PGPASSWORD=admin psql -U ${USER} --dbname ${TABLE} --host ${SERVER} --port ${PORT} -w

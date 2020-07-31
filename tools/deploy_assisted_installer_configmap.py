@@ -33,8 +33,18 @@ def main():
         service_host = "assisted-installer.{}".format(utils.get_domain(deploy_options.domain))
         service_port = "80"
     else:
-        service_host = utils.get_service_host(SERVICE, deploy_options.target, namespace=deploy_options.namespace)
-        service_port = utils.get_service_port(SERVICE, deploy_options.target, namespace=deploy_options.namespace)
+        service_host = utils.get_service_host(
+            service=SERVICE,
+            target=deploy_options.target,
+            namespace=deploy_options.namespace,
+            profile=deploy_options.profile
+        )
+        service_port = utils.get_service_port(
+            service=SERVICE,
+            target=deploy_options.target,
+            namespace=deploy_options.namespace,
+            profile=deploy_options.profile
+        )
 
     with open(SRC_FILE, "r") as src:
         with open(DST_FILE, "w+") as dst:
