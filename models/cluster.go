@@ -121,7 +121,7 @@ type Cluster struct {
 	UpdatedAt strfmt.DateTime `json:"updated_at,omitempty" gorm:"type:timestamp with time zone"`
 
 	// user id
-	UserID string `json:"user_id,omitempty"`
+	UserName string `json:"user_name,omitempty"`
 }
 
 // Validate validates this cluster

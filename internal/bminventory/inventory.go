@@ -92,6 +92,7 @@ type Config struct {
 	JobMemoryLimit     string            `envconfig:"JOB_MEMORY_LIMIT" default:"1000Mi"`
 	JobCPURequests     string            `envconfig:"JOB_CPU_REQUESTS" default:"300m"`
 	JobMemoryRequests  string            `envconfig:"JOB_MEMORY_REQUESTS" default:"400Mi"`
+	EnableAuth         bool              `envconfig:"ENABLE_AUTH" default:"false"`
 }
 
 const agentMessageOfTheDay = `
@@ -355,8 +356,7 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 		ServiceNetworkCidr:       swag.StringValue(params.NewClusterParams.ServiceNetworkCidr),
 		SSHPublicKey:             params.NewClusterParams.SSHPublicKey,
 		UpdatedAt:                strfmt.DateTime{},
-		UserID:                   auth.UserIDFromContext(ctx),
-		OrgID:                    auth.OrgIDFromContext(ctx),
+		UserName:                 auth.UserNameFromContext(ctx),
 	}}
 	if params.NewClusterParams.PullSecret != "" {
 		err := validations.ValidatePullSecret(params.NewClusterParams.PullSecret)
@@ -1140,8 +1140,11 @@ func calculateHostNetworks(log logrus.FieldLogger, cluster *common.Cluster) []*m
 func (b *bareMetalInventory) ListClusters(ctx context.Context, params installer.ListClustersParams) middleware.Responder {
 	log := logutil.FromContext(ctx, b.log)
 	var clusters []*common.Cluster
-	query := identity.GetUserIDFilter(ctx)
-	if err := b.db.Preload("Hosts").Find(&clusters).Where(query).Error; err != nil {
+	query := ""
+	if b.Config.EnableAuth {
+		query = identity.GetUserNameFilter(ctx)
+	}
+	if err := b.db.Preload("Hosts").Where(query).Find(&clusters).Error; err != nil {
 		log.WithError(err).Error("failed to list clusters")
 		return installer.NewListClustersInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))

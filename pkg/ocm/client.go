@@ -12,6 +12,7 @@ type Client struct {
 	connection *sdkClient.Connection
 
 	Authentication OCMAuthentication
+	Authorization  OCMAuthorization
 }
 
 type Config struct {
@@ -41,6 +42,7 @@ func NewClient(config Config) (*Client, error) {
 		return nil, fmt.Errorf("Unable to build OCM connection: %s", err.Error())
 	}
 	client.Authentication = &authentication{client: client}
+	client.Authorization = &authorization{client: client}
 	return client, nil
 }
 

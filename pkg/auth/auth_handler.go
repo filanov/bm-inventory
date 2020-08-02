@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/security"
+	"github.com/jinzhu/gorm"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/filanov/bm-inventory/pkg/ocm"
@@ -25,10 +26,10 @@ type AuthPayload struct {
 	Email     string `json:"email"`
 	Issuer    string `json:"iss"`
 	ClientID  string `json:"clientId"`
+	IsAdmin   bool   `json:"is_admin"`
 }
 
 type Config struct {
-	EnableAuth bool   `envconfig:"ENABLE_AUTH" default:"false"`
 	JwkCertURL string `envconfig:"JWKS_URL" default:""`
 	JwkCertCA  string `envconfig:"JWKS_CA" default:""`
 }
@@ -37,13 +38,15 @@ type AuthHandler struct {
 	CertURL string
 	keyMap  map[string]*rsa.PublicKey
 	client  *ocm.Client
+	db      *gorm.DB
 }
 
 var authHandler = &AuthHandler{}
 
-func InitAuthHandler(certURL string, ocmCLient *ocm.Client) {
+func InitAuthHandler(certURL string, ocmCLient *ocm.Client, db *gorm.DB) {
 	authHandler.client = ocmCLient
 	authHandler.CertURL = certURL
+	authHandler.db = db
 	err := authHandler.populateKeyMap()
 	if err != nil {
 		logrus.Fatalln("Failed to init auth manager,", err)
@@ -127,6 +130,13 @@ func parsePayload(userToken *jwt.Token) (*AuthPayload, error) {
 			payload.FirstName = names[0]
 		}
 	}
+	// TODO: cache admin capability in memory
+	admin, err := IsAdmin(payload.Username)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to fetch user's capabilities: %v", err)
+	}
+	payload.IsAdmin = admin
+
 	return payload, nil
 }
 
@@ -141,7 +151,7 @@ func AuthUserAuth(token string) (interface{}, error) {
 
 	// Check if there was an error in parsing...
 	if err != nil {
-		logrus.Error("Error parsing token: %v", err)
+		logrus.Errorf("Error parsing token: %v", err)
 		return nil, fmt.Errorf("Error parsing token: %v", err)
 	}
 
@@ -149,22 +159,23 @@ func AuthUserAuth(token string) (interface{}, error) {
 		message := fmt.Sprintf("Expected %s signing method but token specified %s",
 			jwt.SigningMethodRS256.Alg(),
 			parsedToken.Header["alg"])
-		logrus.Error("Error validating token algorithm: %s", message)
+		logrus.Errorf("Error validating token algorithm: %s", message)
 		return nil, fmt.Errorf("Error validating token algorithm: %s", message)
 	}
 
 	// Check if the parsed token is valid...
 	if !parsedToken.Valid {
 		logrus.Error("Token is invalid")
-		return nil, fmt.Errorf("Token is invalid: %s", parsedToken)
+		return nil, fmt.Errorf("Token is invalid: %v", parsedToken)
 	}
 
 	payload, err := parsePayload(parsedToken)
 	if err != nil {
-		logrus.Fatalln("Failed parse payload,", err)
+		logrus.Error("Failed parse payload,", err)
 		return nil, err
 	}
-	return payload.Username, nil
+
+	return payload, nil
 }
 
 func CreateAuthenticator(isEnabled bool) func(name, in string, authenticate security.TokenAuthentication) runtime.Authenticator {

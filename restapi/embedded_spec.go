@@ -1648,7 +1648,7 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
-        "user_id": {
+        "user_name": {
           "type": "string"
         }
       }
@@ -4332,7 +4332,7 @@ func init() {
           "format": "date-time",
           "x-go-custom-tag": "gorm:\"type:timestamp with time zone\""
         },
-        "user_id": {
+        "user_name": {
           "type": "string"
         }
       }

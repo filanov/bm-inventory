@@ -173,12 +173,13 @@ func main() {
 		log.Error("Failed to OCM Client,", err)
 	}
 
-	auth.InitAuthHandler(Options.Auth.JwkCertURL, ocmClient)
+	auth.InitAuthHandler(Options.Auth.JwkCertURL, ocmClient, db)
 
 	h, err := restapi.Handler(restapi.Config{
 		AuthAgentAuth:       auth.AuthAgentAuth,
 		AuthUserAuth:        auth.AuthUserAuth,
-		APIKeyAuthenticator: auth.CreateAuthenticator(Options.Auth.EnableAuth),
+		APIKeyAuthenticator: auth.CreateAuthenticator(Options.BMConfig.EnableAuth),
+		Authorizer:          auth.CreateAuthorizer(Options.BMConfig.EnableAuth),
 		InstallerAPI:        bm,
 		EventsAPI:           events,
 		Logger:              log.Printf,
@@ -188,8 +189,6 @@ func main() {
 	})
 	h = app.WithMetricsResponderMiddleware(h)
 	h = app.WithHealthMiddleware(h)
-	// TODO: replace this with real auth
-	h = auth.GetUserInfoMiddleware(h)
 	h = requestid.Middleware(h)
 	if err != nil {
 		log.Fatal("Failed to init rest handler,", err)
