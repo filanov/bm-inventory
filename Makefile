@@ -4,11 +4,12 @@ BUILD_FOLDER = $(PWD)/build
 
 TARGET := $(or ${TARGET},minikube)
 NAMESPACE := $(or ${NAMESPACE},assisted-installer)
+PROFILE := $(or ${PROFILE},minikube)
 KUBECTL=kubectl -n $(NAMESPACE)
 
 ifeq ($(TARGET), minikube)
 define get_service
-minikube service --url $(1) -n $(NAMESPACE) | sed 's/http:\/\///g'
+minikube service --profile $(PROFILE) --url $(1) -n $(NAMESPACE) | sed 's/http:\/\///g'
 endef # get_service
 else
 define get_service
@@ -92,7 +93,7 @@ deploy-all: create-build-dir deploy-namespace deploy-postgres deploy-s3 deploy-r
 	echo "Deployment done"
 
 deploy-ui: deploy-namespace
-	python3 ./tools/deploy_ui.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --namespace "$(NAMESPACE)" $(DEPLOY_TAG_OPTION)
+	python3 ./tools/deploy_ui.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --namespace "$(NAMESPACE)" --profile $(PROFILE) $(DEPLOY_TAG_OPTION)
 
 deploy-namespace: create-build-dir
 	python3 ./tools/deploy_namespace.py --deploy-namespace $(APPLY_NAMESPACE) --namespace "$(NAMESPACE)"
@@ -109,11 +110,11 @@ deploy-route53: deploy-namespace
 	python3 ./tools/deploy_route53.py --secret "$(ROUTE53_SECRET)" --namespace "$(NAMESPACE)"
 
 deploy-inventory-service-file: deploy-namespace
-	python3 ./tools/deploy_inventory_service.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --namespace "$(NAMESPACE)"
+	python3 ./tools/deploy_inventory_service.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --namespace "$(NAMESPACE)" --profile "$(PROFILE)"
 	sleep 5;  # wait for service to get an address
 
 deploy-service-requirements: deploy-namespace deploy-inventory-service-file
-	python3 ./tools/deploy_assisted_installer_configmap.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --base-dns-domains "$(BASE_DNS_DOMAINS)" --namespace "$(NAMESPACE)" $(DEPLOY_TAG_OPTION)
+	python3 ./tools/deploy_assisted_installer_configmap.py --target "$(TARGET)" --domain "$(INGRESS_DOMAIN)" --base-dns-domains "$(BASE_DNS_DOMAINS)" --namespace "$(NAMESPACE)" --profile $(PROFILE) $(DEPLOY_TAG_OPTION)
 
 deploy-service: deploy-namespace deploy-service-requirements deploy-role
 	python3 ./tools/deploy_assisted_installer.py $(DEPLOY_TAG_OPTION) --namespace "$(NAMESPACE)" $(TEST_FLAGS)
