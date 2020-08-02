@@ -40,8 +40,7 @@ type InstructionManager struct {
 	stateToSteps stateToStepsMap
 }
 type InstructionConfig struct {
-	InventoryURL           string `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
-	InventoryPort          string `envconfig:"INVENTORY_PORT" default:"30485"`
+	InventoryBaseUrl       string `envconfig:"INVENTORY_BASE_URL" default:"http://10.35.59.36:30485"`
 	InstallerImage         string `envconfig:"INSTALLER_IMAGE" default:"quay.io/ocpmetal/assisted-installer:latest"`
 	ControllerImage        string `envconfig:"CONTROLLER_IMAGE" default:"quay.io/ocpmetal/assisted-installer-controller:latest"`
 	ConnectivityCheckImage string `envconfig:"CONNECTIVITY_CHECK_IMAGE" default:"quay.io/ocpmetal/connectivity_check:latest"`

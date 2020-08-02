@@ -79,8 +79,7 @@ type Config struct {
 	KubeconfigGenerator string `envconfig:"KUBECONFIG_GENERATE_IMAGE" default:"quay.io/ocpmetal/ignition-manifests-and-kubeconfig-generate:latest"` // TODO: update the latest once the repository has git workflow
 	//[TODO] -  change the default of Releae image to "", once everyine wll update their environment
 	ReleaseImage       string            `envconfig:"OPENSHIFT_INSTALL_RELEASE_IMAGE" default:"quay.io/openshift-release-dev/ocp-release@sha256:eab93b4591699a5a4ff50ad3517892653f04fb840127895bb3609b3cc68f98f3"`
-	InventoryURL       string            `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
-	InventoryPort      string            `envconfig:"INVENTORY_PORT" default:"30485"`
+	InventoryBaseURL   string            `envconfig:"INVENTORY_BASE_URL" default:"http://10.35.59.36:30485"`
 	S3EndpointURL      string            `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
 	S3Bucket           string            `envconfig:"S3_BUCKET" default:"test"`
 	AwsAccessKeyID     string            `envconfig:"AWS_ACCESS_KEY_ID" default:"accessKey1"`
@@ -114,7 +113,7 @@ const ignitionConfigFormat = `{
 "units": [{
 "name": "agent.service",
 "enabled": true,
-"contents": "[Service]\nType=simple\nRestart=always\nRestartSec=3\nStartLimitIntervalSec=0\nEnvironment=HTTPS_PROXY={{.ProxyURL}}\nEnvironment=HTTP_PROXY={{.ProxyURL}}\nEnvironment=http_proxy={{.ProxyURL}}\nEnvironment=https_proxy={{.ProxyURL}}\nExecStartPre=podman run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host {{.InventoryURL}} --port {{.InventoryPort}} --cluster-id {{.clusterId}} --agent-version {{.AgentDockerImg}}\n\n[Install]\nWantedBy=multi-user.target"
+"contents": "[Service]\nType=simple\nRestart=always\nRestartSec=3\nStartLimitIntervalSec=0\nEnvironment=HTTPS_PROXY={{.ProxyURL}}\nEnvironment=HTTP_PROXY={{.ProxyURL}}\nEnvironment=http_proxy={{.ProxyURL}}\nEnvironment=https_proxy={{.ProxyURL}}\nExecStartPre=podman run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host {{.InventoryURL}} --port {{.InventoryPort}} --url {{.InventoryBaseURL}} --cluster-id {{.clusterId}} --agent-version {{.AgentDockerImg}}\n\n[Install]\nWantedBy=multi-user.target"
 }]
 },
 "storage": {
@@ -293,15 +292,24 @@ func (b *bareMetalInventory) createImageJob(jobName, imgName, ignitionConfig str
 
 func (b *bareMetalInventory) formatIgnitionFile(cluster *common.Cluster, params installer.GenerateClusterISOParams) (string, error) {
 	var ignitionParams = map[string]string{
-		"userSshKey":     b.getUserSshKey(params),
-		"AgentDockerImg": b.AgentDockerImg,
-		"InventoryURL":   strings.TrimSpace(b.InventoryURL),
-		"InventoryPort":  strings.TrimSpace(b.InventoryPort),
-		"clusterId":      cluster.ID.String(),
-		"ProxyURL":       params.ImageCreateParams.ProxyURL,
-		"PULL_SECRET":    dataurl.EncodeBytes([]byte(cluster.PullSecret)),
-		"AGENT_MOTD":     url.PathEscape(agentMessageOfTheDay),
+		"userSshKey":       b.getUserSshKey(params),
+		"AgentDockerImg":   b.AgentDockerImg,
+		"InventoryBaseURL": strings.TrimSpace(b.InventoryBaseURL),
+		"clusterId":        cluster.ID.String(),
+		"ProxyURL":         params.ImageCreateParams.ProxyURL,
+		"PULL_SECRET":      dataurl.EncodeBytes([]byte(cluster.PullSecret)),
+		"AGENT_MOTD":       url.PathEscape(agentMessageOfTheDay),
 	}
+
+	// TODO: left for backward compatibility, remove when assisted-installer reads URL
+	baseUrl, err := url.Parse(ignitionParams["InventoryBaseURL"])
+	if err != nil {
+		return "", err
+	}
+
+	ignitionParams["InventoryURL"] = baseUrl.Hostname()
+	ignitionParams["InventoryPort"] = baseUrl.Port()
+
 	tmpl, err := template.New("ignitionConfig").Parse(ignitionConfigFormat)
 	if err != nil {
 		return "", err
@@ -1598,7 +1606,7 @@ func (b *bareMetalInventory) createKubeconfigJob(cluster *common.Cluster, jobNam
 								},
 								{
 									Name:  "INVENTORY_ENDPOINT",
-									Value: "http://" + strings.TrimSpace(b.InventoryURL) + ":" + strings.TrimSpace(b.InventoryPort) + "/api/assisted-install/v1",
+									Value: strings.TrimSpace(b.InventoryBaseURL) + "/api/assisted-install/v1",
 								},
 								{
 									Name:  "IMAGE_NAME",
