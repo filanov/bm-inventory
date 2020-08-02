@@ -1045,3 +1045,122 @@ var _ = Describe("PrepareForInstallation", func() {
 		common.DeleteTestDB(db, dbName)
 	})
 })
+
+var _ = Describe("autoRoleSelection", func() {
+	var (
+		hapi              API
+		db                *gorm.DB
+		hostId, clusterId strfmt.UUID
+		host              models.Host
+		dbName            = "auto_select_role"
+		ctrl              *gomock.Controller
+		mockEvents        *events.MockHandler
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		mockEvents = events.NewMockHandler(ctrl)
+		mockEvents.EXPECT().AddEvent(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+			Return().AnyTimes()
+		db = common.PrepareTestDB(dbName, &models.Host{}, &common.Cluster{})
+		hapi = NewManager(getTestLog(), db, mockEvents, nil, nil, createValidatorCfg(), nil)
+		hostId = strfmt.UUID(uuid.New().String())
+		clusterId = strfmt.UUID(uuid.New().String())
+		cluster := getTestCluster(clusterId, "1.1.0.0/16")
+		Expect(db.Create(&cluster).Error).ShouldNot(HaveOccurred())
+	})
+
+	tests := []struct {
+		name         string
+		srcStatus    string
+		sourceRole   models.HostRole
+		expectedRole models.HostRole
+		inventory    string
+	}{
+		{
+			name:         "worker inventory",
+			srcStatus:    models.HostStatusDiscovering,
+			sourceRole:   models.HostRoleAutoAssign,
+			inventory:    workerInventory(),
+			expectedRole: models.HostRoleWorker,
+		},
+		{
+			name:         "master inventory",
+			srcStatus:    models.HostStatusDiscovering,
+			sourceRole:   models.HostRoleAutoAssign,
+			inventory:    masterInventory(),
+			expectedRole: models.HostRoleMaster,
+		},
+		{
+			name:         "no inventory",
+			srcStatus:    models.HostStatusDiscovering,
+			sourceRole:   models.HostRoleAutoAssign,
+			expectedRole: models.HostRoleAutoAssign,
+		},
+		{
+			name:         "role already exists",
+			srcStatus:    models.HostStatusDiscovering,
+			sourceRole:   models.HostRoleWorker,
+			expectedRole: models.HostRoleWorker,
+		},
+		{
+			name:         "disabled host - no role assign",
+			srcStatus:    models.HostStatusDisabled,
+			sourceRole:   models.HostRoleAutoAssign,
+			expectedRole: models.HostRoleAutoAssign,
+		},
+	}
+
+	for _, t := range tests {
+		It(t.name, func() {
+			host = getTestHost(hostId, clusterId, t.srcStatus)
+			host.Role = t.sourceRole
+			host.Inventory = t.inventory
+			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+			hapi.HostMonitoring()
+			Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
+				Should(Equal(t.expectedRole))
+		})
+	}
+
+	It("cluster already have 3 masters", func() {
+		for i := 0; i < 3; i++ {
+			host = getTestHost(strfmt.UUID(uuid.New().String()), clusterId, models.HostStatusDiscovering)
+			host.Role = models.HostRoleMaster
+			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+		}
+		host = getTestHost(hostId, clusterId, models.HostStatusDiscovering)
+		host.Role = models.HostRoleAutoAssign
+		host.Inventory = masterInventory()
+
+		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+		hapi.HostMonitoring()
+		Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
+			Should(Equal(models.HostRoleWorker))
+	})
+
+	It("cluster already have 3 masters one of them disabled", func() {
+		for i := 0; i < 2; i++ {
+			host = getTestHost(strfmt.UUID(uuid.New().String()), clusterId, models.HostStatusDiscovering)
+			host.Role = models.HostRoleMaster
+			Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+		}
+		host = getTestHost(strfmt.UUID(uuid.New().String()), clusterId, models.HostStatusDisabled)
+		host.Role = models.HostRoleMaster
+		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+
+		host = getTestHost(hostId, clusterId, models.HostStatusDiscovering)
+		host.Role = models.HostRoleAutoAssign
+		host.Inventory = masterInventory()
+		Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
+
+		hapi.HostMonitoring()
+		Eventually(func() models.HostRole { return getHost(hostId, clusterId, db).Role }, 5).
+			Should(Equal(models.HostRoleMaster))
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+		common.DeleteTestDB(db, dbName)
+	})
+})

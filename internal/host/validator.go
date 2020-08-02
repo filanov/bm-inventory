@@ -89,7 +89,7 @@ func (c *validationContext) loadInventory() error {
 
 func (c *validationContext) validateRole() error {
 	switch c.host.Role {
-	case models.HostRoleMaster, models.HostRoleWorker, "":
+	case models.HostRoleMaster, models.HostRoleWorker, models.HostRoleAutoAssign:
 		return nil
 	default:
 		return errors.Errorf("Illegal role defined: %s", c.host.Role)
@@ -231,7 +231,7 @@ func (v *validator) printHasMinValidDisks(c *validationContext, status validatio
 }
 
 func (v *validator) isRoleDefined(c *validationContext) validationStatus {
-	return boolValue(c.host.Role != "")
+	return boolValue(c.host.Role != models.HostRoleAutoAssign)
 }
 
 func (v *validator) printIsRoleDefined(context *validationContext, status validationStatus) string {
@@ -261,7 +261,7 @@ func (v *validator) printIsMachineCidrDefined(context *validationContext, status
 }
 
 func (v *validator) hasCpuCoresForRole(c *validationContext) validationStatus {
-	if c.inventory == nil || c.host.Role == "" {
+	if c.inventory == nil || c.host.Role == models.HostRoleAutoAssign {
 		return ValidationPending
 	}
 	switch c.host.Role {
@@ -301,7 +301,7 @@ func (v *validator) printHasCpuCoresForRole(c *validationContext, status validat
 }
 
 func (v *validator) hasMemoryForRole(c *validationContext) validationStatus {
-	if c.inventory == nil || c.host.Role == "" {
+	if c.inventory == nil || c.host.Role == models.HostRoleAutoAssign {
 		return ValidationPending
 	}
 	switch c.host.Role {

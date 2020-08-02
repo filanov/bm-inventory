@@ -32,6 +32,11 @@ func (m *Manager) HostMonitoring() {
 		return
 	}
 	for _, host := range hosts {
+		// select role if needed
+		if host.Role == models.HostRoleAutoAssign {
+			m.autoRoleSelection(ctx, host)
+		}
+
 		if err := m.RefreshStatus(ctx, host, m.db); err != nil {
 			log.WithError(err).Errorf("failed to refresh host %s state", *host.ID)
 		}

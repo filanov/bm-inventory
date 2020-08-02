@@ -1379,7 +1379,8 @@ var _ = Describe("cluster install", func() {
 			ClusterID: clusterID,
 		})
 		Expect(err).To(Not(HaveOccurred()))
-		waitForHostState(ctx, clusterID, *h1.ID, models.HostStatusPendingForInput, 60*time.Second)
+		// role is auto selected
+		waitForHostState(ctx, clusterID, *h1.ID, models.HostStatusKnown, defaultWaitForHostStateTimeout)
 
 		hwInfo = &models.Inventory{
 			CPU:    &models.CPU{Count: 16},
@@ -1406,7 +1407,7 @@ var _ = Describe("cluster install", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 		h1 = getHost(clusterID, *h1.ID)
-		waitForHostState(ctx, clusterID, *h1.ID, "insufficient", 60*time.Second)
+		waitForHostState(ctx, clusterID, *h1.ID, "insufficient", defaultWaitForHostStateTimeout)
 	})
 
 	It("[only_k8s]unique_hostname_validation", func() {
@@ -1451,18 +1452,13 @@ var _ = Describe("cluster install", func() {
 		disabledHost := registerHost(clusterID)
 		generateHWPostStepReply(disabledHost, validHwInfo, "h1")
 		disabledHost = getHost(clusterID, *disabledHost.ID)
-		waitForHostState(ctx, clusterID, *disabledHost.ID, models.HostStatusPendingForInput, 60*time.Second)
-		_, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
-			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
-				{ID: *disabledHost.ID, Role: models.HostRoleUpdateParamsWorker},
-			}},
-			ClusterID: clusterID,
-		})
-		Expect(err).NotTo(HaveOccurred())
+		// insufficient because role was auto selected
+		waitForHostState(ctx, clusterID, *disabledHost.ID, models.HostStatusInsufficient,
+			defaultWaitForHostStateTimeout)
 
 		By("Changing hostname, verify host is known now")
 		generateHWPostStepReply(h4, validHwInfo, "h4")
-		waitForHostState(ctx, clusterID, *h4.ID, "known", 60*time.Second)
+		waitForHostState(ctx, clusterID, *h4.ID, "known", defaultWaitForHostStateTimeout)
 		h4 = getHost(clusterID, *h4.ID)
 		Expect(h4.RequestedHostname).Should(Equal("h4"))
 
@@ -1474,7 +1470,7 @@ var _ = Describe("cluster install", func() {
 		Expect(err).NotTo(HaveOccurred())
 		disabledHost = getHost(clusterID, *disabledHost.ID)
 		Expect(*disabledHost.Status).Should(Equal("disabled"))
-		waitForHostState(ctx, clusterID, *h1.ID, "known", 60*time.Second)
+		waitForHostState(ctx, clusterID, *h1.ID, "known", defaultWaitForHostStateTimeout)
 
 		By("waiting for cluster to be in ready state")
 		waitForClusterState(ctx, clusterID, models.ClusterStatusReady, 60*time.Second, clusterReadyStateInfo)
@@ -1532,6 +1528,54 @@ var _ = Describe("cluster install", func() {
 
 	})
 
+	It("role auto select", func() {
+		By("register 10 hosts")
+		clusterID := *cluster.ID
+		for i := 0; i < 10; i++ {
+			registerHost(clusterID)
+		}
+
+		By("set valid hw info for all the hosts")
+		getReply, err := bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+		Expect(err).ShouldNot(HaveOccurred())
+		c := getReply.GetPayload()
+		for i, h := range c.Hosts {
+			generateHWPostStepReply(h, validHwInfo, fmt.Sprintf("h%d", i))
+		}
+
+		hostsWithRolesCount := func() int {
+			getReply, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+			Expect(err).ShouldNot(HaveOccurred())
+			c = getReply.GetPayload()
+			count := 0
+			for _, h := range c.Hosts {
+				if h.Role == models.HostRoleMaster || h.Role == models.HostRoleWorker {
+					count++
+				}
+			}
+			return count
+		}
+		By("validate that all the hosts have roles master or worker")
+		Eventually(hostsWithRolesCount, 30).Should(Equal(10))
+
+		By("validate that cluster have 3 masters and 7 workers")
+		getReply, err = bmclient.Installer.GetCluster(ctx, &installer.GetClusterParams{ClusterID: clusterID})
+		Expect(err).ShouldNot(HaveOccurred())
+		c = getReply.GetPayload()
+		mastersCount := 0
+		workersCount := 0
+		for _, h := range c.Hosts {
+			if h.Role == models.HostRoleMaster {
+				mastersCount++
+			}
+			if h.Role == models.HostRoleWorker {
+				workersCount++
+			}
+		}
+		Expect(mastersCount).Should(Equal(3))
+		Expect(workersCount).Should(Equal(7))
+	})
+
 	It("[only_k8s]different_roles_stages", func() {
 		clusterID := *cluster.ID
 		registerHostsAndSetRoles(clusterID, 4)
@@ -1563,6 +1607,7 @@ var _ = Describe("cluster install", func() {
 	It("[only_k8s]set_requested_hostnames", func() {
 		clusterID := *cluster.ID
 		hosts := register3nodes(clusterID)
+		By("update hosts roles to master")
 		_, err := bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsRoles: []*models.ClusterUpdateParamsHostsRolesItems0{
 				{ID: *hosts[0].ID, Role: models.HostRoleUpdateParamsMaster},
@@ -1579,7 +1624,8 @@ var _ = Describe("cluster install", func() {
 		waitForHostState(ctx, clusterID, *h1.ID, models.HostStatusKnown, time.Minute)
 		waitForHostState(ctx, clusterID, *h2.ID, models.HostStatusKnown, time.Minute)
 		waitForHostState(ctx, clusterID, *h3.ID, models.HostStatusKnown, time.Minute)
-		// update requested hostnames
+
+		By("update requested hostnames")
 		_, err = bmclient.Installer.UpdateCluster(ctx, &installer.UpdateClusterParams{
 			ClusterUpdateParams: &models.ClusterUpdateParams{HostsNames: []*models.ClusterUpdateParamsHostsNamesItems0{
 				{ID: *hosts[0].ID, Hostname: "reqh0"},
@@ -1604,7 +1650,7 @@ var _ = Describe("cluster install", func() {
 		h4 := registerHost(clusterID)
 		generateHWPostStepReply(h4, validHwInfo, "h3")
 		h4 = getHost(clusterID, *h4.ID)
-		waitForHostState(ctx, clusterID, *h4.ID, host.HostStatusPendingForInput, time.Minute)
+		waitForHostState(ctx, clusterID, *h4.ID, host.HostStatusInsufficient, time.Minute)
 		waitForHostState(ctx, clusterID, *h3.ID, models.HostStatusInsufficient, time.Minute)
 
 		By("Check cluster install fails on validation")
@@ -1615,7 +1661,7 @@ var _ = Describe("cluster install", func() {
 		h5 := registerHost(clusterID)
 		generateHWPostStepReply(h5, validHwInfo, "reqh0")
 		h5 = getHost(clusterID, *h5.ID)
-		waitForHostState(ctx, clusterID, *h5.ID, host.HostStatusPendingForInput, time.Minute)
+		waitForHostState(ctx, clusterID, *h5.ID, host.HostStatusInsufficient, time.Minute)
 		waitForHostState(ctx, clusterID, *h1.ID, models.HostStatusInsufficient, time.Minute)
 
 		By("Change requested hostname of an insufficient node")

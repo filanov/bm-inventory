@@ -43,6 +43,7 @@ var _ = Describe("Host tests", func() {
 
 	It("host CRUD", func() {
 		host := registerHost(clusterID)
+		Expect(host.Role).Should(Equal(models.HostRoleAutoAssign))
 		host = getHost(clusterID, *host.ID)
 		Expect(*host.Status).Should(Equal("discovering"))
 		Expect(host.StatusUpdatedAt).ShouldNot(Equal(strfmt.DateTime(time.Time{})))

@@ -1219,6 +1219,7 @@ func (b *bareMetalInventory) RegisterHost(ctx context.Context, params installer.
 		ClusterID:             params.ClusterID,
 		CheckedInAt:           strfmt.DateTime(time.Now()),
 		DiscoveryAgentVersion: params.NewHostParams.DiscoveryAgentVersion,
+		Role:                  models.HostRoleAutoAssign,
 	}
 
 	if err := b.hostApi.RegisterHost(ctx, &host); err != nil {

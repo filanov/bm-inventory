@@ -947,7 +947,7 @@ var _ = Describe("Refresh Host", func() {
 			name               string
 			srcState           string
 			inventory          string
-			role               string
+			role               models.HostRole
 			machineNetworkCidr string
 			validCheckInTime   bool
 			dstState           string
@@ -958,6 +958,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "discovering to disconnected",
 				validCheckInTime:  false,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusDiscovering,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -979,6 +980,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "insufficient to disconnected",
 				validCheckInTime:  false,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusInsufficient,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -1000,6 +1002,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "known to disconnected",
 				validCheckInTime:  false,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusKnown,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -1008,6 +1011,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "pending to disconnected",
 				validCheckInTime:  false,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusPendingForInput,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -1029,6 +1033,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "disconnected to disconnected",
 				validCheckInTime:  false,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusDisconnected,
 				statusInfoChecker: makeValueChecker(statusInfoDisconnected),
@@ -1050,6 +1055,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "disconnected to discovering",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusDiscovering,
 				statusInfoChecker: makeValueChecker(statusInfoDiscovering),
@@ -1071,6 +1077,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "discovering to discovering",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusDiscovering,
 				dstState:          HostStatusDiscovering,
 				statusInfoChecker: makeValueChecker(statusInfoDiscovering),
@@ -1092,6 +1099,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "disconnected to insufficient (1)",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusInsufficient,
 				statusInfoChecker: makeValueChecker(statusInfoInsufficientHardware),
@@ -1114,6 +1122,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "insufficient to insufficient (1)",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusInsufficient,
 				dstState:          HostStatusInsufficient,
 				statusInfoChecker: makeValueChecker(statusInfoInsufficientHardware),
@@ -1136,6 +1145,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "discovering to insufficient (1)",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusDiscovering,
 				dstState:          HostStatusInsufficient,
 				statusInfoChecker: makeValueChecker(statusInfoInsufficientHardware),
@@ -1158,6 +1168,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "pending to insufficient (1)",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusPendingForInput,
 				dstState:          HostStatusPendingForInput,
 				statusInfoChecker: makeValueChecker(""),
@@ -1167,6 +1178,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "known to insufficient (1)",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusKnown,
 				dstState:          HostStatusKnown,
 				statusInfoChecker: makeValueChecker(""),
@@ -1176,6 +1188,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:              "disconnected to pending",
 				validCheckInTime:  true,
+				role:              models.HostRoleAutoAssign,
 				srcState:          HostStatusDisconnected,
 				dstState:          HostStatusPendingForInput,
 				statusInfoChecker: makeValueChecker(statusInfoPendingForInput),
@@ -1198,6 +1211,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:               "discovering to pending",
 				validCheckInTime:   true,
+				role:               models.HostRoleAutoAssign,
 				srcState:           HostStatusDiscovering,
 				dstState:           HostStatusPendingForInput,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1221,6 +1235,7 @@ var _ = Describe("Refresh Host", func() {
 			{
 				name:               "insufficient to pending",
 				validCheckInTime:   true,
+				role:               models.HostRoleAutoAssign,
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusPendingForInput,
 				machineNetworkCidr: "5.6.7.0/24",
@@ -1246,7 +1261,7 @@ var _ = Describe("Refresh Host", func() {
 				validCheckInTime:  true,
 				srcState:          HostStatusKnown,
 				dstState:          HostStatusPendingForInput,
-				role:              "worker",
+				role:              models.HostRoleWorker,
 				statusInfoChecker: makeValueChecker(statusInfoPendingForInput),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1269,7 +1284,7 @@ var _ = Describe("Refresh Host", func() {
 				validCheckInTime:  true,
 				srcState:          HostStatusPendingForInput,
 				dstState:          HostStatusPendingForInput,
-				role:              "worker",
+				role:              models.HostRoleWorker,
 				statusInfoChecker: makeValueChecker(statusInfoPendingForInput),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1293,7 +1308,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusDisconnected,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
-				role:               "worker",
+				role:               models.HostRoleWorker,
 				statusInfoChecker:  makeValueChecker(statusInfoNotReadyForInstall),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1317,7 +1332,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusDiscovering,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(statusInfoNotReadyForInstall),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1341,7 +1356,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(statusInfoNotReadyForInstall),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1365,7 +1380,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusPendingForInput,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(statusInfoNotReadyForInstall),
 				inventory:          workerInventory(),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
@@ -1389,7 +1404,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(statusInfoNotReadyForInstall),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1413,7 +1428,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "5.6.7.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(statusInfoNotReadyForInstall),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1437,7 +1452,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusInsufficient,
 				machineNetworkCidr: "1.2.3.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(statusInfoNotReadyForInstall),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1462,7 +1477,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusDiscovering,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(""),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1487,7 +1502,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusInsufficient,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
-				role:               "worker",
+				role:               models.HostRoleWorker,
 				statusInfoChecker:  makeValueChecker(""),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1512,7 +1527,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusPendingForInput,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
-				role:               "worker",
+				role:               models.HostRoleWorker,
 				statusInfoChecker:  makeValueChecker(""),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1537,7 +1552,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState:           HostStatusKnown,
 				dstState:           HostStatusKnown,
 				machineNetworkCidr: "1.2.3.0/24",
-				role:               "master",
+				role:               models.HostRoleMaster,
 				statusInfoChecker:  makeValueChecker(""),
 				validationsChecker: makeJsonChecker(map[validationID]validationCheckResult{
 					IsConnected:          {status: ValidationSuccess, messagePattern: "Host is connected"},
@@ -1580,7 +1595,7 @@ var _ = Describe("Refresh Host", func() {
 				srcState = t.srcState
 				host = getTestHost(hostId, clusterId, srcState)
 				host.Inventory = t.inventory
-				host.Role = models.HostRole(t.role)
+				host.Role = t.role
 				host.CheckedInAt = hostCheckInAt
 				Expect(db.Create(&host).Error).ShouldNot(HaveOccurred())
 				cluster = getTestCluster(clusterId, t.machineNetworkCidr)
@@ -1597,7 +1612,7 @@ var _ = Describe("Refresh Host", func() {
 				}
 				var resultHost models.Host
 				Expect(db.Take(&resultHost, "id = ? and cluster_id = ?", hostId.String(), clusterId.String()).Error).ToNot(HaveOccurred())
-				Expect(resultHost.Role).To(Equal(models.HostRole(t.role)))
+				Expect(resultHost.Role).To(Equal(t.role))
 				Expect(resultHost.Status).To(Equal(&t.dstState))
 				t.statusInfoChecker.check(resultHost.StatusInfo)
 				if t.validationsChecker != nil {

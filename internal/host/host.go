@@ -22,6 +22,8 @@ import (
 	"github.com/thoas/go-funk"
 )
 
+const minMasterHosts = 3
+
 const (
 	HostStatusDiscovering                 = "discovering"
 	HostStatusKnown                       = "known"
@@ -286,20 +288,11 @@ func (m *Manager) UpdateConnectivityReport(ctx context.Context, h *models.Host, 
 }
 
 func (m *Manager) UpdateRole(ctx context.Context, h *models.Host, role models.HostRole, db *gorm.DB) error {
-	hostStatus := swag.StringValue(h.Status)
-	allowedStatuses := []string{HostStatusDiscovering, HostStatusKnown, HostStatusDisconnected, HostStatusInsufficient, HostStatusPendingForInput}
-	if !funk.ContainsString(allowedStatuses, hostStatus) {
-		return common.NewApiError(http.StatusBadRequest,
-			errors.Errorf("Host is in %s state, host role can be set only in one of %s states",
-				hostStatus, allowedStatuses))
-	}
-
-	h.Role = role
 	cdb := m.db
 	if db != nil {
 		cdb = db
 	}
-	return cdb.Model(h).Update("role", role).Error
+	return updateRole(h, role, cdb, nil)
 }
 
 func (m *Manager) UpdateHostname(ctx context.Context, h *models.Host, hostname string, db *gorm.DB) error {
@@ -418,4 +411,55 @@ func (m *Manager) reportInstallationMetrics(ctx context.Context, h *models.Host,
 	} else {
 		m.metricApi.ReportHostInstallationMetrics(log, cluster.OpenshiftVersion, h, previousProgress, CurrentStage)
 	}
+}
+
+func (m *Manager) selectRole(ctx context.Context, h *models.Host) models.HostRole {
+	var (
+		autoSelectedRole = models.HostRoleWorker
+		log              = logutil.FromContext(ctx, m.log)
+	)
+
+	// count already existing masters
+	mastersCount := 0
+	if err := m.db.Model(&models.Host{}).Where("cluster_id = ? and status != ? and role = ?",
+		h.ClusterID, models.HostStatusDisabled, models.HostRoleMaster).Count(&mastersCount).Error; err != nil {
+		log.WithError(err).Errorf("failed to count masters in cluster %s", h.ClusterID.String())
+		return autoSelectedRole
+	}
+
+	if mastersCount < minMasterHosts {
+		h.Role = models.HostRoleMaster
+		vc, err := newValidationContext(h, m.db)
+		if err != nil {
+			log.WithError(err).Errorf("failed to create new validation context for host %s", h.ID.String())
+			return autoSelectedRole
+		}
+		conditions, _, err := m.rp.preprocess(vc)
+		if err != nil {
+			log.WithError(err).Errorf("failed to run validations on host %s", h.ID.String())
+			return autoSelectedRole
+		}
+		if conditions[HasCPUCoresForRole] && conditions[HasMemoryForRole] {
+			autoSelectedRole = models.HostRoleMaster
+		}
+	}
+
+	return autoSelectedRole
+}
+
+func (m *Manager) autoRoleSelection(ctx context.Context, h *models.Host) {
+	log := logutil.FromContext(ctx, m.log)
+	// don't select role if there is not hw info
+	if h.Inventory == "" {
+		return
+	}
+	role := m.selectRole(ctx, h)
+	// use sourced role to prevent races with user role setting
+	if err := updateRole(h, role, m.db, swag.String(string(models.HostRoleAutoAssign))); err != nil {
+		log.Warningf("failed to update role %s for host %s cluster %s", role, h.ID.String(), h.ClusterID.String())
+	} else {
+		log.Infof("Auto selected role %s for host %s cluster %s", role, h.ID.String(), h.ClusterID.String())
+	}
+	// pointer was changed in selectRole or after the update - need to take the host again
+	m.db.Model(&models.Host{}).Take(h, "id = ? and cluster_id = ?", h.ID.String(), h.ClusterID.String())
 }
