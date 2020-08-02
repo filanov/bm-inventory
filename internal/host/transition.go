@@ -377,7 +377,7 @@ func (th *transitionHandler) PostRefreshHost(reason string) stateswitch.PostTran
 	ret := func(sw stateswitch.StateSwitch, args stateswitch.TransitionArgs) error {
 		sHost, ok := sw.(*stateHost)
 		if !ok {
-			return errors.New("PostResetHost incompatible type of StateSwitch")
+			return errors.New("PostRefreshHost incompatible type of StateSwitch")
 		}
 		params, ok := args.(*TransitionArgsRefreshHost)
 		if !ok {
