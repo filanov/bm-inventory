@@ -114,7 +114,7 @@ const ignitionConfigFormat = `{
 "units": [{
 "name": "agent.service",
 "enabled": true,
-"contents": "[Service]\nType=simple\nRestart=always\nRestartSec=3\nStartLimitIntervalSec=0\nEnvironment=HTTPS_PROXY={{.ProxyURL}}\nEnvironment=HTTP_PROXY={{.ProxyURL}}\nEnvironment=http_proxy={{.ProxyURL}}\nEnvironment=https_proxy={{.ProxyURL}}\nExecStartPre=podman run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host {{.InventoryURL}} --port {{.InventoryPort}} --cluster-id {{.clusterId}} --agent-version {{.AgentDockerImg}}\n\n[Install]\nWantedBy=multi-user.target"
+"contents": "[Service]\nType=simple\nRestart=always\nRestartSec=3\nStartLimitIntervalSec=0\nEnvironment=HTTPS_PROXY={{.HTTPSProxy}}\nEnvironment=HTTP_PROXY={{.HTTPProxy}}\nEnvironment=http_proxy={{.HTTPProxy}}\nEnvironment=https_proxy={{.HTTPSProxy}}\nExecStartPre=podman run --privileged --rm -v /usr/local/bin:/hostbin {{.AgentDockerImg}} cp /usr/bin/agent /hostbin\nExecStart=/usr/local/bin/agent --host {{.InventoryURL}} --port {{.InventoryPort}} --cluster-id {{.clusterId}} --agent-version {{.AgentDockerImg}}\n\n[Install]\nWantedBy=multi-user.target"
 }]
 },
 "storage": {
@@ -298,9 +298,11 @@ func (b *bareMetalInventory) formatIgnitionFile(cluster *common.Cluster, params 
 		"InventoryURL":   strings.TrimSpace(b.InventoryURL),
 		"InventoryPort":  strings.TrimSpace(b.InventoryPort),
 		"clusterId":      cluster.ID.String(),
-		"ProxyURL":       params.ImageCreateParams.ProxyURL,
+		"ProxyURL":       params.ImageCreateParams.ProxyURL, // TODO: ProxyURL is deprecated in favor of HTTPProxy/HTTPSProxy
 		"PULL_SECRET":    dataurl.EncodeBytes([]byte(cluster.PullSecret)),
 		"AGENT_MOTD":     url.PathEscape(agentMessageOfTheDay),
+		"HTTPProxy":      cluster.HTTPProxy,
+		"HTTPSProxy":     cluster.HTTPSProxy,
 	}
 	tmpl, err := template.New("ignitionConfig").Parse(ignitionConfigFormat)
 	if err != nil {
@@ -357,6 +359,9 @@ func (b *bareMetalInventory) RegisterCluster(ctx context.Context, params install
 		UpdatedAt:                strfmt.DateTime{},
 		UserID:                   auth.UserIDFromContext(ctx),
 		OrgID:                    auth.OrgIDFromContext(ctx),
+		HTTPProxy:                params.NewClusterParams.HTTPProxy,
+		HTTPSProxy:               params.NewClusterParams.HTTPSProxy,
+		NoProxy:                  params.NewClusterParams.NoProxy,
 	}}
 	if params.NewClusterParams.PullSecret != "" {
 		err := validations.ValidatePullSecret(params.NewClusterParams.PullSecret)
@@ -506,8 +511,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 	just refresh the timestamp.
 	*/
 	var imageExists bool
-	if cluster.ImageInfo.ProxyURL == params.ImageCreateParams.ProxyURL &&
-		cluster.ImageInfo.SSHPublicKey == params.ImageCreateParams.SSHPublicKey &&
+	if cluster.ImageInfo.SSHPublicKey == params.ImageCreateParams.SSHPublicKey &&
 		cluster.ImageInfo.GeneratorVersion == b.Config.ImageBuilder {
 		var err error
 		imgName := getImageName(params.ClusterID)
@@ -522,6 +526,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 	}
 
 	updates := map[string]interface{}{}
+	// ProxyURL id deprecated
 	updates["image_proxy_url"] = params.ImageCreateParams.ProxyURL
 	updates["image_ssh_public_key"] = params.ImageCreateParams.SSHPublicKey
 	updates["image_created_at"] = strfmt.DateTime(now)
@@ -596,6 +601,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 	}
 
 	log.Infof("Generated cluster <%s> image with ignition config %s", params.ClusterID, ignitionConfig)
+	// TODO: Replace with Cluster.HTTPProxy / Cluster.HTTPSProxy
 	msg := fmt.Sprintf("Generated image (proxy URL is \"%s\", ", params.ImageCreateParams.ProxyURL)
 	if params.ImageCreateParams.SSHPublicKey != "" {
 		msg += "SSH public key is set)"

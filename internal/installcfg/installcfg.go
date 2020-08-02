@@ -42,6 +42,11 @@ type platform struct {
 type InstallerConfigBaremetal struct {
 	APIVersion string `yaml:"apiVersion"`
 	BaseDomain string `yaml:"baseDomain"`
+	Proxy      struct {
+		HTTPProxy  string `yaml:"httpProxy"`
+		HTTPSProxy string `yaml:"httpsProxy"`
+		NoProxy    string `yaml:"noProxy"`
+	} `yaml:"proxy"`
 	Networking struct {
 		NetworkType    string `yaml:"networkType"`
 		ClusterNetwork []struct {
@@ -83,6 +88,15 @@ func getBasicInstallConfig(cluster *common.Cluster) *InstallerConfigBaremetal {
 	return &InstallerConfigBaremetal{
 		APIVersion: "v1",
 		BaseDomain: cluster.BaseDNSDomain,
+		Proxy: struct {
+			HTTPProxy  string `yaml:"httpProxy"`
+			HTTPSProxy string `yaml:"httpsProxy"`
+			NoProxy    string `yaml:"noProxy"`
+		}{
+			HTTPProxy:  cluster.HTTPProxy,
+			HTTPSProxy: cluster.HTTPSProxy,
+			NoProxy:    cluster.NoProxy,
+		},
 		Networking: struct {
 			NetworkType    string `yaml:"networkType"`
 			ClusterNetwork []struct {
