@@ -1779,12 +1779,14 @@ definitions:
   host-role-update-params:
     type: string
     enum:
+      - 'auto-assign'
       - 'master'
       - 'worker'
 
   host-role:
     type: string
     enum:
+      - 'auto-assign'
       - 'master'
       - 'worker'
       - 'bootstrap'

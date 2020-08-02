@@ -2158,6 +2158,7 @@ func init() {
     "host-role": {
       "type": "string",
       "enum": [
+        "auto-assign",
         "master",
         "worker",
         "bootstrap"
@@ -2166,6 +2167,7 @@ func init() {
     "host-role-update-params": {
       "type": "string",
       "enum": [
+        "auto-assign",
         "master",
         "worker"
       ]
@@ -4667,6 +4669,7 @@ func init() {
     "host-role": {
       "type": "string",
       "enum": [
+        "auto-assign",
         "master",
         "worker",
         "bootstrap"
@@ -4675,6 +4678,7 @@ func init() {
     "host-role-update-params": {
       "type": "string",
       "enum": [
+        "auto-assign",
         "master",
         "worker"
       ]
