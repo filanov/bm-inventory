@@ -29,8 +29,8 @@ stage('Deploy to prod') {
   agent any
   steps {
 	sh '''docker login quay.io -u oscohen -p nata2411'''
-	sh '''docker tag quay.io/ocpmetal/bm-inventory:test quay.io/ocpmetal/bm-inventory-push-test'''
-	sh '''docker push quay.io/ocpmetal/bm-inventory'''  
+	sh '''docker tag quay.io/ocpmetal/bm-inventory:test quay.io/oscohen/bm-inventory-push-test'''
+	sh '''docker push quay.io/oscohen/bm-inventory-push-test'''  
 }
 }
 
