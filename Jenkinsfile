@@ -19,7 +19,6 @@ kubectl  get pods -A'''
 
     stage('test') {
       steps {
-        # sh 'export PATH=$PATH:/usr/local/go/bin; make subsystem-run'
       	echo "love"
 	}
     }
