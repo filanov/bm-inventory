@@ -22,6 +22,17 @@ kubectl  get pods -A'''
       	echo "love"
 	}
     }
+stage('Deploy to prod') {
+  when {
+    branch 'master'
+  }
+  agent any
+  steps {
+	sh '''docker login quay.io -u oscohen -p nata2411'''
+	sh '''docker tag quay.io/ocpmetal/bm-inventory quay.io/ocpmetal/bm-inventory-push-test'''
+	sh '''docker push quay.io/ocpmetal/bm-inventory'''  
+}
+}
 
   }
 }
