@@ -18,6 +18,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/filanov/bm-inventory/pkg/s3wrapper"
+
 	"github.com/filanov/bm-inventory/pkg/auth"
 
 	"github.com/filanov/bm-inventory/internal/identity"
@@ -81,6 +83,7 @@ type Config struct {
 	ReleaseImage       string            `envconfig:"OPENSHIFT_INSTALL_RELEASE_IMAGE" default:"quay.io/openshift-release-dev/ocp-release@sha256:eab93b4591699a5a4ff50ad3517892653f04fb840127895bb3609b3cc68f98f3"`
 	InventoryURL       string            `envconfig:"INVENTORY_URL" default:"10.35.59.36"`
 	InventoryPort      string            `envconfig:"INVENTORY_PORT" default:"30485"`
+	Region             string            `envconfig:"S3_REGION" default:"us-east-1"`
 	S3EndpointURL      string            `envconfig:"S3_ENDPOINT_URL" default:"http://10.35.59.36:30925"`
 	S3Bucket           string            `envconfig:"S3_BUCKET" default:"test"`
 	AwsAccessKeyID     string            `envconfig:"AWS_ACCESS_KEY_ID" default:"accessKey1"`
@@ -2227,6 +2230,60 @@ func (b *bareMetalInventory) GetFreeAddresses(ctx context.Context, params instal
 		return common.GenerateErrorResponder(err)
 	}
 	return installer.NewGetFreeAddressesOK().WithPayload(results)
+}
+
+func (b *bareMetalInventory) UploadHostLogs(ctx context.Context, params installer.UploadHostLogsParams) middleware.Responder {
+	log := logutil.FromContext(ctx, b.log)
+	log.Infof("UploadLogs for cluster %s , host %s", params.ClusterID, params.HostID)
+
+	defer func() {
+		// Closing file and removing all temporary files created by Multipart
+		params.Upfile.Close()
+		err := params.HTTPRequest.MultipartForm.RemoveAll()
+		if err != nil {
+			log.WithError(err).Warnf("Failed to delete temporary files used for upload")
+		}
+	}()
+
+	var cluster models.Cluster
+
+	if err := b.db.Preload("Hosts", "id = ?", params.HostID).First(&cluster, "id = ?",
+		params.ClusterID).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return common.NewApiError(http.StatusNotFound, err)
+		}
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+
+	if len(cluster.Hosts) < 1 {
+		return common.NewApiError(http.StatusNotFound, errors.Errorf("Host %s not found", params.HostID))
+	}
+
+	// needed to get filename
+	_, fileHeader, err := params.HTTPRequest.FormFile("upfile")
+	if err != nil {
+		log.WithError(err).Errorf("Failed to get filename")
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+
+	fileName := fmt.Sprintf("%s/%s/%s", params.ClusterID, cluster.Hosts[0].RequestedHostname, fileHeader.Filename)
+	log.Infof("Start upload %s to bucket %s aws len", fileName, b.S3Bucket)
+
+	location, err := s3wrapper.PutObject(&s3wrapper.Config{
+		Region:             b.Region,
+		S3Bucket:           b.S3Bucket,
+		S3EndpointURL:      b.S3EndpointURL,
+		AwsAccessKeyID:     b.AwsAccessKeyID,
+		AwsSecretAccessKey: b.AwsSecretAccessKey,
+	}, params.Upfile, fileName, b.S3Bucket)
+
+	if err != nil {
+		log.WithError(err).Errorf("Failed to upload %s to s3", fileName)
+		return common.NewApiError(http.StatusInternalServerError, err)
+	}
+
+	log.Infof("Done uploading file, full path %s", location)
+	return installer.NewUploadHostLogsNoContent()
 }
 
 func (b *bareMetalInventory) customizeHost(host *models.Host) error {

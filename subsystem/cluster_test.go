@@ -679,6 +679,17 @@ var _ = Describe("cluster install", func() {
 			}
 		})
 
+		It("[only_k8s]Upload logs", func() {
+			By("Test happy flow")
+			{
+				kubeconfigFile, err := os.Open("zmoji.apk")
+				Expect(err).NotTo(HaveOccurred())
+				nodes := register3nodes(clusterID)
+				_, err = bmclient.Installer.UploadHostLogs(ctx, &installer.UploadHostLogsParams{ClusterID: clusterID, HostID: *nodes[1].ID, Upfile: kubeconfigFile})
+				Expect(err).NotTo(HaveOccurred())
+			}
+		})
+
 		It("[only_k8s]Upload ingress ca and kubeconfig download", func() {
 			ingressCa := "-----BEGIN CERTIFICATE-----\nMIIDozCCAougAwIBAgIULCOqWTF" +
 				"aEA8gNEmV+rb7h1v0r3EwDQYJKoZIhvcNAQELBQAwYTELMAkGA1UEBhMCaXMxCzAJBgNVBAgMAmRk" +

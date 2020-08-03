@@ -1163,6 +1163,59 @@ func init() {
         }
       }
     },
+    "/clusters/{cluster_id}/hosts/{host_id}/logs": {
+      "post": {
+        "consumes": [
+          "multipart/form-data",
+          "application/x-www-form-urlencoded"
+        ],
+        "tags": [
+          "installer"
+        ],
+        "summary": "Agent API to upload logs.",
+        "operationId": "UploadHostLogs",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "host_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "file",
+            "x-mimetype": "application/zip",
+            "description": "The file to upload.",
+            "name": "upfile",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
     "/clusters/{cluster_id}/hosts/{host_id}/progress": {
       "put": {
         "tags": [
@@ -3650,6 +3703,59 @@ func init() {
             "schema": {
               "$ref": "#/definitions/error"
             }
+          },
+          "404": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          },
+          "500": {
+            "description": "Error.",
+            "schema": {
+              "$ref": "#/definitions/error"
+            }
+          }
+        }
+      }
+    },
+    "/clusters/{cluster_id}/hosts/{host_id}/logs": {
+      "post": {
+        "consumes": [
+          "application/x-www-form-urlencoded",
+          "multipart/form-data"
+        ],
+        "tags": [
+          "installer"
+        ],
+        "summary": "Agent API to upload logs.",
+        "operationId": "UploadHostLogs",
+        "parameters": [
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "format": "uuid",
+            "name": "host_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "file",
+            "x-mimetype": "application/zip",
+            "description": "The file to upload.",
+            "name": "upfile",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success."
           },
           "404": {
             "description": "Error.",

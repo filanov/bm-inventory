@@ -254,6 +254,15 @@ func (m *Manager) UploadIngressCert(c *common.Cluster) (err error) {
 	return err
 }
 
+//func (m *Manager) UploadLogs(c *common.Cluster,  ) (err error) {
+//	clusterStatus := swag.StringValue(c.Status)
+//	allowedStatuses := []string{models.ClusterStatusFinalizing, clusterStatusInstalled}
+//	if !funk.ContainsString(allowedStatuses, clusterStatus) {
+//		err = errors.Errorf("Cluster %s is in %s state, upload ingress ca can be done only in %s or %s state", c.ID, clusterStatus, models.ClusterStatusFinalizing, clusterStatusInstalled)
+//	}
+//	return err
+//}
+
 func (m *Manager) AcceptRegistration(c *common.Cluster) (err error) {
 	clusterStatus := swag.StringValue(c.Status)
 	allowedStatuses := []string{clusterStatusInsufficient, clusterStatusReady}

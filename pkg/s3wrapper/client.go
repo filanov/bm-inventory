@@ -2,9 +2,12 @@ package s3wrapper
 
 import (
 	"crypto/tls"
+	"io"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -80,4 +83,29 @@ func NewS3Client(cfg *Config) (*s3.S3, error) {
 		return nil, errors.Errorf("failed to create s3 client")
 	}
 	return client, nil
+}
+
+func PutObject(cfg *Config, file io.Reader, filename string, bucket string) (string, error) {
+	s3Session, err := NewS3Session(cfg)
+	if err != nil {
+		return "", err
+	}
+	// Create an uploader with the session and custom options
+	uploader := s3manager.NewUploader(s3Session, func(u *s3manager.Uploader) {
+		u.PartSize = 5 * 1024 * 1024 // The minimum/default allowed part size is 5MB
+		u.Concurrency = 5            // default is 5
+	})
+
+	// Upload the file to S3.
+	result, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filename),
+		Body:   file,
+	})
+
+	//in case it fails to upload
+	if err != nil {
+		return "", errors.Errorf("failed to upload %s, error %s", filename, err.Error())
+	}
+	return result.Location, nil
 }
