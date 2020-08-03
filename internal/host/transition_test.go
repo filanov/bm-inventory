@@ -213,26 +213,57 @@ var _ = Describe("RegisterHost", func() {
 
 	Context("register after reboot", func() {
 		tests := []struct {
-			name     string
-			srcState string
-			progress models.HostProgressInfo
+			name          string
+			srcState      string
+			progress      models.HostProgressInfo
+			dstState      string
+			eventSeverity string
+			eventMessage  string
+			role          models.HostRole
+			statusInfo    string
+			hwInfo        string
 		}{
 			{
 				name:     "host in reboot",
-				srcState: HostStatusInstallingInProgress,
+				srcState: models.HostStatusInstallingInProgress,
 				progress: models.HostProgressInfo{
 					CurrentStage: models.HostStageRebooting,
 				},
+				dstState:      models.HostStatusInstallingPendingUserAction,
+				eventSeverity: models.EventSeverityWarning,
+				eventMessage: "Host %s: updated status from \"installing-in-progress\" to \"installing-pending-user-action\" " +
+					"(Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot order " +
+					"to boot from disk)",
+				statusInfo: statusInfoInstallingPendingUserAction,
+				hwInfo:     defaultHwInfo,
+				role:       models.HostRoleMaster,
+			},
+			{
+				name:     "resetting host in reboot",
+				srcState: models.HostStatusResetting,
+				progress: models.HostProgressInfo{
+					CurrentStage: models.HostStageRebooting,
+				},
+				dstState:      models.HostStatusResetting,
+				eventSeverity: "",
+				eventMessage:  "",
+				hwInfo:        defaultHwInfo,
+				role:          models.HostRoleMaster,
+			},
+			{
+				name:     "resetting-pending-user-action host in reboot",
+				srcState: models.HostStatusResettingPendingUserAction,
+				progress: models.HostProgressInfo{
+					CurrentStage: models.HostStageRebooting,
+				},
+				dstState:      models.HostStatusDiscovering,
+				eventSeverity: models.EventSeverityInfo,
+				eventMessage: "Host %s: updated status from \"resetting-pending-user-action\" to \"discovering\" " +
+					"(Waiting for host hardware info)",
+				statusInfo: statusInfoDiscovering,
+				role:       models.HostRoleMaster,
 			},
 		}
-
-		AfterEach(func() {
-			h := getHost(hostId, clusterId, db)
-			Expect(swag.StringValue(h.Status)).Should(Equal(models.HostStatusInstallingPendingUserAction))
-			Expect(h.Role).Should(Equal(models.HostRoleMaster))
-			Expect(h.Inventory).Should(Equal(defaultHwInfo))
-			Expect(h.StatusInfo).NotTo(BeNil())
-		})
 
 		for i := range tests {
 			t := tests[i]
@@ -246,22 +277,34 @@ var _ = Describe("RegisterHost", func() {
 					Status:    swag.String(t.srcState),
 					Progress:  &t.progress,
 				}).Error).ShouldNot(HaveOccurred())
-				mockEvents.EXPECT().AddEvent(gomock.Any(), hostId.String(), models.EventSeverityWarning,
-					fmt.Sprintf("Host %s: updated status from \"installing-in-progress\" to \"installing-pending-user-action\" "+
-						"(Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot order "+
-						"to boot from disk)", hostId.String()),
-					gomock.Any(), clusterId.String())
+
+				if t.eventSeverity != "" && t.eventMessage != "" {
+					mockEvents.EXPECT().AddEvent(
+						gomock.Any(),
+						hostId.String(),
+						t.eventSeverity,
+						fmt.Sprintf(t.eventMessage, hostId.String()),
+						gomock.Any(),
+						clusterId.String())
+				}
 
 				Expect(hapi.RegisterHost(ctx, &models.Host{
 					ID:        &hostId,
 					ClusterID: clusterId,
 					Status:    swag.String(t.srcState),
 				})).ShouldNot(HaveOccurred())
+
+				h := getHost(hostId, clusterId, db)
+				Expect(swag.StringValue(h.Status)).Should(Equal(t.dstState))
+				Expect(h.Role).Should(Equal(t.role))
+				Expect(h.Inventory).Should(Equal(t.hwInfo))
+				Expect(swag.StringValue(h.StatusInfo)).Should(Equal(t.statusInfo))
 			})
 		}
 	})
 
 	AfterEach(func() {
+		ctrl.Finish()
 		common.DeleteTestDB(db, dbName)
 	})
 })
