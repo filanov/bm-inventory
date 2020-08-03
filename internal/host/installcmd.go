@@ -89,8 +89,8 @@ func (i *installCmd) GetStep(ctx context.Context, host *models.Host) (*models.St
 	}
 	step.Args = []string{"-c", buf.String()}
 
-	if err := i.db.Model(&models.Host{}).Where("id = ?", host.ID.String()).
-		Update("installer_version", i.instructionConfig.InstallerImage).Error; err != nil {
+	if _, err := UpdateHost(i.log, i.db, host.ClusterID, *host.ID, *host.Status,
+		"installer_version", i.instructionConfig.InstallerImage, "installation_disk_path", bootdevice); err != nil {
 		return nil, err
 	}
 

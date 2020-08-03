@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -103,7 +104,8 @@ func (th *transitionHandler) PostRegisterDuringReboot(sw stateswitch.StateSwitch
 	}
 
 	return th.updateTransitionHost(params.ctx, logutil.FromContext(params.ctx, th.log), th.db, sHost,
-		"Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot order to boot from disk")
+		fmt.Sprintf("Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot order to boot from disk %s",
+			sHost.host.InstallationDiskPath))
 }
 
 ////////////////////////////////////////////////////////////////////////////
