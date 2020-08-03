@@ -1789,14 +1789,6 @@ func (b *bareMetalInventory) ResetCluster(ctx context.Context, params installer.
 		return common.GenerateErrorResponder(err)
 	}
 
-	// abort installation files generation job if running.
-	ctime := time.Time(c.CreatedAt)
-	cTimestamp := strconv.FormatInt(ctime.Unix(), 10)
-	jobName := fmt.Sprintf("%s-%s-%s", kubeconfigPrefix, c.ID.String(), cTimestamp)[:63]
-	if err := b.job.Delete(ctx, jobName, b.Namespace); err != nil {
-		return installer.NewResetClusterInternalServerError().WithPayload(common.GenerateError(http.StatusInternalServerError, err))
-	}
-
 	for _, h := range c.Hosts {
 		if err := b.hostApi.ResetHost(ctx, h, "cluster was reset by user", tx); err != nil {
 			return common.GenerateErrorResponder(err)
