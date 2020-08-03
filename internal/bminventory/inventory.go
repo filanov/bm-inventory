@@ -18,25 +18,23 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/filanov/bm-inventory/pkg/auth"
-
-	"github.com/filanov/bm-inventory/internal/identity"
-
 	"github.com/danielerez/go-dns-client/pkg/dnsproviders"
 	"github.com/filanov/bm-inventory/internal/cluster"
 	"github.com/filanov/bm-inventory/internal/cluster/validations"
 	"github.com/filanov/bm-inventory/internal/common"
 	"github.com/filanov/bm-inventory/internal/events"
 	"github.com/filanov/bm-inventory/internal/host"
+	"github.com/filanov/bm-inventory/internal/identity"
 	"github.com/filanov/bm-inventory/internal/installcfg"
 	"github.com/filanov/bm-inventory/internal/metrics"
 	"github.com/filanov/bm-inventory/internal/network"
 	"github.com/filanov/bm-inventory/models"
+	"github.com/filanov/bm-inventory/pkg/auth"
 	"github.com/filanov/bm-inventory/pkg/filemiddleware"
 	"github.com/filanov/bm-inventory/pkg/job"
 	logutil "github.com/filanov/bm-inventory/pkg/log"
 	"github.com/filanov/bm-inventory/pkg/requestid"
-	awsS3CLient "github.com/filanov/bm-inventory/pkg/s3Client"
+	"github.com/filanov/bm-inventory/pkg/s3wrapper"
 	"github.com/filanov/bm-inventory/pkg/transaction"
 	"github.com/filanov/bm-inventory/restapi"
 	"github.com/filanov/bm-inventory/restapi/operations/installer"
@@ -152,7 +150,7 @@ type bareMetalInventory struct {
 	hostApi       host.API
 	clusterApi    cluster.API
 	eventsHandler events.Handler
-	s3Client      awsS3CLient.S3Client
+	s3Client      s3wrapper.API
 	metricApi     metrics.API
 }
 
@@ -166,7 +164,7 @@ func NewBareMetalInventory(
 	cfg Config,
 	jobApi job.API,
 	eventsHandler events.Handler,
-	s3Client awsS3CLient.S3Client,
+	s3Client s3wrapper.API,
 	metricApi metrics.API,
 ) *bareMetalInventory {
 
@@ -513,7 +511,7 @@ func (b *bareMetalInventory) GenerateClusterISO(ctx context.Context, params inst
 		cluster.ImageInfo.GeneratorVersion == b.Config.ImageBuilder {
 		var err error
 		imgName := getImageName(params.ClusterID)
-		imageExists, err = b.s3Client.UpdateObjectTag(ctx, imgName, b.S3Bucket, "create_sec_since_epoch", strconv.FormatInt(now.Unix(), 10))
+		imageExists, err = b.s3Client.UpdateObjectTag(ctx, imgName, "create_sec_since_epoch", strconv.FormatInt(now.Unix(), 10))
 		if err != nil {
 			log.WithError(tx.Error).Errorf("failed to contact storage backend")
 			msg := "Failed to generate image: error contacting storage backend"
@@ -1676,11 +1674,12 @@ func (b *bareMetalInventory) DownloadClusterFiles(ctx context.Context, params in
 			WithPayload(common.GenerateError(http.StatusConflict, err))
 	}
 
-	respBody, contentLength, err := b.s3Client.DownloadFileFromS3(ctx, fmt.Sprintf("%s/%s", params.ClusterID, params.FileName), b.S3Bucket)
+	respBody, contentLength, err := b.s3Client.Download(ctx, fmt.Sprintf("%s/%s", params.ClusterID, params.FileName))
 	if err != nil {
 		return installer.NewDownloadClusterFilesInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
+
 	return filemiddleware.NewResponder(installer.NewDownloadClusterFilesOK().WithPayload(respBody), params.FileName, contentLength)
 }
 
@@ -1704,8 +1703,7 @@ func (b *bareMetalInventory) DownloadClusterKubeconfig(ctx context.Context, para
 			WithPayload(common.GenerateError(http.StatusConflict, err))
 	}
 
-	respBody, contentLength, err := b.s3Client.DownloadFileFromS3(ctx, fmt.Sprintf("%s/%s", params.ClusterID, kubeconfig), b.S3Bucket)
-
+	respBody, contentLength, err := b.s3Client.Download(ctx, fmt.Sprintf("%s/%s", params.ClusterID, kubeconfig))
 	if err != nil {
 		return installer.NewDownloadClusterKubeconfigConflict().
 			WithPayload(common.GenerateError(http.StatusConflict, errors.Wrap(err, "failed to download kubeconfig")))
@@ -1731,13 +1729,13 @@ func (b *bareMetalInventory) GetCredentials(ctx context.Context, params installe
 		return installer.NewGetCredentialsConflict().
 			WithPayload(common.GenerateError(http.StatusConflict, err))
 	}
-	fileName := "kubeadmin-password"
-	filesURL := fmt.Sprintf("%s/%s/%s", b.S3EndpointURL, b.S3Bucket,
-		fmt.Sprintf("%s/%s", params.ClusterID, fileName))
-	log.Info("File URL: ", filesURL)
-	resp, err := http.Get(filesURL)
+	objectName := "kubeadmin-password"
+	objectURL := fmt.Sprintf("%s/%s/%s", b.S3EndpointURL, b.S3Bucket,
+		fmt.Sprintf("%s/%s", params.ClusterID, objectName))
+	log.Info("Object URL: ", objectURL)
+	resp, err := http.Get(objectURL)
 	if err != nil {
-		log.WithError(err).Errorf("Failed to get clusters %s %s file", params.ClusterID, fileName)
+		log.WithError(err).Errorf("Failed to get clusters %s %s object", params.ClusterID, objectName)
 		return installer.NewGetCredentialsInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
@@ -1745,7 +1743,7 @@ func (b *bareMetalInventory) GetCredentials(ctx context.Context, params installe
 	password, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK || err != nil {
 		log.WithError(fmt.Errorf("%s", password)).
-			Errorf("Failed to get clusters %s %s", params.ClusterID, fileName)
+			Errorf("Failed to get clusters %s %s", params.ClusterID, objectName)
 		return installer.NewGetCredentialsConflict().
 			WithPayload(common.GenerateError(http.StatusConflict, errors.New(string(password))))
 	}
@@ -1802,8 +1800,8 @@ func (b *bareMetalInventory) UploadClusterIngressCert(ctx context.Context, param
 			WithPayload(common.GenerateError(http.StatusBadRequest, err))
 	}
 
-	fileName := fmt.Sprintf("%s/%s", cluster.ID, kubeconfig)
-	exists, err := b.s3Client.DoesObjectExist(ctx, fileName, b.S3Bucket)
+	objectName := fmt.Sprintf("%s/%s", cluster.ID, kubeconfig)
+	exists, err := b.s3Client.DoesObjectExist(ctx, objectName)
 	if err != nil {
 		log.WithError(err).Errorf("Failed to upload ingress ca")
 		return installer.NewUploadClusterIngressCertInternalServerError().
@@ -1815,8 +1813,8 @@ func (b *bareMetalInventory) UploadClusterIngressCert(ctx context.Context, param
 		return installer.NewUploadClusterIngressCertCreated()
 	}
 
-	noigress := fmt.Sprintf("%s/%s-noingress", cluster.ID, kubeconfig)
-	resp, _, err := b.s3Client.DownloadFileFromS3(ctx, noigress, b.S3Bucket)
+	noingress := fmt.Sprintf("%s/%s-noingress", cluster.ID, kubeconfig)
+	resp, _, err := b.s3Client.Download(ctx, noingress)
 	if err != nil {
 		return installer.NewUploadClusterIngressCertInternalServerError().
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
@@ -1835,9 +1833,9 @@ func (b *bareMetalInventory) UploadClusterIngressCert(ctx context.Context, param
 			WithPayload(common.GenerateError(http.StatusInternalServerError, err))
 	}
 
-	if err := b.s3Client.PushDataToS3(ctx, mergedKubeConfig, fileName, b.S3Bucket); err != nil {
+	if err := b.s3Client.Upload(ctx, mergedKubeConfig, objectName); err != nil {
 		return installer.NewUploadClusterIngressCertInternalServerError().
-			WithPayload(common.GenerateError(http.StatusInternalServerError, fmt.Errorf("failed to upload %s to s3", fileName)))
+			WithPayload(common.GenerateError(http.StatusInternalServerError, fmt.Errorf("failed to upload %s to s3", objectName)))
 	}
 	return installer.NewUploadClusterIngressCertCreated()
 }
@@ -2047,7 +2045,7 @@ func (b *bareMetalInventory) CompleteInstallation(ctx context.Context, params in
 
 func (b *bareMetalInventory) deleteS3ClusterFiles(ctx context.Context, c *common.Cluster) error {
 	for _, name := range clusterFileNames {
-		if err := b.s3Client.DeleteFileFromS3(ctx, fmt.Sprintf("%s/%s", c.ID, name), b.S3Bucket); err != nil {
+		if err := b.s3Client.DeleteObject(ctx, fmt.Sprintf("%s/%s", c.ID, name)); err != nil {
 			return err
 		}
 	}
