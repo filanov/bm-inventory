@@ -5,6 +5,7 @@ BUILD_FOLDER = $(PWD)/build
 TARGET := $(or ${TARGET},minikube)
 NAMESPACE := $(or ${NAMESPACE},assisted-installer)
 KUBECTL=kubectl -n $(NAMESPACE)
+RT_CMD := $(or ${CE},docker)
 
 ifeq ($(TARGET), minikube)
 define get_service
@@ -24,6 +25,11 @@ ROUTE53_SECRET := ${ROUTE53_SECRET}
 
 all: build
 
+set_runtime:
+ifeq "${CE}" "podman"
+RT_CMD = podman --storage-driver=vfs --cgroup-manager=cgroupfs
+endif
+
 lint:
 	golangci-lint run -v
 
@@ -40,12 +46,12 @@ format:
 generate:
 	go generate $(shell go list ./... | grep -v 'bm-inventory/models\|bm-inventory/client\|bm-inventory/restapi')
 
-generate-from-swagger:
+generate-from-swagger: set_runtime
 	rm -rf client models restapi
-	docker run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
+	${RT_CMD} run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
 		quay.io/goswagger/swagger:v0.24.0 generate server	--template=stratoscale -f swagger.yaml \
 		--template-dir=/templates/contrib
-	docker run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
+	${RT_CMD} run -u $(UID):$(UID) -v $(PWD):$(PWD):rw,Z -v /etc/passwd:/etc/passwd -w $(PWD) \
 		quay.io/goswagger/swagger:v0.24.0 generate client	--template=stratoscale -f swagger.yaml \
 		--template-dir=/templates/contrib
 
@@ -53,13 +59,13 @@ generate-from-swagger:
 # Update #
 ##########
 
-update: build create-python-client
-	GIT_REVISION=${GIT_REVISION} docker build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
-	docker push $(SERVICE)
+update: set_runtime build create-python-client
+	GIT_REVISION=${GIT_REVISION} ${RT_CMD} build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
+	${RT_CMD} push $(SERVICE)
 
-update-minikube: build create-python-client
+update-minikube: set_runtime build create-python-client
 	eval $$(SHELL=$${SHELL:-/bin/sh} minikube docker-env) && \
-	GIT_REVISION=${GIT_REVISION} docker build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
+	GIT_REVISION=${GIT_REVISION} ${RT_CMD} build --build-arg GIT_REVISION -f Dockerfile.bm-inventory . -t $(SERVICE)
 
 create-python-client: build/bm-inventory-client-${GIT_REVISION}.tar.gz
 
@@ -67,7 +73,7 @@ build/bm-inventory-client/setup.py: swagger.yaml
 	cp swagger.yaml $(BUILD_FOLDER)
 	echo '{"packageName" : "bm_inventory_client", "packageVersion": "1.0.0"}' > $(BUILD_FOLDER)/code-gen-config.json
 	sed -i '/pattern:/d' $(BUILD_FOLDER)/swagger.yaml
-	docker run --rm -u $(shell id -u $(USER)) -v $(BUILD_FOLDER):/swagger-api/out:Z \
+	${RT_CMD} run --rm -u $(shell id -u $(USER)) -v $(BUILD_FOLDER):/swagger-api/out:Z \
 		-v $(BUILD_FOLDER)/swagger.yaml:/swagger.yaml:ro,Z -v $(BUILD_FOLDER)/code-gen-config.json:/config.json:ro,Z \
 		jimschubert/swagger-codegen-cli:2.3.1 generate --lang python --config /config.json --output ./bm-inventory-client/ --input-spec /swagger.yaml
 	rm -f $(BUILD_FOLDER)/swagger.yaml
@@ -152,12 +158,12 @@ deploy-grafana: create-build-dir
 
 deploy-monitoring: deploy-olm deploy-prometheus deploy-grafana
 
-unit-test:
-	docker stop postgres || true
-	docker run -d  --rm --name postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -p 127.0.0.1:5432:5432 postgres:12.3-alpine -c 'max_connections=10000'
+unit-test: set_runtime
+	${RT_CMD} stop postgres || true
+	${RT_CMD} run -d --rm --name postgres -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -p 127.0.0.1:5432:5432 postgres:12.3-alpine -c 'max_connections=10000'
 	until PGPASSWORD=admin pg_isready -U admin --dbname postgres --host 127.0.0.1 --port 5432; do sleep 1; done
-	SKIP_UT_DB=1 go test -v $(or ${TEST}, ${TEST}, $(shell go list ./... | grep -v subsystem)) -cover || (docker stop postgres && /bin/false)
-	docker stop postgres
+	SKIP_UT_DB=1 go test -v $(or ${TEST}, ${TEST}, $(shell go list ./... | grep -v subsystem)) -cover || (${RT_CMD} stop postgres && /bin/false)
+	${RT_CMD} stop postgres
 
 #########
 # Clean #

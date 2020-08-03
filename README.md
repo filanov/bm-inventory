@@ -84,6 +84,15 @@ skipper make update && kubectl get pod --namespace assisted-installer -o name | 
 
 It will build and push a new image of the service to your Docker registry, then delete the service pod from minikube, the deployment will handle the update and pull the new image to start the service again.
 
+### Use Podman as a Container Engine on test execution
+
+If you wanna execute the tests using Podman instead of Docker use this command:
+
+```shell
+make generate-from-swagger CE=podman
+make unit-test CE=podman
+```
+
 ## Deployment
 
 ### Deploy to minikube
