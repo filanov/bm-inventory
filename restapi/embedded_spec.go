@@ -1486,6 +1486,7 @@ func init() {
             "ready",
             "error",
             "preparing-for-installation",
+            "pending-for-input",
             "installing",
             "finalizing",
             "installed"
@@ -1510,6 +1511,11 @@ func init() {
         },
         "user_id": {
           "type": "string"
+        },
+        "validations_info": {
+          "description": "Json formatted string containing the validations results for each validation id grouped by category (network, hosts-data, etc.)",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:varchar(2048)\""
         }
       }
     },
@@ -1666,6 +1672,18 @@ func init() {
           "x-nullable": true
         }
       }
+    },
+    "cluster-validation-id": {
+      "type": "string",
+      "enum": [
+        "machine-cidr-defined",
+        "machine-cidr-equals-to-calculated-cidr",
+        "api-vip-belongs-to-machine-cidr-and-not-in-use",
+        "ingress-vip-belongs-to-machine-cidr-and-not-in-use",
+        "no-pending-for-input-host",
+        "all-hosts-are-ready-to-install",
+        "has-exactly-three-masters"
+      ]
     },
     "completion-params": {
       "type": "object",
@@ -4013,6 +4031,7 @@ func init() {
             "ready",
             "error",
             "preparing-for-installation",
+            "pending-for-input",
             "installing",
             "finalizing",
             "installed"
@@ -4037,6 +4056,11 @@ func init() {
         },
         "user_id": {
           "type": "string"
+        },
+        "validations_info": {
+          "description": "Json formatted string containing the validations results for each validation id grouped by category (network, hosts-data, etc.)",
+          "type": "string",
+          "x-go-custom-tag": "gorm:\"type:varchar(2048)\""
         }
       }
     },
@@ -4175,6 +4199,18 @@ func init() {
           "x-nullable": true
         }
       }
+    },
+    "cluster-validation-id": {
+      "type": "string",
+      "enum": [
+        "machine-cidr-defined",
+        "machine-cidr-equals-to-calculated-cidr",
+        "api-vip-belongs-to-machine-cidr-and-not-in-use",
+        "ingress-vip-belongs-to-machine-cidr-and-not-in-use",
+        "no-pending-for-input-host",
+        "all-hosts-are-ready-to-install",
+        "has-exactly-three-masters"
+      ]
     },
     "completion-params": {
       "type": "object",

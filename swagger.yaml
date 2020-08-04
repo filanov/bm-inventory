@@ -1376,6 +1376,7 @@ definitions:
           - ready
           - error
           - preparing-for-installation
+          - pending-for-input
           - installing
           - finalizing
           - installed
@@ -1426,6 +1427,10 @@ definitions:
         description: True if the pull-secret has been added to the cluster
       ignition_generator_version:
         type: string
+      validations_info:
+        type: string
+        description: Json formatted string containing the validations results for each validation id grouped by category (network, hosts-data, etc.)
+        x-go-custom-tag: gorm:"type:varchar(2048)"
 
   image_info:
     type: object
@@ -1804,3 +1809,14 @@ definitions:
       - 'hostname-unique'
       - 'hostname-valid'
       - 'belongs-to-machine-cidr'
+
+  cluster-validation-id:
+    type: string
+    enum:
+      - 'machine-cidr-defined'
+      - 'machine-cidr-equals-to-calculated-cidr'
+      - 'api-vip-belongs-to-machine-cidr-and-not-in-use'
+      - 'ingress-vip-belongs-to-machine-cidr-and-not-in-use'
+      - 'no-pending-for-input-host'
+      - 'all-hosts-are-ready-to-install'
+      - 'has-exactly-three-masters'
