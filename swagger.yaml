@@ -1439,10 +1439,17 @@ definitions:
         type: string
         x-go-custom-tag: gorm:"type:varchar(1024)"
         description: SSH public key for debugging the installation
+      image_size_bytes:
+        type: integer
+        minimum: 0
       generator_version:
         type: string
         description: Image generator version
       created_at:
+        type: string
+        format: date-time
+        x-go-custom-tag: gorm:"type:timestamp with time zone"
+      expires_at:
         type: string
         format: date-time
         x-go-custom-tag: gorm:"type:timestamp with time zone"
