@@ -29,6 +29,7 @@ import (
 	"github.com/filanov/bm-inventory/pkg/auth"
 	"github.com/filanov/bm-inventory/pkg/db"
 	"github.com/filanov/bm-inventory/pkg/job"
+	"github.com/filanov/bm-inventory/pkg/ocm"
 	"github.com/filanov/bm-inventory/pkg/requestid"
 	awsS3Client "github.com/filanov/bm-inventory/pkg/s3Client"
 	"github.com/filanov/bm-inventory/pkg/s3wrapper"
@@ -51,6 +52,7 @@ func init() {
 }
 
 var Options struct {
+	Auth                        auth.Config
 	BMConfig                    bminventory.Config
 	DBConfig                    db.Config
 	HWValidatorConfig           hardware.ValidatorCfg
@@ -65,6 +67,7 @@ var Options struct {
 	ImageExpirationInterval     time.Duration `envconfig:"IMAGE_EXPIRATION_INTERVAL" default:"30m"`
 	ImageExpirationTime         time.Duration `envconfig:"IMAGE_EXPIRATION_TIME" default:"60m"`
 	ClusterConfig               cluster.Config
+	OCMConfig                   ocm.Config
 }
 
 func main() {
@@ -121,6 +124,14 @@ func main() {
 		log.Fatal("failed to auto migrate, ", err)
 	}
 
+	ocmClient, err := ocm.NewClient(Options.OCMConfig)
+
+	if err != nil {
+		log.Warn("Failed to Create OCM Client,", err)
+	}
+
+	authHandler := auth.NewAuthHandler(Options.Auth, ocmClient, log.WithField("pkg", "auth"))
+
 	versionHandler := versions.NewHandler(Options.Versions)
 	domainHandler := domains.NewHandler(Options.BMConfig.BaseDNSDomains)
 	eventsHandler := events.New(db, log.WithField("pkg", "events"))
@@ -169,12 +180,15 @@ func main() {
 	}
 
 	h, err := restapi.Handler(restapi.Config{
-		InstallerAPI:      bm,
-		EventsAPI:         events,
-		Logger:            log.Printf,
-		VersionsAPI:       versionHandler,
-		ManagedDomainsAPI: domainHandler,
-		InnerMiddleware:   metrics.WithMatchedRoute(log.WithField("pkg", "matched-h"), prometheusRegistry),
+		AuthAgentAuth:       authHandler.AuthAgentAuth,
+		AuthUserAuth:        authHandler.AuthUserAuth,
+		APIKeyAuthenticator: authHandler.CreateAuthenticator(),
+		InstallerAPI:        bm,
+		EventsAPI:           events,
+		Logger:              log.Printf,
+		VersionsAPI:         versionHandler,
+		ManagedDomainsAPI:   domainHandler,
+		InnerMiddleware:     metrics.WithMatchedRoute(log.WithField("pkg", "matched-h"), prometheusRegistry),
 	})
 	h = app.WithMetricsResponderMiddleware(h)
 	h = app.WithHealthMiddleware(h)
