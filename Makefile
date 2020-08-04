@@ -1,3 +1,4 @@
+
 PWD = $(shell pwd)
 UID = $(shell id -u)
 BUILD_FOLDER = $(PWD)/build
@@ -21,6 +22,7 @@ SERVICE := $(or ${SERVICE},quay.io/ocpmetal/bm-inventory:latest)
 GIT_REVISION := $(shell git rev-parse HEAD)
 APPLY_NAMESPACE := $(or ${APPLY_NAMESPACE},True)
 ROUTE53_SECRET := ${ROUTE53_SECRET}
+CONTAINER_COMMAND = $(shell if [ -x "$(shell command -v docker)" ]; then echo "docker" ; else echo "podman"; fi)
 
 all: build
 
@@ -134,6 +136,14 @@ deploy-test:
 	export SERVICE=quay.io/ocpmetal/bm-inventory:test && export TEST_FLAGS=--subsystem-test && \
 	$(MAKE) update-minikube deploy-all
 
+deploy-onprem:
+	${CONTAINER_COMMAND} pod create --name assisted-installer -p 5432,8000,8090,8080
+	${CONTAINER_COMMAND} volume create s3-volume
+	${CONTAINER_COMMAND} run -dt --pod assisted-installer --env-file onprem-environment -v s3-volume:/mnt/data:rw --name s3 scality/s3server:latest
+	${CONTAINER_COMMAND} run -dt --pod assisted-installer --env-file onprem-environment --name db postgres:12.3-alpine
+	${CONTAINER_COMMAND} run -dt --pod assisted-installer --env-file onprem-environment --restart always --name installer ${SERVICE}
+	${CONTAINER_COMMAND} run -dt --pod assisted-installer --env-file onprem-environment -v $(PWD)/deploy/ui/nginx.conf:/opt/bitnami/nginx/conf/server_blocks/nginx.conf:z --name ui quay.io/ocpmetal/ocp-metal-ui:latest
+
 ########
 # Test #
 ########
@@ -164,6 +174,12 @@ unit-test:
 	SKIP_UT_DB=1 go test -v $(or ${TEST}, ${TEST}, $(shell go list ./... | grep -v subsystem)) -cover || (docker stop postgres && /bin/false)
 	docker stop postgres
 
+test-onprem:
+	INVENTORY=127.0.0.1:8090 \
+	DB_HOST=127.0.0.1 \
+	DB_PORT=5432 \
+	go test -v ./subsystem/... -count=1 -ginkgo.focus=${FOCUS} -ginkgo.v
+
 #########
 # Clean #
 #########
@@ -179,3 +195,8 @@ subsystem-clean:
 
 clear-deployment:
 	-python3 ./tools/clear_deployment.py --delete-namespace $(APPLY_NAMESPACE) --namespace "$(NAMESPACE)" || true
+
+clean-onprem:
+	${CONTAINER_COMMAND} pod rm -f assisted-installer
+	${CONTAINER_COMMAND} volume rm s3-volume
+
