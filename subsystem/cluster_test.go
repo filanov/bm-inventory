@@ -815,6 +815,7 @@ var _ = Describe("cluster install", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				verifyErrorStates()
 			})
+			// RWSU
 			It("[only_k8s]cancel cluster with various hosts states", func() {
 				_, err := bmclient.Installer.InstallCluster(ctx, &installer.InstallClusterParams{ClusterID: clusterID})
 				Expect(err).NotTo(HaveOccurred())
@@ -1532,6 +1533,7 @@ var _ = Describe("cluster install", func() {
 
 	})
 
+	// RWSU
 	It("[only_k8s]different_roles_stages", func() {
 		clusterID := *cluster.ID
 		registerHostsAndSetRoles(clusterID, 4)

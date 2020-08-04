@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/filanov/bm-inventory/pkg/app"
 	"github.com/filanov/bm-inventory/pkg/auth"
 	"github.com/filanov/bm-inventory/pkg/db"
+	"github.com/filanov/bm-inventory/pkg/generator"
 	"github.com/filanov/bm-inventory/pkg/job"
 	"github.com/filanov/bm-inventory/pkg/requestid"
 	awsS3Client "github.com/filanov/bm-inventory/pkg/s3Client"
@@ -60,11 +62,11 @@ var Options struct {
 	S3Config                    s3wrapper.Config
 	HostStateMonitorInterval    time.Duration `envconfig:"HOST_MONITOR_INTERVAL" default:"8s"`
 	Versions                    versions.Versions
-	UseK8s                      bool          `envconfig:"USE_K8S" default:"true"` // TODO remove when jobs running deprecated
 	CreateS3Bucket              bool          `envconfig:"CREATE_S3_BUCKET" default:"false"`
 	ImageExpirationInterval     time.Duration `envconfig:"IMAGE_EXPIRATION_INTERVAL" default:"30m"`
 	ImageExpirationTime         time.Duration `envconfig:"IMAGE_EXPIRATION_TIME" default:"60m"`
 	ClusterConfig               cluster.Config
+	DeployTarget                string `envconfig:"DEPLOY_TARGET" default:"k8s"`
 }
 
 func main() {
@@ -80,30 +82,6 @@ func main() {
 	flag.Parse()
 
 	log.Println("Starting bm service")
-
-	var kclient client.Client
-	if Options.UseK8s {
-
-		if Options.CreateS3Bucket {
-			if err = s3wrapper.CreateBucket(&Options.S3Config); err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		scheme := runtime.NewScheme()
-		if err = clientgoscheme.AddToScheme(scheme); err != nil {
-			log.Fatal("Failed to add K8S scheme", err)
-		}
-
-		kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
-		if err != nil && Options.UseK8s {
-			log.Fatal("failed to create client:", err)
-		}
-
-	} else {
-		log.Println("running drone test, skipping S3")
-		kclient = nil
-	}
 
 	// Connect to db
 	dbConnectionStr := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
@@ -148,13 +126,40 @@ func main() {
 		log.Fatal("Failed to setup S3 client", err)
 	}
 
-	jobApi := job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
+	log.Println("DeployTarget: " + Options.DeployTarget)
 
-	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, jobApi, eventsHandler, s3Client, metricsManager)
+	var generator generator.ISOInstallConfigGenerator
+
+	switch Options.DeployTarget {
+	case "k8s":
+		var kclient client.Client
+		createS3Bucket(&Options.S3Config)
+
+		scheme := runtime.NewScheme()
+		if err = clientgoscheme.AddToScheme(scheme); err != nil {
+			log.Fatal("Failed to add K8S scheme", err)
+		}
+
+		kclient, err = client.New(config.GetConfigOrDie(), client.Options{Scheme: scheme})
+		if err != nil {
+			log.Fatal("failed to create client:", err)
+		}
+		generator = job.New(log.WithField("pkg", "k8s-job-wrapper"), kclient, Options.JobConfig)
+	case "onprem":
+		// in on-prem mode, setup s3 and use localjob implementation
+		createS3Bucket(&Options.S3Config)
+		generator = job.NewLocalJob(log.WithField("pkg", "local-job-wrapper"), Options.JobConfig)
+	default:
+		// drone/nonk8s
+		log.Println("running drone test, skipping S3")
+		generator = job.New(log.WithField("pkg", "k8s-job-wrapper"), nil, Options.JobConfig)
+	}
+
+	bm := bminventory.NewBareMetalInventory(db, log.WithField("pkg", "Inventory"), hostApi, clusterApi, Options.BMConfig, generator, eventsHandler, s3Client, metricsManager)
 
 	events := events.NewApi(eventsHandler, logrus.WithField("pkg", "eventsApi"))
 
-	if Options.UseK8s {
+	if Options.DeployTarget == "k8s" {
 		s3WrapperClient, s3Err := s3wrapper.NewS3Client(&Options.S3Config)
 		if s3Err != nil {
 			log.Fatal("failed to create S3 client, ", err)
@@ -186,4 +191,12 @@ func main() {
 	}
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", swag.StringValue(port)), h))
+}
+
+func createS3Bucket(s3config *s3wrapper.Config) {
+	if Options.CreateS3Bucket {
+		if err := s3wrapper.CreateBucket(&Options.S3Config); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
