@@ -238,18 +238,20 @@ var _ = Describe("RegisterHost", func() {
 			t := tests[i]
 
 			It(t.name, func() {
+				diskPath := "disk-path"
 				Expect(db.Create(&models.Host{
-					ID:        &hostId,
-					ClusterID: clusterId,
-					Role:      models.HostRoleMaster,
-					Inventory: defaultHwInfo,
-					Status:    swag.String(t.srcState),
-					Progress:  &t.progress,
+					ID:                   &hostId,
+					ClusterID:            clusterId,
+					Role:                 models.HostRoleMaster,
+					Inventory:            defaultHwInfo,
+					Status:               swag.String(t.srcState),
+					Progress:             &t.progress,
+					InstallationDiskPath: diskPath,
 				}).Error).ShouldNot(HaveOccurred())
 				mockEvents.EXPECT().AddEvent(gomock.Any(), hostId.String(), models.EventSeverityWarning,
 					fmt.Sprintf("Host %s: updated status from \"installing-in-progress\" to \"installing-pending-user-action\" "+
 						"(Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot order "+
-						"to boot from disk)", hostId.String()),
+						"to boot from disk %s)", hostId.String(), diskPath),
 					gomock.Any(), clusterId.String())
 
 				Expect(hapi.RegisterHost(ctx, &models.Host{

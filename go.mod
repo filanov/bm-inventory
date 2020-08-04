@@ -18,9 +18,11 @@ require (
 	github.com/go-openapi/swag v0.19.9
 	github.com/go-openapi/validate v0.19.10
 	github.com/golang/mock v1.2.0
+	github.com/google/martian v2.1.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/jinzhu/gorm v1.9.12
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/labstack/gommon v0.3.0
 	github.com/minio/minio-go/v6 v6.0.55
 	github.com/onsi/ginkgo v1.14.0
 	github.com/onsi/gomega v1.10.1
