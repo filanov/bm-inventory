@@ -21,8 +21,16 @@ type ImageInfo struct {
 	// Format: date-time
 	CreatedAt strfmt.DateTime `json:"created_at,omitempty" gorm:"type:timestamp with time zone"`
 
+	// expires at
+	// Format: date-time
+	ExpiresAt strfmt.DateTime `json:"expires_at,omitempty" gorm:"type:timestamp with time zone"`
+
 	// Image generator version
 	GeneratorVersion string `json:"generator_version,omitempty"`
+
+	// image size bytes
+	// Minimum: 0
+	ImageSizeBytes *int64 `json:"image_size_bytes,omitempty"`
 
 	// The URL of the HTTP/S proxy that agents should use to access the discovery service
 	// http://\<user\>:\<password\>@\<server\>:\<port\>/
@@ -41,6 +49,14 @@ func (m *ImageInfo) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateExpiresAt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateImageSizeBytes(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -54,6 +70,32 @@ func (m *ImageInfo) validateCreatedAt(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("created_at", "body", "date-time", m.CreatedAt.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ImageInfo) validateExpiresAt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ExpiresAt) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("expires_at", "body", "date-time", m.ExpiresAt.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ImageInfo) validateImageSizeBytes(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ImageSizeBytes) { // not required
+		return nil
+	}
+
+	if err := validate.MinimumInt("image_size_bytes", "body", int64(*m.ImageSizeBytes), 0, false); err != nil {
 		return err
 	}
 
