@@ -11,31 +11,31 @@ import (
 	reflect "reflect"
 )
 
-// MockS3Wrapper is a mock of S3Wrapper interface
-type MockS3Wrapper struct {
+// MockAPI is a mock of API interface
+type MockAPI struct {
 	ctrl     *gomock.Controller
-	recorder *MockS3WrapperMockRecorder
+	recorder *MockAPIMockRecorder
 }
 
-// MockS3WrapperMockRecorder is the mock recorder for MockS3Wrapper
-type MockS3WrapperMockRecorder struct {
-	mock *MockS3Wrapper
+// MockAPIMockRecorder is the mock recorder for MockAPI
+type MockAPIMockRecorder struct {
+	mock *MockAPI
 }
 
-// NewMockS3Wrapper creates a new mock instance
-func NewMockS3Wrapper(ctrl *gomock.Controller) *MockS3Wrapper {
-	mock := &MockS3Wrapper{ctrl: ctrl}
-	mock.recorder = &MockS3WrapperMockRecorder{mock}
+// NewMockAPI creates a new mock instance
+func NewMockAPI(ctrl *gomock.Controller) *MockAPI {
+	mock := &MockAPI{ctrl: ctrl}
+	mock.recorder = &MockAPIMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockS3Wrapper) EXPECT() *MockS3WrapperMockRecorder {
+func (m *MockAPI) EXPECT() *MockAPIMockRecorder {
 	return m.recorder
 }
 
 // CreateBucket mocks base method
-func (m *MockS3Wrapper) CreateBucket() error {
+func (m *MockAPI) CreateBucket() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateBucket")
 	ret0, _ := ret[0].(error)
@@ -43,13 +43,13 @@ func (m *MockS3Wrapper) CreateBucket() error {
 }
 
 // CreateBucket indicates an expected call of CreateBucket
-func (mr *MockS3WrapperMockRecorder) CreateBucket() *gomock.Call {
+func (mr *MockAPIMockRecorder) CreateBucket() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBucket", reflect.TypeOf((*MockS3Wrapper)(nil).CreateBucket))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBucket", reflect.TypeOf((*MockAPI)(nil).CreateBucket))
 }
 
 // Upload mocks base method
-func (m *MockS3Wrapper) Upload(ctx context.Context, data []byte, objectName string) error {
+func (m *MockAPI) Upload(ctx context.Context, data []byte, objectName string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upload", ctx, data, objectName)
 	ret0, _ := ret[0].(error)
@@ -57,13 +57,13 @@ func (m *MockS3Wrapper) Upload(ctx context.Context, data []byte, objectName stri
 }
 
 // Upload indicates an expected call of Upload
-func (mr *MockS3WrapperMockRecorder) Upload(ctx, data, objectName interface{}) *gomock.Call {
+func (mr *MockAPIMockRecorder) Upload(ctx, data, objectName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upload", reflect.TypeOf((*MockS3Wrapper)(nil).Upload), ctx, data, objectName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upload", reflect.TypeOf((*MockAPI)(nil).Upload), ctx, data, objectName)
 }
 
 // Download mocks base method
-func (m *MockS3Wrapper) Download(ctx context.Context, objectName string) (io.ReadCloser, int64, error) {
+func (m *MockAPI) Download(ctx context.Context, objectName string) (io.ReadCloser, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Download", ctx, objectName)
 	ret0, _ := ret[0].(io.ReadCloser)
@@ -73,13 +73,13 @@ func (m *MockS3Wrapper) Download(ctx context.Context, objectName string) (io.Rea
 }
 
 // Download indicates an expected call of Download
-func (mr *MockS3WrapperMockRecorder) Download(ctx, objectName interface{}) *gomock.Call {
+func (mr *MockAPIMockRecorder) Download(ctx, objectName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Download", reflect.TypeOf((*MockS3Wrapper)(nil).Download), ctx, objectName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Download", reflect.TypeOf((*MockAPI)(nil).Download), ctx, objectName)
 }
 
 // DoesObjectExist mocks base method
-func (m *MockS3Wrapper) DoesObjectExist(ctx context.Context, objectName string) (bool, error) {
+func (m *MockAPI) DoesObjectExist(ctx context.Context, objectName string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DoesObjectExist", ctx, objectName)
 	ret0, _ := ret[0].(bool)
@@ -88,13 +88,13 @@ func (m *MockS3Wrapper) DoesObjectExist(ctx context.Context, objectName string) 
 }
 
 // DoesObjectExist indicates an expected call of DoesObjectExist
-func (mr *MockS3WrapperMockRecorder) DoesObjectExist(ctx, objectName interface{}) *gomock.Call {
+func (mr *MockAPIMockRecorder) DoesObjectExist(ctx, objectName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesObjectExist", reflect.TypeOf((*MockS3Wrapper)(nil).DoesObjectExist), ctx, objectName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DoesObjectExist", reflect.TypeOf((*MockAPI)(nil).DoesObjectExist), ctx, objectName)
 }
 
 // DeleteObject mocks base method
-func (m *MockS3Wrapper) DeleteObject(ctx context.Context, objectName string) error {
+func (m *MockAPI) DeleteObject(ctx context.Context, objectName string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteObject", ctx, objectName)
 	ret0, _ := ret[0].(error)
@@ -102,13 +102,13 @@ func (m *MockS3Wrapper) DeleteObject(ctx context.Context, objectName string) err
 }
 
 // DeleteObject indicates an expected call of DeleteObject
-func (mr *MockS3WrapperMockRecorder) DeleteObject(ctx, objectName interface{}) *gomock.Call {
+func (mr *MockAPIMockRecorder) DeleteObject(ctx, objectName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObject", reflect.TypeOf((*MockS3Wrapper)(nil).DeleteObject), ctx, objectName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteObject", reflect.TypeOf((*MockAPI)(nil).DeleteObject), ctx, objectName)
 }
 
 // UpdateObjectTag mocks base method
-func (m *MockS3Wrapper) UpdateObjectTag(ctx context.Context, objectName, key, value string) (bool, error) {
+func (m *MockAPI) UpdateObjectTag(ctx context.Context, objectName, key, value string) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateObjectTag", ctx, objectName, key, value)
 	ret0, _ := ret[0].(bool)
@@ -117,7 +117,22 @@ func (m *MockS3Wrapper) UpdateObjectTag(ctx context.Context, objectName, key, va
 }
 
 // UpdateObjectTag indicates an expected call of UpdateObjectTag
-func (mr *MockS3WrapperMockRecorder) UpdateObjectTag(ctx, objectName, key, value interface{}) *gomock.Call {
+func (mr *MockAPIMockRecorder) UpdateObjectTag(ctx, objectName, key, value interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateObjectTag", reflect.TypeOf((*MockS3Wrapper)(nil).UpdateObjectTag), ctx, objectName, key, value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateObjectTag", reflect.TypeOf((*MockAPI)(nil).UpdateObjectTag), ctx, objectName, key, value)
+}
+
+// GetObjectSizeBytes mocks base method
+func (m *MockAPI) GetObjectSizeBytes(ctx context.Context, objectName string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetObjectSizeBytes", ctx, objectName)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetObjectSizeBytes indicates an expected call of GetObjectSizeBytes
+func (mr *MockAPIMockRecorder) GetObjectSizeBytes(ctx, objectName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectSizeBytes", reflect.TypeOf((*MockAPI)(nil).GetObjectSizeBytes), ctx, objectName)
 }
