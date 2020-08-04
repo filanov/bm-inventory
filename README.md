@@ -8,7 +8,7 @@
 
 ## Prerequisites
 
-1. DfdfdfDocker
+1. fdfDocker
 1. skipper https://github.com/stratoscale/skipper
 1. minikube (for tests)
 1. kubectl
