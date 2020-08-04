@@ -17,17 +17,18 @@ import (
 )
 
 const (
-	statusInfoDisconnected               = "Host keepalive timeout"
-	statusInfoDisabled                   = "Host is disabled"
-	statusInfoDiscovering                = "Waiting for host hardware info"
-	statusInfoInsufficientHardware       = "Host does not pass minimum hardware requirements"
-	statusInfoPendingForInput            = "User input required"
-	statusInfoNotReadyForInstall         = "Host not ready for install"
-	statusInfoInstalling                 = "Installation in progress"
-	statusInfoResettingPendingUserAction = "Reboot the host into the installation image to complete resetting the installation"
-	statusInfoPreparingForInstallation   = "Preparing host for installation"
-	statusInfoPreparingTimedOut          = "Cluster is no longer preparing for installation"
-	statusInfoAbortingDueClusterErrors   = "Installation has been aborted due cluster errors"
+	statusInfoDisconnected                = "Host keepalive timeout"
+	statusInfoDisabled                    = "Host is disabled"
+	statusInfoDiscovering                 = "Waiting for host hardware info"
+	statusInfoInsufficientHardware        = "Host does not pass minimum hardware requirements"
+	statusInfoPendingForInput             = "User input required"
+	statusInfoNotReadyForInstall          = "Host not ready for install"
+	statusInfoInstalling                  = "Installation in progress"
+	statusInfoInstallingPendingUserAction = "Expected the host to boot from disk, but it booted the installation image - please reboot and fix boot order to boot from disk"
+	statusInfoResettingPendingUserAction  = "Reboot the host into the installation image to complete resetting the installation"
+	statusInfoPreparingForInstallation    = "Preparing host for installation"
+	statusInfoPreparingTimedOut           = "Cluster is no longer preparing for installation"
+	statusInfoAbortingDueClusterErrors    = "Installation has been aborted due cluster errors"
 )
 
 type UpdateReply struct {

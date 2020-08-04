@@ -25,12 +25,30 @@ func NewHostStateMachine(th *transitionHandler) stateswitch.StateMachine {
 	sm.AddTransition(stateswitch.TransitionRule{
 		TransitionType: TransitionTypeRegisterHost,
 		SourceStates: []stateswitch.State{
+			stateswitch.State(models.HostStatusResetting),
+		},
+		Condition:        th.IsHostInReboot,
+		DestinationState: stateswitch.State(models.HostStatusResetting),
+	})
+
+	sm.AddTransition(stateswitch.TransitionRule{
+		TransitionType: TransitionTypeRegisterHost,
+		SourceStates: []stateswitch.State{
+			stateswitch.State(models.HostStatusResetting),
+		},
+		Condition:        stateswitch.Not(th.IsHostInReboot),
+		DestinationState: stateswitch.State(models.HostStatusDiscovering),
+		PostTransition:   th.PostRegisterHost,
+	})
+
+	sm.AddTransition(stateswitch.TransitionRule{
+		TransitionType: TransitionTypeRegisterHost,
+		SourceStates: []stateswitch.State{
 			"",
 			HostStatusDiscovering,
 			HostStatusKnown,
 			HostStatusDisconnected,
 			HostStatusInsufficient,
-			HostStatusResetting,
 			stateswitch.State(models.HostStatusResettingPendingUserAction),
 		},
 		DestinationState: HostStatusDiscovering,
