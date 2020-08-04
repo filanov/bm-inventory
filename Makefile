@@ -131,7 +131,7 @@ deploy-postgres: deploy-namespace
 	python3 ./tools/deploy_postgres.py --namespace "$(NAMESPACE)"
 
 deploy-test:
-	export SERVICE=quay.io/ocpmetal/bm-inventory:test && export TEST_FLAGS=--subsystem-test && \
+	export SERVICE=minikube-local-registry/bm-inventory:minikube-test && export TEST_FLAGS=--subsystem-test && \
 	$(MAKE) update-minikube deploy-all
 
 ########
