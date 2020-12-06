@@ -203,6 +203,10 @@ func (b *bareMetalInventory) generateDummyISOImage() {
 		b.createImageJob(jobName, imgName, "Dummy", false)); err != nil {
 		log.WithError(err).Errorf("failed to generate dummy ISO image")
 	}
+	if err := b.job.Monitor(context.Background(), jobName, b.Namespace); err != nil {
+		log.WithError(err).Errorf("error while generating dummy ISO image")
+	}
+
 }
 
 func getQuantity(s string) resource.Quantity {
