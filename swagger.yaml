@@ -49,6 +49,7 @@ paths:
         - installer
       summary: Retrieves the list of OpenShift bare metal clusters.
       operationId: ListClusters
+      x-auth-type: user-auth-type
       responses:
         200:
           description: Success.
@@ -65,6 +66,7 @@ paths:
         - installer
       summary: Retrieves the details of the OpenShift bare metal cluster.
       operationId: GetCluster
+      x-auth-type: agent-auth-type
       parameters:
         - in: path
           name: cluster_id

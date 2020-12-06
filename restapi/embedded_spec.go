@@ -56,7 +56,8 @@ func init() {
               "$ref": "#/definitions/error"
             }
           }
-        }
+        },
+        "x-auth-type": "user-auth-type"
       },
       "post": {
         "tags": [
@@ -131,7 +132,8 @@ func init() {
               "$ref": "#/definitions/error"
             }
           }
-        }
+        },
+        "x-auth-type": "agent-auth-type"
       },
       "delete": {
         "tags": [
@@ -2559,7 +2561,8 @@ func init() {
               "$ref": "#/definitions/error"
             }
           }
-        }
+        },
+        "x-auth-type": "user-auth-type"
       },
       "post": {
         "tags": [
@@ -2634,7 +2637,8 @@ func init() {
               "$ref": "#/definitions/error"
             }
           }
-        }
+        },
+        "x-auth-type": "agent-auth-type"
       },
       "delete": {
         "tags": [
