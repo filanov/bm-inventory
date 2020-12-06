@@ -1742,6 +1742,8 @@ definitions:
         $ref: '#/definitions/memory'
       cpu:
         $ref: '#/definitions/cpu'
+      new:
+        type: string
 
   free_network_addresses:
     type: object

@@ -2340,6 +2340,9 @@ func init() {
         "memory": {
           "$ref": "#/definitions/memory"
         },
+        "new": {
+          "type": "string"
+        },
         "system_vendor": {
           "$ref": "#/definitions/system_vendor"
         }
@@ -4848,6 +4851,9 @@ func init() {
         },
         "memory": {
           "$ref": "#/definitions/memory"
+        },
+        "new": {
+          "type": "string"
         },
         "system_vendor": {
           "$ref": "#/definitions/system_vendor"

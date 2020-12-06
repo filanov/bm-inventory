@@ -42,6 +42,9 @@ type Inventory struct {
 	// memory
 	Memory *Memory `json:"memory,omitempty"`
 
+	// new
+	New string `json:"new,omitempty"`
+
 	// system vendor
 	SystemVendor *SystemVendor `json:"system_vendor,omitempty"`
 }
